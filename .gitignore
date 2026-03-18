@@ -1,0 +1,51 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native — generated on build
+/ios
+/android
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# IDE
+.idea/
+.vscode/
+
+# Claude
+.claude/
+
+# Environment variables — NEVER commit secrets
+.env
+.env*.local
+
+# Database — regenerated at runtime
+*.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+app-example
