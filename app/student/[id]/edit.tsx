@@ -18,7 +18,7 @@ export default function EditStudent() {
   useEffect(() => {
     if (!student) return;
     populateForm({ name: student.name, major: student.major, year: student.year });
-  }, [student, populateForm]);
+  }, [student?.id, populateForm]);
 
   if (!student) return null;
 

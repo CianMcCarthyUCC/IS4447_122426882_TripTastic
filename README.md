@@ -1,50 +1,29 @@
-# Welcome to your Expo app 👋
+# IS4447 - Student Manager
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Student ID:** 122426882
+**Name:** Cian McCarthy
 
-## Get started
+A React Native student management app built with Expo, Drizzle ORM, and SQLite for local offline persistence.
 
-1. Install dependencies
+## GitHub
 
-   ```bash
-   npm install
-   ```
+https://github.com/CianMcCarthyUCC/IS4447_122426882_CianMcCarthy
 
-2. Start the app
+## Expo
 
-   ```bash
-   npx expo start
-   ```
+https://expo.dev/projects/0c1d33ff-849f-4cbd-86b3-79efbfa0ae26
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Getting Started
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Tech Stack
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Framework:** React Native + Expo (SDK 54)
+- **Routing:** Expo Router (file-based)
+- **Database:** SQLite via `expo-sqlite`
+- **ORM:** Drizzle ORM
+- **Language:** TypeScript (strict mode)
