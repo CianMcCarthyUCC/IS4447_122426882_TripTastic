@@ -34,7 +34,7 @@ export default function StudentDetail() {
       <ButtonGroup>
         <PrimaryButton
           label="Edit"
-          onPress={() => router.push({ pathname: '../student/[id]/edit', params: { id } })}
+          onPress={() => router.push({ pathname: '/student/[id]/edit', params: { id } })}
         />
         <PrimaryButton label="Delete" variant="danger" onPress={handleDelete} />
         <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />

@@ -14,7 +14,7 @@ export default function IndexScreen() {
   return (
     <ScreenContainer withTabs>
       <ScreenHeader title="Students" subtitle={`${students.length} enrolled`} />
-      <PrimaryButton label="Add Student" onPress={() => router.push({ pathname: '../add' })} />
+      <PrimaryButton label="Add Student" onPress={() => router.push({ pathname: '/add' })} />
       <StudentList students={students} />
     </ScreenContainer>
   );
