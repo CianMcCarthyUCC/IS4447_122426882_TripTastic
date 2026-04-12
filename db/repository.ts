@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from './client';
-import { categories, activities, targets } from './schema';
-import type { CategoryFormData, ActivityFormData, TargetFormData, Target } from '@/types';
+import { categories, activities, targets, users, sessions } from './schema';
+import type { CategoryFormData, ActivityFormData, TargetFormData, Target, User } from '@/types';
 
 // ── Categories ──────────────────────────────────────────
 
@@ -84,4 +84,60 @@ export async function updateTargetById(id: number, data: TargetFormData) {
 
 export async function deleteTargetById(id: number) {
   await db.delete(targets).where(eq(targets.id, id));
+}
+
+// ── Users ──────────────────────────────────────────────
+
+export async function findUserByEmail(email: string): Promise<User | undefined> {
+  const rows = await db.select().from(users).where(eq(users.email, email));
+  if (rows.length === 0) return undefined;
+  const row = rows[0];
+  return { id: row.id, email: row.email, createdAt: row.createdAt };
+}
+
+export async function findUserWithHashByEmail(
+  email: string,
+): Promise<(User & { passwordHash: string }) | undefined> {
+  const rows = await db.select().from(users).where(eq(users.email, email));
+  return rows[0] as (User & { passwordHash: string }) | undefined;
+}
+
+export async function findUserById(id: number): Promise<User | undefined> {
+  const rows = await db.select().from(users).where(eq(users.id, id));
+  if (rows.length === 0) return undefined;
+  const row = rows[0];
+  return { id: row.id, email: row.email, createdAt: row.createdAt };
+}
+
+export async function insertUser(email: string, passwordHash: string): Promise<void> {
+  await db.insert(users).values({
+    email,
+    passwordHash,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteUserById(id: number): Promise<void> {
+  await db.delete(sessions).where(eq(sessions.userId, id));
+  await db.delete(users).where(eq(users.id, id));
+}
+
+// ── Sessions (SQLite-based session persistence) ────────
+
+export async function getActiveSession(): Promise<number | null> {
+  const rows = await db.select().from(sessions);
+  if (rows.length === 0) return null;
+  return rows[0].userId;
+}
+
+export async function createSession(userId: number): Promise<void> {
+  await db.delete(sessions);
+  await db.insert(sessions).values({
+    userId,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function clearSessionDb(): Promise<void> {
+  await db.delete(sessions);
 }

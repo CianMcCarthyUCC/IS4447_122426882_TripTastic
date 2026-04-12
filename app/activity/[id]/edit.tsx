@@ -47,7 +47,7 @@ export default function EditActivity() {
     await updateActivity(Number(id), formData);
     haptics.success();
     showToast('Activity updated', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

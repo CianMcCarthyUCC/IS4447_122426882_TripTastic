@@ -46,7 +46,7 @@ export default function EditTarget() {
     await updateTarget(Number(id), formData);
     haptics.success();
     showToast('Target updated', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

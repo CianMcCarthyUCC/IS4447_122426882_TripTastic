@@ -25,7 +25,11 @@ function ProgressBar({
   unit = 'min',
 }: Props) {
   return (
-    <View accessibilityLabel={`${current} of ${target} ${unit}, ${percent}%`}>
+    <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${current} of ${target} ${unit}, ${percent}%`}
+      accessibilityValue={{ min: 0, max: target, now: current }}
+    >
       {/* Badge row */}
       {(exceeded || met) && (
         <View style={styles.badgeRow}>

@@ -21,7 +21,15 @@ export default function CategoryDetail() {
   const [loading, setLoading] = useState(false);
 
   const category = findCategoryById(Number(id));
-  if (!category) return null;
+
+  if (!category) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader title="Not Found" subtitle="This category may have been deleted." />
+        <PrimaryButton label="Go Back" variant="secondary" onPress={() => router.back()} />
+      </ScreenContainer>
+    );
+  }
 
   const handleDelete = async () => {
     setConfirmVisible(false);
@@ -29,7 +37,7 @@ export default function CategoryDetail() {
     await deleteCategory(Number(id));
     haptics.success();
     showToast('Category deleted', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

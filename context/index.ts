@@ -1,7 +1,9 @@
+export { AuthContext, useAuthContext } from './AuthContext';
 export { CategoryContext, useCategoryContext } from './CategoryContext';
 export { ActivityContext, useActivityContext } from './ActivityContext';
 export { TargetContext, useTargetContext } from './TargetContext';
 export { default as AppProvider } from './AppProvider';
+export type { AuthContextType } from './AuthContext';
 export type { CategoryContextType } from './CategoryContext';
 export type { ActivityContextType } from './ActivityContext';
 export type { TargetContextType } from './TargetContext';

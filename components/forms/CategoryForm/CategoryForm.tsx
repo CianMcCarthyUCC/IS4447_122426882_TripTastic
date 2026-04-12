@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
+import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import FormField from '@/components/forms/FormField';
 import { PrimaryButton } from '@/components/buttons';
 import { SharedStyles } from '@/constants';
@@ -22,7 +23,7 @@ export default function CategoryForm({
   error,
 }: Props) {
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <KeyboardAwareForm>
       <View style={SharedStyles.form}>
         <FormField
           label="Name"
@@ -58,6 +59,6 @@ export default function CategoryForm({
       <View style={SharedStyles.buttonSpacing}>
         <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
       </View>
-    </ScrollView>
+    </KeyboardAwareForm>
   );
 }

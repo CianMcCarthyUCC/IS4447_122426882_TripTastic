@@ -31,7 +31,7 @@ export default function AddActivity() {
     await addActivity(formData);
     haptics.success();
     showToast('Activity added', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

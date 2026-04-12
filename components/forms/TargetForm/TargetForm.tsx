@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
+import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import FormField from '@/components/forms/FormField';
 import { CategoryPicker } from '@/components/forms/CategoryPicker';
 import { PeriodPicker } from '@/components/forms/PeriodPicker';
@@ -44,7 +45,7 @@ export default function TargetForm({
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <KeyboardAwareForm>
       <View style={SharedStyles.form}>
         <CategoryPicker
           categories={categories}
@@ -84,6 +85,6 @@ export default function TargetForm({
       <View style={SharedStyles.buttonSpacing}>
         <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
       </View>
-    </ScrollView>
+    </KeyboardAwareForm>
   );
 }
