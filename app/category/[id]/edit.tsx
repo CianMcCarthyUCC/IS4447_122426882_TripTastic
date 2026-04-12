@@ -4,6 +4,7 @@ import { useCategories, useCategoryForm, useToast, useHaptics } from '@/hooks';
 import { CategoryForm } from '@/components/forms';
 import { Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { validateCategoryForm } from '@/utils/validation';
 
 /**
  * Edit category screen — reuses CategoryForm. Validates required fields.
@@ -28,8 +29,9 @@ export default function EditCategory() {
   if (!category) return null;
 
   const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError('Category name is required.');
+    const validationError = validateCategoryForm(formData);
+    if (validationError) {
+      setError(validationError);
       haptics.error();
       return;
     }
@@ -38,7 +40,7 @@ export default function EditCategory() {
     await updateCategory(Number(id), formData);
     haptics.success();
     showToast('Category updated', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

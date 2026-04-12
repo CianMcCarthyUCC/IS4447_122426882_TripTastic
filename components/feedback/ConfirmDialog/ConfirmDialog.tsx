@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { GestureResponderEvent } from 'react-native';
 import { PrimaryButton } from '@/components/buttons';
 import { Colors, Spacing, BorderRadius } from '@/constants';
 
@@ -37,7 +38,7 @@ function ConfirmDialog({
       statusBarTranslucent
     >
       <Pressable style={styles.overlay} onPress={onCancel}>
-        <Pressable style={styles.dialog} onPress={() => {}}>
+        <View style={styles.dialog} onStartShouldSetResponder={() => true}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
 
@@ -49,7 +50,7 @@ function ConfirmDialog({
               <PrimaryButton label={confirmLabel} variant={variant} onPress={onConfirm} />
             </View>
           </View>
-        </Pressable>
+        </View>
       </Pressable>
     </Modal>
   );

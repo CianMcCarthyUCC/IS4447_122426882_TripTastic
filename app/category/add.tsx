@@ -4,9 +4,10 @@ import { useCategories, useCategoryForm, useToast, useHaptics } from '@/hooks';
 import { CategoryForm } from '@/components/forms';
 import { Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { validateCategoryForm } from '@/utils/validation';
 
 /**
- * Add category screen — validates required fields before saving.
+ * Add category screen — validates with shared utility before saving.
  */
 export default function AddCategory() {
   const router = useRouter();
@@ -18,8 +19,9 @@ export default function AddCategory() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError('Category name is required.');
+    const validationError = validateCategoryForm(formData);
+    if (validationError) {
+      setError(validationError);
       haptics.error();
       return;
     }
@@ -28,7 +30,7 @@ export default function AddCategory() {
     await addCategory(formData);
     haptics.success();
     showToast('Category created', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

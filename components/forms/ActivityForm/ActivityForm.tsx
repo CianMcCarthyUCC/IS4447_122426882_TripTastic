@@ -1,4 +1,5 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
+import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import FormField from '@/components/forms/FormField';
 import { DateField } from '@/components/forms/DateField';
 import { CategoryPicker } from '@/components/forms/CategoryPicker';
@@ -31,7 +32,7 @@ export default function ActivityForm({
   error,
 }: Props) {
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <KeyboardAwareForm>
       <View style={SharedStyles.form}>
         <DateField
           label="Date"
@@ -75,6 +76,6 @@ export default function ActivityForm({
       <View style={SharedStyles.buttonSpacing}>
         <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
       </View>
-    </ScrollView>
+    </KeyboardAwareForm>
   );
 }

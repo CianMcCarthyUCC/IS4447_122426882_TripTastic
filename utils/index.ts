@@ -12,4 +12,18 @@ export {
 export { computeProgress } from './progressHelpers';
 export type { ProgressData } from './progressHelpers';
 
-export { validateActivityForm, validateTargetForm } from './validation';
+export {
+  validateActivityForm,
+  validateTargetForm,
+  validateCategoryForm,
+  validateRegisterForm,
+  validateLoginForm,
+} from './validation';
+
+export {
+  hashPassword,
+  verifyPassword,
+  setSession,
+  getSession,
+  clearSession,
+} from './auth';

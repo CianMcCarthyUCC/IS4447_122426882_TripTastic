@@ -31,7 +31,7 @@ export default function AddTarget() {
     await addTarget(formData);
     haptics.success();
     showToast('Target created', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (

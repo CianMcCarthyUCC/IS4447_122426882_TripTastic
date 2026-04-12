@@ -1,12 +1,32 @@
-import { Tabs } from 'expo-router';
+import { memo, useCallback } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants';
+import { Colors, Spacing } from '@/constants';
+
+const ProfileButton = memo(function ProfileButton() {
+  const router = useRouter();
+  const openProfile = useCallback(() => router.push('/profile'), [router]);
+
+  return (
+    <Pressable
+      onPress={openProfile}
+      style={styles.profileButton}
+      accessibilityLabel="Open profile"
+      accessibilityHint="View your account, logout, or delete profile"
+      accessibilityRole="button"
+    >
+      <Ionicons name="person-circle-outline" size={28} color={Colors.primaryAction} />
+    </Pressable>
+  );
+});
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primaryAction,
+        headerRight: () => <ProfileButton />,
       }}
     >
       <Tabs.Screen
@@ -52,3 +72,9 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  profileButton: {
+    marginRight: Spacing.lg,
+  },
+});

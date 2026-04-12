@@ -22,7 +22,15 @@ export default function ActivityDetail() {
   const [loading, setLoading] = useState(false);
 
   const activity = findActivityById(Number(id));
-  if (!activity) return null;
+
+  if (!activity) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader title="Not Found" subtitle="This activity may have been deleted." />
+        <PrimaryButton label="Go Back" variant="secondary" onPress={() => router.back()} />
+      </ScreenContainer>
+    );
+  }
 
   const category = findCategoryById(activity.categoryId);
 
@@ -32,7 +40,7 @@ export default function ActivityDetail() {
     await deleteActivity(Number(id));
     haptics.success();
     showToast('Activity deleted', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (
@@ -42,7 +50,7 @@ export default function ActivityDetail() {
 
       <View style={SharedStyles.tagRow}>
         <InfoTag label="Duration" value={`${activity.metric} min`} />
-        {category && <InfoTag label="Category" value={category.name} />}
+        <InfoTag label="Category" value={category?.name ?? 'Uncategorised'} />
       </View>
 
       {activity.notes ? (

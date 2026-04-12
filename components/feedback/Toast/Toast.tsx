@@ -1,5 +1,5 @@
-import { memo, useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius } from '@/constants';
 
@@ -12,6 +12,10 @@ type Props = {
   duration?: number;
   onHide: () => void;
 };
+
+const TOAST_OFFSET_Y = -100;
+const TOAST_SLIDE_DURATION = 300;
+const TOAST_DEFAULT_DURATION = 2500;
 
 const ICONS: Record<ToastVariant, keyof typeof Ionicons.glyphMap> = {
   success: 'checkmark-circle',
@@ -27,16 +31,22 @@ const BG_COLORS: Record<ToastVariant, string> = {
 
 /**
  * Animated toast notification — slides in from top, auto-hides.
- * Provides user feedback for CRUD operations.
+ * Uses ref for onHide to avoid re-triggering animation on parent re-render.
  */
 function Toast({
   visible,
   message,
   variant = 'success',
-  duration = 2500,
+  duration = TOAST_DEFAULT_DURATION,
   onHide,
 }: Props) {
-  const translateY = useRef(new Animated.Value(-100)).current;
+  const translateY = useRef(new Animated.Value(TOAST_OFFSET_Y)).current;
+  const onHideRef = useRef(onHide);
+  onHideRef.current = onHide;
+
+  const handleAnimationEnd = useCallback(() => {
+    onHideRef.current();
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -49,15 +59,15 @@ function Toast({
         }),
         Animated.delay(duration),
         Animated.timing(translateY, {
-          toValue: -100,
-          duration: 300,
+          toValue: TOAST_OFFSET_Y,
+          duration: TOAST_SLIDE_DURATION,
           useNativeDriver: true,
         }),
-      ]).start(() => onHide());
+      ]).start(handleAnimationEnd);
     } else {
-      translateY.setValue(-100);
+      translateY.setValue(TOAST_OFFSET_Y);
     }
-  }, [visible, duration, onHide, translateY]);
+  }, [visible, duration, translateY, handleAnimationEnd]);
 
   if (!visible) return null;
 

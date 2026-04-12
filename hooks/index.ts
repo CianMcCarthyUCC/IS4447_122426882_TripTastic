@@ -1,3 +1,4 @@
+export { useAuth } from './useAuth';
 export { useCategories } from './useCategories';
 export { useCategoryForm } from './useCategoryForm';
 export { useActivities } from './useActivities';

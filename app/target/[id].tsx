@@ -24,7 +24,15 @@ export default function TargetDetail() {
   const [loading, setLoading] = useState(false);
 
   const target = findTargetById(Number(id));
-  if (!target) return null;
+
+  if (!target) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader title="Not Found" subtitle="This target may have been deleted." />
+        <PrimaryButton label="Go Back" variant="secondary" onPress={() => router.back()} />
+      </ScreenContainer>
+    );
+  }
 
   const category = findCategoryById(target.categoryId);
 
@@ -49,7 +57,7 @@ export default function TargetDetail() {
     await deleteTarget(Number(id));
     haptics.success();
     showToast('Target deleted', 'success');
-    setTimeout(() => router.back(), 600);
+    router.back();
   };
 
   return (
