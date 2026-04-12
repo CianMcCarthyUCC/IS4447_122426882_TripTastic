@@ -23,7 +23,11 @@ export const Colors = {
 
   // Brand / Actions
   primaryAction: '#0F766E',
+  successAction: '#059669',
   dangerAction: '#B91C1C',
+
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.5)',
 
   // Tags
   tagLabel: '#1D4ED8',

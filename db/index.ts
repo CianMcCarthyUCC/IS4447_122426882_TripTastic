@@ -10,4 +10,8 @@ export {
   insertActivity,
   updateActivityById,
   deleteActivityById,
+  getAllTargets,
+  insertTarget,
+  updateTargetById,
+  deleteTargetById,
 } from './repository';
