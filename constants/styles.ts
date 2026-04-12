@@ -77,4 +77,52 @@ export const SharedStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: Spacing.xxl * 2,
   },
+  // Progress bars
+  progressBarBg: {
+    backgroundColor: Colors.cardBorder,
+    borderRadius: BorderRadius.xs,
+    height: 10,
+    marginTop: Spacing.md,
+    overflow: 'hidden' as const,
+  },
+  progressBarFill: {
+    borderRadius: BorderRadius.xs,
+    height: 10,
+  },
+  // Badges
+  badge: {
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  badgeText: {
+    color: Colors.textButton,
+    fontSize: 11,
+    fontWeight: '700' as const,
+  },
+  // Pill toggles
+  pillRow: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: Spacing.sm,
+  },
+  pill: {
+    borderColor: Colors.inputBorder,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 2,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  pillSelected: {
+    backgroundColor: Colors.primaryAction,
+    borderColor: Colors.primaryAction,
+  },
+  pillText: {
+    color: Colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  pillTextSelected: {
+    color: Colors.textButton,
+  },
 });

@@ -25,7 +25,8 @@ export const activities = sqliteTable('activities', {
 
 export const targets = sqliteTable('targets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  tripId: integer('trip_id').notNull(),
+  tripId: integer('trip_id'),
   categoryId: integer('category_id').notNull(),
   targetValue: integer('target_value').notNull(),
+  period: text('period').notNull(),
 });

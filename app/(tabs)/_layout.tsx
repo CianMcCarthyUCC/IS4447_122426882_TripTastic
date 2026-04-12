@@ -29,6 +29,26 @@ export default function TabLayout() {
           tabBarAccessibilityLabel: 'Categories tab',
         }}
       />
+      <Tabs.Screen
+        name="targets"
+        options={{
+          title: 'Targets',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="flag" size={size} color={color} accessibilityElementsHidden />
+          ),
+          tabBarAccessibilityLabel: 'Targets tab',
+        }}
+      />
+      <Tabs.Screen
+        name="insights"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart" size={size} color={color} accessibilityElementsHidden />
+          ),
+          tabBarAccessibilityLabel: 'Insights tab',
+        }}
+      />
     </Tabs>
   );
 }

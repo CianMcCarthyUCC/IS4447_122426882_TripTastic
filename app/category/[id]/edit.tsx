@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { useCategories, useCategoryForm } from '@/hooks';
+import { useCategories, useCategoryForm, useToast, useHaptics } from '@/hooks';
 import { CategoryForm } from '@/components/forms';
+import { Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
 
 /**
@@ -12,7 +13,10 @@ export default function EditCategory() {
   const router = useRouter();
   const { findCategoryById, updateCategory } = useCategories();
   const { formData, onChangeField, populateForm } = useCategoryForm();
+  const { toast, showToast, hideToast } = useToast();
+  const haptics = useHaptics();
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const category = findCategoryById(Number(id));
 
@@ -26,22 +30,27 @@ export default function EditCategory() {
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       setError('Category name is required.');
+      haptics.error();
       return;
     }
     setError('');
+    setLoading(true);
     await updateCategory(Number(id), formData);
-    router.back();
+    haptics.success();
+    showToast('Category updated', 'success');
+    setTimeout(() => router.back(), 600);
   };
 
   return (
     <ScreenContainer>
+      <Toast {...toast} onHide={hideToast} />
       <ScreenHeader title="Edit Category" subtitle={`Update ${category.name}`} />
       <CategoryForm
         formData={formData}
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel="Save Changes"
+        submitLabel={loading ? 'Saving...' : 'Save Changes'}
         error={error}
       />
     </ScreenContainer>

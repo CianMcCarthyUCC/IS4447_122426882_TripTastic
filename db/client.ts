@@ -32,12 +32,14 @@ sqlite.execSync(`
   );
 `);
 
+sqlite.execSync(`DROP TABLE IF EXISTS targets;`);
 sqlite.execSync(`
   CREATE TABLE IF NOT EXISTS targets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    trip_id INTEGER NOT NULL,
+    trip_id INTEGER,
     category_id INTEGER NOT NULL,
-    target_value INTEGER NOT NULL
+    target_value INTEGER NOT NULL,
+    period TEXT NOT NULL DEFAULT 'weekly'
   );
 `);
 

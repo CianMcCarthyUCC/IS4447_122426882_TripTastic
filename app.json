@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "react-native-lab",
-    "slug": "react-native-lab",
+    "name": "TripTastic",
+    "slug": "triptastic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "reactnativelab",
+    "scheme": "triptastic",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
