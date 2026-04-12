@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing } from '@/constants';
+import { Colors, Spacing, SharedStyles } from '@/constants';
 
 type Props = {
   message?: string;
@@ -11,7 +11,7 @@ type Props = {
  */
 export default function LoadingState({ message = 'Loading...' }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={SharedStyles.centeredContainer}>
       <ActivityIndicator size="large" color={Colors.primaryAction} />
       <Text style={styles.message}>{message}</Text>
     </View>
@@ -19,11 +19,6 @@ export default function LoadingState({ message = 'Loading...' }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.xxl * 2,
-  },
   message: {
     color: Colors.textSecondary,
     fontSize: 14,

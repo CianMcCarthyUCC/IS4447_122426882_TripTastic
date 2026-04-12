@@ -1,21 +1,25 @@
 import { useRouter } from 'expo-router';
-import { useStudents } from '@/hooks';
+import { useActivities, useCategories } from '@/hooks';
 import { PrimaryButton } from '@/components/buttons';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
-import { StudentList } from '@/components/lists';
+import { ActivityList } from '@/components/lists';
 
 /**
- * Main screen — just imports and composition. No inline logic.
+ * Main screen — activities list with add button.
  */
 export default function IndexScreen() {
   const router = useRouter();
-  const { students } = useStudents();
+  const { activities } = useActivities();
+  const { categories } = useCategories();
 
   return (
     <ScreenContainer withTabs>
-      <ScreenHeader title="Students" subtitle={`${students.length} enrolled`} />
-      <PrimaryButton label="Add Student" onPress={() => router.push({ pathname: '../add' })} />
-      <StudentList students={students} />
+      <ScreenHeader title="Activities" subtitle={`${activities.length} recorded`} />
+      <PrimaryButton
+        label="Add Activity"
+        onPress={() => router.push('/activity/add')}
+      />
+      <ActivityList activities={activities} categories={categories} />
     </ScreenContainer>
   );
 }

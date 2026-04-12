@@ -1,1 +1,2 @@
-export { default as StudentCard } from './StudentCard';
+export { CategoryCard } from './CategoryCard';
+export { ActivityCard } from './ActivityCard';

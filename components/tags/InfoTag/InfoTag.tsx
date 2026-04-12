@@ -8,7 +8,7 @@ type Props = {
 
 export default function InfoTag({ label, value }: Props) {
   return (
-    <View style={styles.tag}>
+    <View style={styles.tag} accessibilityLabel={`${label}: ${value}`}>
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.value}>{value}</Text>
     </View>
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.tagBackground,
     borderRadius: BorderRadius.pill,
     flexDirection: 'row',
-    marginRight: 8,
+    marginRight: Spacing.sm,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },

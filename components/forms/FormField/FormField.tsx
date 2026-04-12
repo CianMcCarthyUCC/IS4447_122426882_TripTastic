@@ -1,44 +1,38 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '@/constants';
+import { Text, TextInput, View } from 'react-native';
+import type { KeyboardTypeOptions } from 'react-native';
+import { SharedStyles } from '@/constants';
 
 type Props = {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 };
 
-export default function FormField({ label, value, onChangeText, placeholder }: Props) {
+export default function FormField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  accessibilityLabel,
+  accessibilityHint,
+}: Props) {
   return (
-    <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={SharedStyles.fieldWrapper}>
+      <Text style={SharedStyles.fieldLabel} accessibilityRole="text">{label}</Text>
       <TextInput
         placeholder={placeholder ?? label}
         value={value}
         onChangeText={onChangeText}
-        style={styles.input}
+        style={SharedStyles.fieldInput}
+        keyboardType={keyboardType}
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: Spacing.lg,
-  },
-  label: {
-    color: Colors.textLabel,
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
-  },
-  input: {
-    backgroundColor: Colors.inputBackground,
-    borderColor: Colors.inputBorder,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    fontSize: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-});

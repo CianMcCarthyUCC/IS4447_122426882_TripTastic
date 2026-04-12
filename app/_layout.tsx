@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
-import { StudentProvider } from '@/context';
+import { AppProvider } from '@/context';
 
 /**
- * Root layout — thin shell. All logic lives in StudentProvider.
+ * Root layout — thin shell. All logic lives in AppProvider.
  */
 export default function RootLayout() {
   return (
-    <StudentProvider>
+    <AppProvider>
       <Stack />
-    </StudentProvider>
+    </AppProvider>
   );
 }

@@ -1,11 +1,12 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { Colors, BorderRadius } from '@/constants';
+import { Colors, BorderRadius, Spacing } from '@/constants';
 
 type Props = {
   label: string;
   onPress: () => void;
   compact?: boolean;
   variant?: 'primary' | 'secondary' | 'danger';
+  accessibilityLabel?: string;
 };
 
 export default function PrimaryButton({
@@ -13,10 +14,13 @@ export default function PrimaryButton({
   onPress,
   compact = false,
   variant = 'primary',
+  accessibilityLabel,
 }: Props) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [
         styles.button,
         variant === 'secondary' && styles.secondary,
@@ -43,8 +47,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.primaryAction,
     borderRadius: BorderRadius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   secondary: {
     backgroundColor: Colors.cardBackground,
@@ -56,9 +60,9 @@ const styles = StyleSheet.create({
   },
   compact: {
     alignSelf: 'flex-start',
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   pressed: {
     opacity: 0.85,

@@ -1,3 +1,5 @@
-export { StudentContext, useStudentContext } from './StudentContext';
-export { default as StudentProvider } from './StudentProvider';
-export type { StudentContextType } from './StudentContext';
+export { CategoryContext, useCategoryContext } from './CategoryContext';
+export { ActivityContext, useActivityContext } from './ActivityContext';
+export { default as AppProvider } from './AppProvider';
+export type { CategoryContextType } from './CategoryContext';
+export type { ActivityContextType } from './ActivityContext';

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing } from '@/constants';
+import { Colors, Spacing, SharedStyles } from '@/constants';
 
 type Props = {
   title: string;
@@ -8,11 +8,11 @@ type Props = {
 
 /**
  * Reusable empty state — show this when a list has no data.
- * Use anywhere: student list, search results, etc.
+ * Use anywhere: activity list, category list, search results, etc.
  */
 export default function EmptyState({ title, message }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={SharedStyles.centeredContainer}>
       <Text style={styles.title}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
@@ -20,11 +20,6 @@ export default function EmptyState({ title, message }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.xxl * 2,
-  },
   title: {
     color: Colors.textPrimary,
     fontSize: 18,

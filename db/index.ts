@@ -1,9 +1,13 @@
 export { db } from './client';
-export { students } from './schema';
-export { seedStudentsIfEmpty } from './seed';
+export { trips, categories, activities, targets } from './schema';
+export { seedDataIfEmpty } from './seed';
 export {
-  getAllStudents,
-  insertStudent,
-  updateStudentById,
-  deleteStudentById,
+  getAllCategories,
+  insertCategory,
+  updateCategoryById,
+  deleteCategoryById,
+  getAllActivities,
+  insertActivity,
+  updateActivityById,
+  deleteActivityById,
 } from './repository';

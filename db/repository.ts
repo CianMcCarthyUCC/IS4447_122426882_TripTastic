@@ -1,26 +1,55 @@
 import { eq } from 'drizzle-orm';
 import { db } from './client';
-import { students } from './schema';
-import type { StudentFormData } from '@/types';
+import { categories, activities } from './schema';
+import type { CategoryFormData, ActivityFormData } from '@/types';
 
-/**
- * Data access layer — all database operations in one place.
- * Hooks and components never touch the DB directly.
- * This makes the app easier to test and maintain.
- */
+// ── Categories ──────────────────────────────────────────
 
-export async function getAllStudents() {
-  return db.select().from(students);
+export async function getAllCategories() {
+  return db.select().from(categories);
 }
 
-export async function insertStudent(data: StudentFormData) {
-  await db.insert(students).values({ ...data, count: 0 });
+export async function insertCategory(data: CategoryFormData) {
+  await db.insert(categories).values(data);
 }
 
-export async function updateStudentById(id: number, data: StudentFormData) {
-  await db.update(students).set(data).where(eq(students.id, id));
+export async function updateCategoryById(id: number, data: CategoryFormData) {
+  await db.update(categories).set(data).where(eq(categories.id, id));
 }
 
-export async function deleteStudentById(id: number) {
-  await db.delete(students).where(eq(students.id, id));
+export async function deleteCategoryById(id: number) {
+  await db.delete(categories).where(eq(categories.id, id));
+}
+
+// ── Activities ──────────────────────────────────────────
+
+export async function getAllActivities() {
+  return db.select().from(activities);
+}
+
+export async function insertActivity(data: ActivityFormData) {
+  await db.insert(activities).values({
+    tripId: data.tripId,
+    categoryId: data.categoryId,
+    date: data.date,
+    metric: Number(data.metric),
+    notes: data.notes || null,
+  });
+}
+
+export async function updateActivityById(id: number, data: ActivityFormData) {
+  await db
+    .update(activities)
+    .set({
+      tripId: data.tripId,
+      categoryId: data.categoryId,
+      date: data.date,
+      metric: Number(data.metric),
+      notes: data.notes || null,
+    })
+    .where(eq(activities.id, id));
+}
+
+export async function deleteActivityById(id: number) {
+  await db.delete(activities).where(eq(activities.id, id));
 }

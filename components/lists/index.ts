@@ -1,1 +1,2 @@
-export { default as StudentList } from './StudentList';
+export { CategoryList } from './CategoryList';
+export { ActivityList } from './ActivityList';
