@@ -30,6 +30,20 @@ export const users = sqliteTable('users', {
   createdAt: text('created_at').notNull(),
 });
 
+export const savedFilters = sqliteTable('saved_filters', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  filterType: text('filter_type').notNull(),
+  filterValue: text('filter_value').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const recentSearches = sqliteTable('recent_searches', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  query: text('query').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 export const sessions = sqliteTable('sessions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull(),

@@ -37,10 +37,17 @@ export default function EditCategory() {
     }
     setError('');
     setLoading(true);
-    await updateCategory(Number(id), formData);
-    haptics.success();
-    showToast('Category updated', 'success');
-    router.back();
+    try {
+      await updateCategory(Number(id), formData);
+      haptics.success();
+      showToast('Category updated', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,7 +59,8 @@ export default function EditCategory() {
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Changes'}
+        submitLabel="Save Changes"
+        loading={loading}
         error={error}
       />
     </ScreenContainer>

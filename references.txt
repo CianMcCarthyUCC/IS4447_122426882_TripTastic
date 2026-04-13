@@ -1,0 +1,40 @@
+References & Attributions
+=========================
+
+UI/UX Inspiration:
+- Expedia mobile app — card layout, search/filter patterns, travel-themed design
+- Hopper — colour palette inspiration, floating action button pattern
+- TripAdvisor — category organisation, activity logging UX
+- Mobbin (https://mobbin.com) — mobile design pattern library for travel apps
+
+Libraries & Frameworks:
+- React Native (https://reactnative.dev) — mobile framework
+- Expo SDK 54 (https://docs.expo.dev) — development platform
+- Expo Router (https://docs.expo.dev/router/introduction/) — file-based routing
+- Drizzle ORM (https://orm.drizzle.team) — TypeScript SQL ORM
+- react-native-gifted-charts (https://github.com/Abhinandan-Kushwaha/react-native-gifted-charts) — bar/line chart components
+- react-native-reanimated (https://docs.swmansion.com/react-native-reanimated/) — animations
+- react-native-gesture-handler (https://docs.swmansion.com/react-native-gesture-handler/) — swipe gestures
+- react-native-svg (https://github.com/software-mansion/react-native-svg) — SVG rendering for custom icons
+- expo-crypto (https://docs.expo.dev/versions/latest/sdk/crypto/) — password hashing (SHA256)
+- expo-haptics (https://docs.expo.dev/versions/latest/sdk/haptics/) — haptic feedback
+- @expo/vector-icons / Ionicons (https://icons.expo.fyi) — icon library
+
+Animations (Lottie):
+- lottie-react-native (https://github.com/lottie-react-native/lottie-react-native) — Lottie animation player for React Native
+- Lottie by Airbnb (https://github.com/airbnb/lottie-web) — open-source animation rendering library
+- Plane loading animation — custom Lottie JSON, inspired by:
+  - LottieFiles free airplane animations (https://lottiefiles.com/free-animations/airplane-loading)
+  - IconScout plane loading references (https://iconscout.com/lottie-animations/plane-loading)
+  - Licensed under Lottie Simple License (https://lottiefiles.com/page/license)
+- Success checkmark animation — custom Lottie JSON
+- Empty state search animation — custom Lottie JSON
+
+Colour Palette:
+- Deep Navy (#0A2463) + Coral (#FE7D50) — inspired by travel app colour trends
+  Reference: https://colorhexpro.com/top-color-combinations-for-ui-design-in-2025/
+
+React Native Best Practices:
+- React Navigation Bottom Tabs (https://reactnavigation.org/docs/bottom-tab-navigator/)
+- Expo Router typed routes (https://docs.expo.dev/router/reference/typed-routes/)
+- React Native SVG animation guide (https://www.svgai.org/blog/guides/react-native-svg-animation)

@@ -87,7 +87,7 @@ export function useInsightsData(viewMode: ViewMode) {
     return sorted.map((entry) => ({
       value: entry.value,
       label: keyToLabel(entry.key),
-      frontColor: '#0F766E',
+      frontColor: '#0A2463',
     }));
   }, [activities, getKey, keyToLabel]);
 

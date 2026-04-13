@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing, BorderRadius, SharedStyles } from '@/constants';
+import { Spacing, BorderRadius, SharedStyles } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import type { ProgressData } from '@/utils/progressHelpers';
 
 type Props = ProgressData & {
@@ -9,10 +10,6 @@ type Props = ProgressData & {
   unit?: string;
 };
 
-/**
- * Reusable progress bar with percentage, status badges, and remaining display.
- * Used across TargetCard, ProgressCard, and target detail screen.
- */
 function ProgressBar({
   current,
   target,
@@ -24,43 +21,44 @@ function ProgressBar({
   barColor,
   unit = 'min',
 }: Props) {
+  const theme = useAppTheme();
+
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityLabel={`${current} of ${target} ${unit}, ${percent}%`}
       accessibilityValue={{ min: 0, max: target, now: current }}
     >
-      {/* Badge row */}
       {(exceeded || met) && (
         <View style={styles.badgeRow}>
           {exceeded && (
-            <View style={[SharedStyles.badge, { backgroundColor: Colors.dangerAction }]}>
+            <View style={[SharedStyles.badge, { backgroundColor: theme.dangerAction }]}>
               <Text style={SharedStyles.badgeText}>Exceeded</Text>
             </View>
           )}
           {met && (
-            <View style={[SharedStyles.badge, { backgroundColor: Colors.successAction }]}>
+            <View style={[SharedStyles.badge, { backgroundColor: theme.successAction }]}>
               <Text style={SharedStyles.badgeText}>Met</Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Bar */}
-      <View style={SharedStyles.progressBarBg}>
-        <View style={[SharedStyles.progressBarFill, { width: `${barFillWidth}%`, backgroundColor: barColor }]} />
+      <View style={[styles.barBg, { backgroundColor: theme.cardBorder }]}>
+        <View style={[styles.barFill, { width: `${barFillWidth}%`, backgroundColor: barColor }]} />
       </View>
 
-      {/* Text */}
-      <Text style={styles.text}>
+      <Text style={[styles.text, { color: theme.textPrimary }]}>
         {current} / {target} {unit} ({percent}%)
       </Text>
 
       {!met && !exceeded && remaining > 0 && (
-        <Text style={styles.remaining}>{remaining} {unit} remaining</Text>
+        <Text style={[styles.remaining, { color: theme.textSecondary }]}>
+          {remaining} {unit} remaining
+        </Text>
       )}
       {exceeded && (
-        <Text style={styles.exceededText}>
+        <Text style={[styles.exceededText, { color: theme.dangerAction }]}>
           {current - target} {unit} over target
         </Text>
       )}
@@ -76,19 +74,26 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
+  barBg: {
+    borderRadius: BorderRadius.pill,
+    height: 8,
+    marginTop: Spacing.md,
+    overflow: 'hidden',
+  },
+  barFill: {
+    borderRadius: BorderRadius.pill,
+    height: 8,
+  },
   text: {
-    color: Colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     marginTop: Spacing.sm,
   },
   remaining: {
-    color: Colors.textSecondary,
     fontSize: 13,
     marginTop: Spacing.xs,
   },
   exceededText: {
-    color: Colors.dangerAction,
     fontSize: 13,
     fontWeight: '600',
     marginTop: Spacing.xs,

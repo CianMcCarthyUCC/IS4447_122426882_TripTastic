@@ -1,48 +1,52 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useInsightsData } from '@/hooks';
-import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { useInsightsData, useActivities, useCategories, useAppTheme } from '@/hooks';
+import { ScreenContainer } from '@/components/layout';
 import { ViewModeToggle } from '@/components/forms';
 import { BarChartCard, LineChartCard, ProgressCard } from '@/components/charts';
+import { StatsRow } from '@/components/cards';
 import { EmptyState } from '@/components/feedback';
-import { Colors, Spacing } from '@/constants';
+import { Spacing } from '@/constants';
 import type { ViewMode } from '@/types';
 
 /**
- * Insights tab — daily/weekly/monthly views with bar chart, line chart,
- * and target progress cards.
- * Rubric: "Daily/weekly/monthly views; at least two charts"
+ * Insights tab — stat row + charts + target progress.
  */
 export default function InsightsScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('weekly');
   const { barChartData, lineChartData, categoryBarData, progressData } = useInsightsData(viewMode);
+  const { activities } = useActivities();
+  const { categories } = useCategories();
+  const theme = useAppTheme();
+
+  const totalMinutes = useMemo(
+    () => activities.reduce((sum, a) => sum + a.metric, 0),
+    [activities],
+  );
 
   return (
     <ScreenContainer withTabs>
-      <ScreenHeader title="Insights" subtitle="Activity trends & target progress" />
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Insights</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Your trip at a glance
+        </Text>
+      </View>
+
+      <StatsRow stats={[
+        { label: 'Total', value: `${totalMinutes}m`, icon: 'time' },
+        { label: 'Activities', value: String(activities.length), icon: 'list' },
+        { label: 'Categories', value: String(categories.length), icon: 'grid' },
+      ]} />
+
       <ViewModeToggle selected={viewMode} onSelect={setViewMode} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Bar chart: totals per period */}
-        <BarChartCard
-          title={`Activity Totals (${viewMode})`}
-          data={barChartData}
-        />
+        <BarChartCard title={`Activity Totals (${viewMode})`} data={barChartData} />
+        <LineChartCard title="Cumulative Trend" data={lineChartData} />
+        <BarChartCard title="By Category" data={categoryBarData} />
 
-        {/* Line chart: cumulative trend */}
-        <LineChartCard
-          title="Cumulative Trend"
-          data={lineChartData}
-        />
-
-        {/* Category breakdown bar chart */}
-        <BarChartCard
-          title="By Category"
-          data={categoryBarData}
-        />
-
-        {/* Target progress section */}
-        <Text style={styles.sectionTitle}>Target Progress</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Target Progress</Text>
         {progressData.length > 0 ? (
           progressData.map((p) => (
             <ProgressCard
@@ -58,12 +62,11 @@ export default function InsightsScreen() {
           ))
         ) : (
           <EmptyState
-            title="No targets set"
-            message="Create targets in the Targets tab to track progress here."
+            title="No goals set"
+            message="Set goals in the Goals tab to track your trip progress here."
           />
         )}
 
-        {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </ScreenContainer>
@@ -71,8 +74,19 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    marginBottom: Spacing.lg,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: Spacing.xs,
+  },
   sectionTitle: {
-    color: Colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: Spacing.md,

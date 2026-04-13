@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './client';
-import { categories, activities, targets, users, sessions } from './schema';
+import { categories, activities, targets, users, sessions, savedFilters, recentSearches } from './schema';
 import type { CategoryFormData, ActivityFormData, TargetFormData, Target, User } from '@/types';
 
 // ── Categories ──────────────────────────────────────────
@@ -140,4 +140,54 @@ export async function createSession(userId: number): Promise<void> {
 
 export async function clearSessionDb(): Promise<void> {
   await db.delete(sessions);
+}
+
+// ── Saved Filters ──────────────────────────────────────
+
+export async function getAllSavedFilters() {
+  return db.select().from(savedFilters);
+}
+
+export async function insertSavedFilter(name: string, filterType: string, filterValue: string) {
+  await db.insert(savedFilters).values({
+    name,
+    filterType,
+    filterValue,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteSavedFilterById(id: number) {
+  await db.delete(savedFilters).where(eq(savedFilters.id, id));
+}
+
+// ── Recent Searches ────────────────────────────────────
+
+export async function getRecentSearches(limit = 5) {
+  const rows = await db.select().from(recentSearches);
+  return rows.slice(-limit).reverse();
+}
+
+export async function insertRecentSearch(query: string) {
+  // Avoid duplicates
+  const existing = await db.select().from(recentSearches).where(eq(recentSearches.query, query));
+  if (existing.length > 0) {
+    await db.delete(recentSearches).where(eq(recentSearches.id, existing[0].id));
+  }
+  await db.insert(recentSearches).values({
+    query,
+    createdAt: new Date().toISOString(),
+  });
+  // Keep only last 10
+  const all = await db.select().from(recentSearches);
+  if (all.length > 10) {
+    const oldest = all.slice(0, all.length - 10);
+    for (const item of oldest) {
+      await db.delete(recentSearches).where(eq(recentSearches.id, item.id));
+    }
+  }
+}
+
+export async function clearRecentSearches() {
+  await db.delete(recentSearches);
 }

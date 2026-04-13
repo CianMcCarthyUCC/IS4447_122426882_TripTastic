@@ -31,23 +31,28 @@ export default function LoginScreen() {
     }
     setError('');
     setLoading(true);
-
-    const authError = await login({ email, password });
-    if (authError) {
-      setError(authError);
-      setLoading(false);
+    try {
+      const authError = await login({ email, password });
+      if (authError) {
+        setError(authError);
+        haptics.error();
+        return;
+      }
+      haptics.success();
+      showToast('Welcome back!', 'success');
+    } catch {
+      setError('Something went wrong. Please try again.');
       haptics.error();
-      return;
+    } finally {
+      setLoading(false);
     }
-    haptics.success();
-    showToast('Welcome back!', 'success');
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <AuthHero tagline="Plan your perfect holiday" />
+        <AuthHero tagline="Plan, track, and relive your holidays" />
         <ScreenHeader title="Login" subtitle="Sign in to your account" />
 
         <View style={SharedStyles.form}>
@@ -75,7 +80,8 @@ export default function LoginScreen() {
         ) : null}
 
         <PrimaryButton
-          label={loading ? 'Signing in...' : 'Login'}
+          label="Login"
+          loading={loading}
           onPress={handleLogin}
         />
 

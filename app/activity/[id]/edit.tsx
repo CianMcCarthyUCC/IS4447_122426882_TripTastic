@@ -44,10 +44,17 @@ export default function EditActivity() {
     }
     setError('');
     setLoading(true);
-    await updateActivity(Number(id), formData);
-    haptics.success();
-    showToast('Activity updated', 'success');
-    router.back();
+    try {
+      await updateActivity(Number(id), formData);
+      haptics.success();
+      showToast('Activity updated', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,7 +66,8 @@ export default function EditActivity() {
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Changes'}
+        submitLabel="Save Changes"
+        loading={loading}
         categories={categories}
         error={error}
       />

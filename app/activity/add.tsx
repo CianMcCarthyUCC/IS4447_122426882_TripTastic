@@ -28,22 +28,30 @@ export default function AddActivity() {
     }
     setError('');
     setLoading(true);
-    await addActivity(formData);
-    haptics.success();
-    showToast('Activity added', 'success');
-    router.back();
+    try {
+      await addActivity(formData);
+      haptics.success();
+      showToast('Activity added', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Add Activity" subtitle="Record a new activity." />
+      <ScreenHeader title="Log Activity" subtitle="Record something from your trip." />
       <ActivityForm
         formData={formData}
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Activity'}
+        submitLabel="Save Activity"
+        loading={loading}
         categories={categories}
         error={error}
       />

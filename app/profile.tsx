@@ -1,23 +1,20 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth, useToast, useHaptics } from '@/hooks';
+import { useAuth, useToast, useHaptics, useAppTheme } from '@/hooks';
 import { PrimaryButton, ButtonGroup } from '@/components/buttons';
 import { InfoTag } from '@/components/tags';
 import { ConfirmDialog, Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
-import { Colors, Spacing, BorderRadius, SharedStyles } from '@/constants';
+import { ProfileIcon } from '@/components/icons';
+import { Spacing, BorderRadius, Shadows } from '@/constants';
 
-/**
- * Profile screen — shows user info, logout, and delete account.
- * Rubric: "logout and delete their profile"
- */
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, deleteAccount } = useAuth();
   const { toast, showToast, hideToast } = useToast();
   const haptics = useHaptics();
+  const theme = useAppTheme();
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -31,15 +28,27 @@ export default function ProfileScreen() {
   }
 
   const handleLogout = async () => {
-    await logout();
-    haptics.success();
+    try {
+      await logout();
+      haptics.success();
+    } catch {
+      showToast('Failed to logout. Please try again.', 'error');
+      haptics.error();
+    }
   };
 
   const handleDeleteAccount = async () => {
     setConfirmVisible(false);
     setLoading(true);
-    await deleteAccount();
-    haptics.success();
+    try {
+      await deleteAccount();
+      haptics.success();
+    } catch {
+      showToast('Failed to delete account. Please try again.', 'error');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,14 +57,14 @@ export default function ProfileScreen() {
       <ScreenHeader title="Profile" subtitle="Your account details" />
 
       <View style={styles.avatar}>
-        <Ionicons name="person-circle-outline" size={80} color={Colors.primaryAction} />
+        <ProfileIcon size={80} color={theme.accentAction} />
       </View>
 
-      <View style={styles.infoCard}>
-        <View style={SharedStyles.tagRow}>
+      <View style={[styles.infoCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+        <View style={styles.tagRow}>
           <InfoTag label="Email" value={user.email} />
         </View>
-        <View style={SharedStyles.tagRow}>
+        <View style={styles.tagRow}>
           <InfoTag label="Member since" value={new Date(user.createdAt).toLocaleDateString()} />
         </View>
       </View>
@@ -63,7 +72,8 @@ export default function ProfileScreen() {
       <ButtonGroup>
         <PrimaryButton label="Logout" variant="secondary" onPress={handleLogout} />
         <PrimaryButton
-          label={loading ? 'Deleting...' : 'Delete Account'}
+          label="Delete Account"
+          loading={loading}
           variant="danger"
           onPress={() => { haptics.warning(); setConfirmVisible(true); }}
         />
@@ -88,11 +98,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   infoCard: {
-    backgroundColor: Colors.cardBackground,
-    borderColor: Colors.cardBorder,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     marginBottom: Spacing.xl,
     padding: Spacing.lg,
+    ...Shadows.md,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: Spacing.sm,
   },
 });

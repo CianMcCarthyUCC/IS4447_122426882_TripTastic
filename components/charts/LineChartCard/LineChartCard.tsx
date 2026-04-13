@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-import { Colors, Spacing, BorderRadius } from '@/constants';
+import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type LineItem = {
   value: number;
@@ -13,41 +14,36 @@ type Props = {
   color?: string;
 };
 
-/**
- * Reusable line chart card — themed wrapper around gifted-charts LineChart.
- * Shows cumulative or trend data with optional area fill.
- */
-export default function LineChartCard({
-  title,
-  data,
-  color = Colors.primaryAction,
-}: Props) {
+export default function LineChartCard({ title, data, color }: Props) {
+  const theme = useAppTheme();
+  const lineColor = color ?? Palette.coral;
+
   if (data.length === 0) {
     return (
-      <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.empty}>No data to display yet.</Text>
+      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
+        <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+    <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+      <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
       <View style={styles.chartWrapper}>
         <LineChart
           data={data}
-          color={color}
+          color={lineColor}
           thickness={3}
-          dataPointsColor={color}
+          dataPointsColor={lineColor}
           dataPointsRadius={4}
           noOfSections={4}
-          yAxisTextStyle={styles.axisText}
-          xAxisLabelTextStyle={styles.axisText}
+          yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+          xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
           hideRules={false}
-          rulesColor={Colors.cardBorder}
+          rulesColor={theme.cardBorder}
           areaChart
-          startFillColor={color}
+          startFillColor={lineColor}
           startOpacity={0.2}
           endOpacity={0.02}
           curved
@@ -61,15 +57,13 @@ export default function LineChartCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.cardBackground,
-    borderColor: Colors.cardBorder,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     marginBottom: Spacing.lg,
     padding: Spacing.lg,
+    ...Shadows.md,
   },
   title: {
-    color: Colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: Spacing.md,
@@ -78,12 +72,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  axisText: {
-    color: Colors.textSecondary,
-    fontSize: 10,
-  },
   empty: {
-    color: Colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
   },

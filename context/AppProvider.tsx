@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { CategoryContext } from './CategoryContext';
 import { ActivityContext } from './ActivityContext';
 import { TargetContext } from './TargetContext';
-import { getAllCategories, getAllActivities, getAllTargets, seedDataIfEmpty, findUserById, initializeDatabase } from '@/db';
+import { getAllCategories, getAllActivities, getAllTargets, seedDataIfEmpty, findUserById } from '@/db';
 import { getSession } from '@/utils/auth';
 import type { Category, Activity, Target, User } from '@/types';
 
@@ -14,8 +14,7 @@ type Props = {
 
 /**
  * Combined provider — wraps the app with auth, category, activity, and target state.
- * Restores session on launch, seeds database, then loads all data.
- * Context values are memoized to prevent unnecessary consumer re-renders.
+ * Uses mounted ref to prevent state updates after unmount (memory leak fix).
  */
 export default function AppProvider({ children }: Props) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,19 +22,23 @@ export default function AppProvider({ children }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [targets, setTargets] = useState<Target[]>([]);
+  const mounted = useRef(true);
 
-  // Initialize database and restore session on mount
+  useEffect(() => {
+    return () => { mounted.current = false; };
+  }, []);
+
+  // Restore session on mount
   useEffect(() => {
     const init = async () => {
       try {
-        initializeDatabase();
         const userId = await getSession();
-        if (userId) {
+        if (userId && mounted.current) {
           const restored = await findUserById(userId);
-          if (restored) setUser(restored);
+          if (restored && mounted.current) setUser(restored);
         }
       } finally {
-        setIsLoading(false);
+        if (mounted.current) setIsLoading(false);
       }
     };
     void init();
@@ -46,15 +49,21 @@ export default function AppProvider({ children }: Props) {
     if (!user) return;
 
     const loadData = async () => {
-      await seedDataIfEmpty();
-      const [cats, acts, tgts] = await Promise.all([
-        getAllCategories(),
-        getAllActivities(),
-        getAllTargets(),
-      ]);
-      setCategories(cats);
-      setActivities(acts);
-      setTargets(tgts);
+      try {
+        await seedDataIfEmpty();
+        const [cats, acts, tgts] = await Promise.all([
+          getAllCategories(),
+          getAllActivities(),
+          getAllTargets(),
+        ]);
+        if (mounted.current) {
+          setCategories(cats);
+          setActivities(acts);
+          setTargets(tgts);
+        }
+      } catch (e) {
+        console.error('Failed to load app data:', e);
+      }
     };
 
     void loadData();

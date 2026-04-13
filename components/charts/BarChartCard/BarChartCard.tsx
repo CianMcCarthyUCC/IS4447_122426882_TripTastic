@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
-import { Colors, Spacing, BorderRadius } from '@/constants';
+import { Spacing, BorderRadius, Shadows } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type BarItem = {
   value: number;
@@ -13,23 +14,21 @@ type Props = {
   data: BarItem[];
 };
 
-/**
- * Reusable bar chart card — themed wrapper around gifted-charts BarChart.
- * Shows aggregated data per period with the app's colour palette.
- */
 export default function BarChartCard({ title, data }: Props) {
+  const theme = useAppTheme();
+
   if (data.length === 0) {
     return (
-      <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.empty}>No data to display yet.</Text>
+      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
+        <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+    <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+      <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
       <View style={styles.chartWrapper}>
         <BarChart
           data={data}
@@ -38,10 +37,10 @@ export default function BarChartCard({ title, data }: Props) {
           roundedTop
           roundedBottom
           noOfSections={4}
-          yAxisTextStyle={styles.axisText}
-          xAxisLabelTextStyle={styles.axisText}
+          yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+          xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
           hideRules={false}
-          rulesColor={Colors.cardBorder}
+          rulesColor={theme.cardBorder}
           barBorderRadius={6}
           isAnimated
           animationDuration={600}
@@ -53,15 +52,13 @@ export default function BarChartCard({ title, data }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.cardBackground,
-    borderColor: Colors.cardBorder,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     marginBottom: Spacing.lg,
     padding: Spacing.lg,
+    ...Shadows.md,
   },
   title: {
-    color: Colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: Spacing.md,
@@ -70,12 +67,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  axisText: {
-    color: Colors.textSecondary,
-    fontSize: 10,
-  },
   empty: {
-    color: Colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
   },

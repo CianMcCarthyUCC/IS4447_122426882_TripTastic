@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing } from '@/constants';
+import { Spacing } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
   title: string;
@@ -7,10 +8,16 @@ type Props = {
 };
 
 export default function ScreenHeader({ title, subtitle }: Props) {
+  const theme = useAppTheme();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <Text style={[styles.title, { color: theme.textPrimary }]} accessibilityRole="header">
+        {title}
+      </Text>
+      {subtitle ? (
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+      ) : null}
     </View>
   );
 }
@@ -20,13 +27,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    color: Colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    color: Colors.textSecondary,
-    fontSize: 14,
+    fontSize: 15,
     marginTop: Spacing.xs,
   },
 });

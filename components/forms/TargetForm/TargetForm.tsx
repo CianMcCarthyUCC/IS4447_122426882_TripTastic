@@ -16,13 +16,14 @@ type Props = {
   submitLabel: string;
   categories: Category[];
   error?: string;
+  loading?: boolean;
 };
 
 type ScopeValue = 'trip' | 'global';
 
 const SCOPE_OPTIONS = [
-  { label: 'Per Trip', value: 'trip' as ScopeValue },
-  { label: 'Global', value: 'global' as ScopeValue },
+  { label: 'This Trip Only', value: 'trip' as ScopeValue },
+  { label: 'All Trips', value: 'global' as ScopeValue },
 ];
 
 /**
@@ -37,6 +38,7 @@ export default function TargetForm({
   submitLabel,
   categories,
   error,
+  loading = false,
 }: Props) {
   const scopeValue: ScopeValue = formData.tripId === null ? 'global' : 'trip';
 
@@ -54,13 +56,13 @@ export default function TargetForm({
         />
 
         <FormField
-          label="Target Value (minutes)"
+          label="Goal (minutes)"
+          helpText="e.g. 300 min of sightseeing per week on your trip"
           value={formData.targetValue}
           onChangeText={(v) => onChangeField('targetValue', v)}
           placeholder="e.g. 300"
           keyboardType="numeric"
-          accessibilityLabel="Target value in minutes"
-          accessibilityHint="Enter the target number of minutes"
+          accessibilityLabel="Goal value in minutes"
         />
 
         <PeriodPicker
@@ -81,9 +83,9 @@ export default function TargetForm({
         <Text style={SharedStyles.errorText} accessibilityRole="alert">{error}</Text>
       ) : null}
 
-      <PrimaryButton label={submitLabel} onPress={onSubmit} />
+      <PrimaryButton label={submitLabel} onPress={onSubmit} loading={loading} disabled={!formData.categoryId || !formData.targetValue} />
       <View style={SharedStyles.buttonSpacing}>
-        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
+        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} disabled={loading} />
       </View>
     </KeyboardAwareForm>
   );

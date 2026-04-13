@@ -28,22 +28,30 @@ export default function AddTarget() {
     }
     setError('');
     setLoading(true);
-    await addTarget(formData);
-    haptics.success();
-    showToast('Target created', 'success');
-    router.back();
+    try {
+      await addTarget(formData);
+      haptics.success();
+      showToast('Target created', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Add Target" subtitle="Set a new goal." />
+      <ScreenHeader title="New Goal" subtitle="Set a weekly or monthly target for your trip." />
       <TargetForm
         formData={formData}
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Target'}
+        submitLabel="Save Target"
+        loading={loading}
         categories={categories}
         error={error}
       />

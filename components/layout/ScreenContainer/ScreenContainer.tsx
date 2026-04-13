@@ -1,5 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SharedStyles } from '@/constants';
+import { Spacing } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import type { ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
 
@@ -10,10 +11,18 @@ type Props = {
 };
 
 export default function ScreenContainer({ children, withTabs = false, style }: Props) {
+  const theme = useAppTheme();
+
   return (
     <SafeAreaView
       style={[
-        withTabs ? SharedStyles.screenContainerWithTabs : SharedStyles.screenContainer,
+        {
+          backgroundColor: theme.screenBackground,
+          flex: 1,
+          ...(withTabs
+            ? { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md }
+            : { padding: Spacing.xxl }),
+        },
         style,
       ]}
     >
