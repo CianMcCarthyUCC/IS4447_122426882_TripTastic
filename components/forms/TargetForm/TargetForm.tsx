@@ -3,7 +3,7 @@ import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import FormField from '@/components/forms/FormField';
 import { CategoryPicker } from '@/components/forms/CategoryPicker';
 import { PeriodPicker } from '@/components/forms/PeriodPicker';
-import PillToggle from '@/components/forms/PillToggle/PillToggle';
+import Dropdown from '@/components/forms/Dropdown/Dropdown';
 import { PrimaryButton } from '@/components/buttons';
 import { SharedStyles } from '@/constants';
 import type { TargetFormData, TargetPeriod, Category } from '@/types';
@@ -19,17 +19,11 @@ type Props = {
   loading?: boolean;
 };
 
-type ScopeValue = 'trip' | 'global';
-
 const SCOPE_OPTIONS = [
-  { label: 'This Trip Only', value: 'trip' as ScopeValue },
-  { label: 'All Trips', value: 'global' as ScopeValue },
+  { label: 'This Trip Only', value: 'trip', icon: 'airplane' as const },
+  { label: 'All Trips', value: 'global', icon: 'globe-outline' as const },
 ];
 
-/**
- * Target form — composes CategoryPicker, PeriodPicker, PillToggle, and FormField.
- * Validation is handled by the parent screen.
- */
 export default function TargetForm({
   formData,
   onChangeField,
@@ -40,11 +34,7 @@ export default function TargetForm({
   error,
   loading = false,
 }: Props) {
-  const scopeValue: ScopeValue = formData.tripId === null ? 'global' : 'trip';
-
-  const handleScopeChange = (val: ScopeValue) => {
-    onChangeField('tripId', val === 'trip' ? 1 : null);
-  };
+  const scopeValue = formData.tripId === null ? 'global' : 'trip';
 
   return (
     <KeyboardAwareForm>
@@ -70,12 +60,13 @@ export default function TargetForm({
           onSelect={(p: TargetPeriod) => onChangeField('period', p)}
         />
 
-        <PillToggle
+        <Dropdown
           label="Scope"
+          helpText="Apply to one trip or across all your trips?"
           options={SCOPE_OPTIONS}
           selected={scopeValue}
-          onSelect={handleScopeChange}
-          accessibilityLabel="Select target scope"
+          onSelect={(v) => onChangeField('tripId', v === 'trip' ? 1 : null)}
+          accessibilityLabel="Select goal scope"
         />
       </View>
 

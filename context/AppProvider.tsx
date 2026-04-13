@@ -1,34 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMountedRef } from '@/hooks/useMountedRef';
 import type { ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { CategoryContext } from './CategoryContext';
 import { ActivityContext } from './ActivityContext';
 import { TargetContext } from './TargetContext';
-import { getAllCategories, getAllActivities, getAllTargets, seedDataIfEmpty, findUserById } from '@/db';
+import { TripContext } from './TripContext';
+import { getAllCategories, getAllActivities, getAllTargets, getAllTrips, seedDataIfEmpty, findUserById } from '@/db';
 import { getSession } from '@/utils/auth';
-import type { Category, Activity, Target, User } from '@/types';
+import { configureNotifications } from '@/utils/notifications';
+import { useGoalNotifications } from '@/hooks/useGoalNotifications';
+import type { Category, Activity, Target, Trip, User } from '@/types';
 
-type Props = {
-  children: ReactNode;
-};
+type Props = { children: ReactNode };
 
-/**
- * Combined provider — wraps the app with auth, category, activity, and target state.
- * Uses mounted ref to prevent state updates after unmount (memory leak fix).
- */
 export default function AppProvider({ children }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [targets, setTargets] = useState<Target[]>([]);
-  const mounted = useRef(true);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
+  const mounted = useMountedRef();
 
-  useEffect(() => {
-    return () => { mounted.current = false; };
-  }, []);
+  useEffect(() => { configureNotifications(); }, []);
 
-  // Restore session on mount
   useEffect(() => {
     const init = async () => {
       try {
@@ -44,60 +41,52 @@ export default function AppProvider({ children }: Props) {
     void init();
   }, []);
 
-  // Load app data once authenticated
   useEffect(() => {
     if (!user) return;
-
     const loadData = async () => {
       try {
         await seedDataIfEmpty();
-        const [cats, acts, tgts] = await Promise.all([
-          getAllCategories(),
-          getAllActivities(),
-          getAllTargets(),
+        const [cats, acts, tgts, trps] = await Promise.all([
+          getAllCategories(), getAllActivities(), getAllTargets(), getAllTrips(),
         ]);
         if (mounted.current) {
           setCategories(cats);
           setActivities(acts);
           setTargets(tgts);
+          setTrips(trps);
+          if (trps.length > 0 && !currentTrip) setCurrentTrip(trps[0]);
         }
       } catch (e) {
         console.error('Failed to load app data:', e);
       }
     };
-
     void loadData();
   }, [user]);
 
-  const authValue = useMemo(
-    () => ({ user, isAuthenticated: user !== null, isLoading, setUser }),
-    [user, isLoading],
-  );
-
-  const categoryValue = useMemo(
-    () => ({ categories, setCategories }),
-    [categories],
-  );
-
-  const activityValue = useMemo(
-    () => ({ activities, setActivities }),
-    [activities],
-  );
-
-  const targetValue = useMemo(
-    () => ({ targets, setTargets }),
-    [targets],
-  );
+  const authValue = useMemo(() => ({ user, isAuthenticated: user !== null, isLoading, setUser }), [user, isLoading]);
+  const categoryValue = useMemo(() => ({ categories, setCategories }), [categories]);
+  const activityValue = useMemo(() => ({ activities, setActivities }), [activities]);
+  const targetValue = useMemo(() => ({ targets, setTargets }), [targets]);
+  const tripValue = useMemo(() => ({ trips, setTrips, currentTrip, setCurrentTrip }), [trips, currentTrip]);
 
   return (
     <AuthContext.Provider value={authValue}>
-      <CategoryContext.Provider value={categoryValue}>
-        <ActivityContext.Provider value={activityValue}>
-          <TargetContext.Provider value={targetValue}>
-            {children}
-          </TargetContext.Provider>
-        </ActivityContext.Provider>
-      </CategoryContext.Provider>
+      <TripContext.Provider value={tripValue}>
+        <CategoryContext.Provider value={categoryValue}>
+          <ActivityContext.Provider value={activityValue}>
+            <TargetContext.Provider value={targetValue}>
+              <GoalNotificationWatcher />
+              {children}
+            </TargetContext.Provider>
+          </ActivityContext.Provider>
+        </CategoryContext.Provider>
+      </TripContext.Provider>
     </AuthContext.Provider>
   );
+}
+
+/** Renders inside all providers so it can access every context. */
+function GoalNotificationWatcher() {
+  useGoalNotifications();
+  return null;
 }

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCategories, useActivities, useAppTheme, useTextFilter } from '@/hooks';
 import { ScreenContainer } from '@/components/layout';
@@ -7,7 +7,7 @@ import { CategoryList } from '@/components/lists';
 import { SearchBar } from '@/components/forms';
 import { FAB } from '@/components/buttons';
 import { EmptyState } from '@/components/feedback';
-import { Spacing } from '@/constants';
+import { SharedStyles } from '@/constants';
 import type { Category } from '@/types';
 
 const searchCategory = (c: Category, q: string) => c.name.toLowerCase().includes(q);
@@ -26,9 +26,9 @@ export default function CategoriesScreen() {
 
   return (
     <ScreenContainer withTabs>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Categories</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+      <View style={SharedStyles.tabHeader}>
+        <Text style={[SharedStyles.tabTitle, { color: theme.textPrimary }]}>Categories</Text>
+        <Text style={[SharedStyles.tabSubtitle, { color: theme.textSecondary }]}>
           {categories.length > 0
             ? `${categories.length} categories · ${activities.length} activities`
             : 'Create categories to organise activities'}
@@ -60,8 +60,4 @@ export default function CategoriesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { marginBottom: Spacing.lg },
-  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, marginTop: Spacing.xs },
-});
+// Uses SharedStyles.tabHeader, tabTitle, tabSubtitle

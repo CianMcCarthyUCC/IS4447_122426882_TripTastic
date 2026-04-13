@@ -30,6 +30,10 @@ Animations (Lottie):
 - Success checkmark animation — custom Lottie JSON
 - Empty state search animation — custom Lottie JSON
 
+Destination Photos:
+- Unsplash API (https://unsplash.com/developers) — free travel photos by destination
+  API key stored in .env (EXPO_PUBLIC_UNSPLASH_ACCESS_KEY), not committed to git
+
 Colour Palette:
 - Deep Navy (#0A2463) + Coral (#FE7D50) — inspired by travel app colour trends
   Reference: https://colorhexpro.com/top-color-combinations-for-ui-design-in-2025/

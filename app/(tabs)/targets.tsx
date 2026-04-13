@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTargets, useCategories, useActivities, useAppTheme } from '@/hooks';
 import { ScreenContainer } from '@/components/layout';
@@ -8,7 +8,7 @@ import { SearchBar, FilterChips } from '@/components/forms';
 import { SummaryBanner } from '@/components/cards';
 import { FAB } from '@/components/buttons';
 import { EmptyState } from '@/components/feedback';
-import { Spacing } from '@/constants';
+import { SharedStyles } from '@/constants';
 import type { ChipOption } from '@/components/forms/FilterChips/FilterChips';
 
 /**
@@ -67,9 +67,9 @@ export default function TargetsScreen() {
 
   return (
     <ScreenContainer withTabs>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Goals</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+      <View style={SharedStyles.tabHeader}>
+        <Text style={[SharedStyles.tabTitle, { color: theme.textPrimary }]}>Goals</Text>
+        <Text style={[SharedStyles.tabSubtitle, { color: theme.textSecondary }]}>
           {targets.length > 0 ? `${targets.length} goals set` : 'Set goals to track your progress'}
         </Text>
       </View>
@@ -108,8 +108,4 @@ export default function TargetsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { marginBottom: Spacing.lg },
-  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, marginTop: Spacing.xs },
-});
+// Uses SharedStyles.tabHeader, tabTitle, tabSubtitle

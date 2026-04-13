@@ -1,27 +1,22 @@
-import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { useActivities, useCategories, useToast, useHaptics } from '@/hooks';
+import { useActivities, useCategories, useDeleteWithConfirm } from '@/hooks';
 import { PrimaryButton, ButtonGroup } from '@/components/buttons';
 import { InfoTag } from '@/components/tags';
 import { ConfirmDialog, Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
 import { SharedStyles } from '@/constants';
 
-/**
- * Activity detail screen — view, edit, or delete an activity.
- */
 export default function ActivityDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { findActivityById, deleteActivity } = useActivities();
   const { findCategoryById } = useCategories();
-  const { toast, showToast, hideToast } = useToast();
-  const haptics = useHaptics();
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const activity = findActivityById(Number(id));
+
+  const { loading, confirmVisible, showConfirm, cancelConfirm, handleDelete, toast, hideToast } =
+    useDeleteWithConfirm(() => deleteActivity(Number(id)), 'Activity deleted');
 
   if (!activity) {
     return (
@@ -34,22 +29,6 @@ export default function ActivityDetail() {
 
   const category = findCategoryById(activity.categoryId);
 
-  const handleDelete = async () => {
-    setConfirmVisible(false);
-    setLoading(true);
-    try {
-      await deleteActivity(Number(id));
-      haptics.success();
-      showToast('Activity deleted', 'success');
-      router.back();
-    } catch {
-      showToast('Failed to delete. Please try again.', 'error');
-      haptics.error();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
@@ -58,6 +37,7 @@ export default function ActivityDetail() {
       <View style={SharedStyles.tagRow}>
         <InfoTag label="Duration" value={`${activity.metric} min`} />
         <InfoTag label="Category" value={category?.name ?? 'Uncategorised'} />
+        <InfoTag label="Status" value={activity.status === 'completed' ? 'Completed' : 'Planned'} />
       </View>
 
       {activity.notes ? (
@@ -67,16 +47,8 @@ export default function ActivityDetail() {
       ) : null}
 
       <ButtonGroup>
-        <PrimaryButton
-          label="Edit"
-          onPress={() => router.push({ pathname: '/activity/[id]/edit', params: { id } })}
-        />
-        <PrimaryButton
-          label="Delete"
-          loading={loading}
-          variant="danger"
-          onPress={() => { haptics.warning(); setConfirmVisible(true); }}
-        />
+        <PrimaryButton label="Edit" onPress={() => router.push({ pathname: '/activity/[id]/edit', params: { id } })} />
+        <PrimaryButton label="Delete" loading={loading} variant="danger" onPress={showConfirm} />
         <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />
       </ButtonGroup>
 
@@ -86,7 +58,7 @@ export default function ActivityDetail() {
         message="Are you sure you want to remove this activity from your trip? This can't be undone."
         confirmLabel="Delete"
         onConfirm={handleDelete}
-        onCancel={() => setConfirmVisible(false)}
+        onCancel={cancelConfirm}
       />
     </ScreenContainer>
   );

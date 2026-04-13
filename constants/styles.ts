@@ -130,4 +130,32 @@ export const SharedStyles = StyleSheet.create({
   pillTextSelected: {
     color: Colors.textButton,
   },
+  // Tab screen headers
+  tabHeader: {
+    marginBottom: Spacing.lg,
+  },
+  tabTitle: {
+    fontSize: 24,
+    fontWeight: '800' as const,
+    letterSpacing: -0.5,
+  },
+  tabSubtitle: {
+    fontSize: 14,
+    marginTop: Spacing.xs,
+  },
+  // Card header row (shared across all card types)
+  cardHeaderRow: {
+    alignItems: 'center' as const,
+    flexDirection: 'row' as const,
+  },
+  // Card with shadow (used by all card components)
+  cardElevated: {
+    backgroundColor: Colors.cardBackground,
+    borderColor: Colors.cardBorder,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    padding: Spacing.lg,
+    ...Shadows.md,
+  },
 });

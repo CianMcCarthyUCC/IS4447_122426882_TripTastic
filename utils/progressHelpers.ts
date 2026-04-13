@@ -1,4 +1,5 @@
 import { Palette } from '@/constants';
+import type { Activity, Target } from '@/types';
 
 export type ProgressData = {
   percent: number;
@@ -28,4 +29,18 @@ export function computeProgress(
     : accentColor ?? Palette.coral;
 
   return { percent, exceeded, met, remaining, barFillWidth, barColor };
+}
+
+/**
+ * Computes the current metric sum for a target by matching activities.
+ * Reused by TargetList, TargetCard, and target detail screen.
+ */
+export function computeTargetCurrentValue(target: Target, activities: Activity[]): number {
+  return activities
+    .filter((a) => {
+      if (a.categoryId !== target.categoryId) return false;
+      if (target.tripId !== null && a.tripId !== target.tripId) return false;
+      return true;
+    })
+    .reduce((sum, a) => sum + a.metric, 0);
 }

@@ -34,7 +34,7 @@ function SavedFiltersBar({ filters, onApply, onRemove }: Props) {
       >
         {filters.map((f) => (
           <View key={f.id} style={[styles.chip, { backgroundColor: theme.tagBackground }]}>
-            <Pressable onPress={() => onApply(f)} style={styles.chipContent}>
+            <Pressable onPress={() => onApply(f)} style={styles.chipContent} accessibilityLabel={`Apply ${f.name} filter`} accessibilityRole="button">
               <Ionicons name="bookmark" size={12} color={theme.accentAction} />
               <Text style={[styles.chipText, { color: theme.textPrimary }]}>{f.name}</Text>
             </Pressable>

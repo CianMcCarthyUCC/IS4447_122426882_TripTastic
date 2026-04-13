@@ -9,7 +9,7 @@ export {
   sortGroupedEntries,
 } from './dateHelpers';
 
-export { computeProgress } from './progressHelpers';
+export { computeProgress, computeTargetCurrentValue } from './progressHelpers';
 export type { ProgressData } from './progressHelpers';
 
 export {
@@ -27,3 +27,21 @@ export {
   getSession,
   clearSession,
 } from './auth';
+
+export { exportDataAsCsv } from './csvExport';
+export { computeStreaks } from './streakCalculator';
+export type { StreakInfo } from './streakCalculator';
+export { getWeather } from './weatherApi';
+export type { WeatherData } from './weatherApi';
+export { getCountryInfo } from './countriesApi';
+export type { CountryData } from './countriesApi';
+export { getDestinationPhoto } from './unsplashApi';
+
+export {
+  requestNotificationPermissions,
+  configureNotifications,
+  scheduleDailyReminder,
+  scheduleGoalReminder,
+  notifyGoalMet,
+  cancelAllNotifications,
+} from './notifications';

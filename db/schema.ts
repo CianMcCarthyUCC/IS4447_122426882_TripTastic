@@ -3,6 +3,9 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const trips = sqliteTable('trips', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
+  destination: text('destination').notNull(),
+  country: text('country').notNull(),
+  coverImage: text('cover_image'),
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
 });
@@ -20,6 +23,7 @@ export const activities = sqliteTable('activities', {
   categoryId: integer('category_id').notNull(),
   date: text('date').notNull(),
   metric: integer('metric').notNull(),
+  status: text('status').notNull(),
   notes: text('notes'),
 });
 
@@ -48,6 +52,12 @@ export const sessions = sqliteTable('sessions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull(),
   createdAt: text('created_at').notNull(),
+});
+
+export const settings = sqliteTable('settings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  value: text('value').notNull(),
 });
 
 export const targets = sqliteTable('targets', {

@@ -1,5 +1,6 @@
 export { default as FormField } from './FormField';
 export { DateField } from './DateField';
+export { Dropdown } from './Dropdown';
 export { CategoryPicker } from './CategoryPicker';
 export { ColorPicker } from './ColorPicker';
 export { IconPicker } from './IconPicker';
@@ -12,3 +13,5 @@ export { PillToggle } from './PillToggle';
 export { SearchBar } from './SearchBar';
 export { FilterChips } from './FilterChips';
 export { SavedFiltersBar } from './SavedFiltersBar';
+export { TripPicker } from './TripPicker';
+export { ImagePicker } from './ImagePicker';

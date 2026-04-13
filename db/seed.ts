@@ -14,29 +14,28 @@ export async function seedDataIfEmpty() {
     { name: 'Shopping', color: '#EC4899', icon: 'cart' },
   ]);
 
-  // Seed a default trip
-  await db.insert(trips).values({
-    name: 'Summer in Italy',
-    startDate: '2026-07-01',
-    endDate: '2026-07-14',
-  });
+  // Seed default trips
+  await db.insert(trips).values([
+    { name: 'Summer in Italy', destination: 'Rome', country: 'Italy', startDate: '2026-07-01', endDate: '2026-07-14' },
+    { name: 'Weekend in Paris', destination: 'Paris', country: 'France', startDate: '2026-08-15', endDate: '2026-08-18' },
+  ]);
 
   // Seed sample activities
   await db.insert(activities).values([
-    { tripId: 1, categoryId: 1, date: '2026-07-01', metric: 180, notes: 'Colosseum tour' },
-    { tripId: 1, categoryId: 2, date: '2026-07-01', metric: 60, notes: 'Lunch at trattoria' },
-    { tripId: 1, categoryId: 1, date: '2026-07-02', metric: 120, notes: 'Vatican Museums' },
-    { tripId: 1, categoryId: 3, date: '2026-07-02', metric: 90, notes: 'Train to Florence' },
-    { tripId: 1, categoryId: 2, date: '2026-07-03', metric: 45, notes: 'Pasta making class' },
-    { tripId: 1, categoryId: 1, date: '2026-07-03', metric: 150, notes: 'Uffizi Gallery' },
-    { tripId: 1, categoryId: 5, date: '2026-07-04', metric: 60, notes: 'Leather market' },
-    { tripId: 1, categoryId: 2, date: '2026-07-04', metric: 30, notes: 'Gelato tasting' },
-    { tripId: 1, categoryId: 3, date: '2026-07-05', metric: 45, notes: 'Bus to Siena' },
-    { tripId: 1, categoryId: 1, date: '2026-07-05', metric: 200, notes: 'Siena day trip' },
-    { tripId: 1, categoryId: 4, date: '2026-07-06', metric: 60, notes: 'Check-in Airbnb' },
-    { tripId: 1, categoryId: 2, date: '2026-07-06', metric: 90, notes: 'Wine tasting dinner' },
-    { tripId: 1, categoryId: 1, date: '2026-07-07', metric: 240, notes: 'Cinque Terre hike' },
-    { tripId: 1, categoryId: 3, date: '2026-07-07', metric: 120, notes: 'Train to Cinque Terre' },
+    { tripId: 1, categoryId: 1, date: '2026-07-01', metric: 180, status: 'completed', notes: 'Colosseum tour' },
+    { tripId: 1, categoryId: 2, date: '2026-07-01', metric: 60, status: 'completed', notes: 'Lunch at trattoria' },
+    { tripId: 1, categoryId: 1, date: '2026-07-02', metric: 120, status: 'completed', notes: 'Vatican Museums' },
+    { tripId: 1, categoryId: 3, date: '2026-07-02', metric: 90, status: 'completed', notes: 'Train to Florence' },
+    { tripId: 1, categoryId: 2, date: '2026-07-03', metric: 45, status: 'completed', notes: 'Pasta making class' },
+    { tripId: 1, categoryId: 1, date: '2026-07-03', metric: 150, status: 'completed', notes: 'Uffizi Gallery' },
+    { tripId: 1, categoryId: 5, date: '2026-07-04', metric: 60, status: 'planned', notes: 'Leather market' },
+    { tripId: 1, categoryId: 2, date: '2026-07-04', metric: 30, status: 'planned', notes: 'Gelato tasting' },
+    { tripId: 1, categoryId: 3, date: '2026-07-05', metric: 45, status: 'planned', notes: 'Bus to Siena' },
+    { tripId: 1, categoryId: 1, date: '2026-07-05', metric: 200, status: 'planned', notes: 'Siena day trip' },
+    { tripId: 1, categoryId: 4, date: '2026-07-06', metric: 60, status: 'planned', notes: 'Check-in Airbnb' },
+    { tripId: 1, categoryId: 2, date: '2026-07-06', metric: 90, status: 'planned', notes: 'Wine tasting dinner' },
+    { tripId: 1, categoryId: 1, date: '2026-07-07', metric: 240, status: 'planned', notes: 'Cinque Terre hike' },
+    { tripId: 1, categoryId: 3, date: '2026-07-07', metric: 120, status: 'planned', notes: 'Train to Cinque Terre' },
   ]);
 
   // Seed sample targets

@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useInsightsData, useActivities, useCategories, useAppTheme } from '@/hooks';
+import { useInsightsData, useActivities, useCategories, useTargets, useAppTheme } from '@/hooks';
 import { ScreenContainer } from '@/components/layout';
 import { ViewModeToggle } from '@/components/forms';
 import { BarChartCard, LineChartCard, ProgressCard } from '@/components/charts';
-import { StatsRow } from '@/components/cards';
+import { StatsRow, StreakCard } from '@/components/cards';
 import { EmptyState } from '@/components/feedback';
-import { Spacing } from '@/constants';
+import { Spacing, SharedStyles } from '@/constants';
+import { computeStreaks } from '@/utils/streakCalculator';
 import type { ViewMode } from '@/types';
 
 /**
@@ -17,6 +18,7 @@ export default function InsightsScreen() {
   const { barChartData, lineChartData, categoryBarData, progressData } = useInsightsData(viewMode);
   const { activities } = useActivities();
   const { categories } = useCategories();
+  const { targets } = useTargets();
   const theme = useAppTheme();
 
   const totalMinutes = useMemo(
@@ -24,11 +26,21 @@ export default function InsightsScreen() {
     [activities],
   );
 
+  const categoryNames = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories],
+  );
+
+  const streaks = useMemo(
+    () => computeStreaks(activities, targets, categoryNames),
+    [activities, targets, categoryNames],
+  );
+
   return (
     <ScreenContainer withTabs>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Insights</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+      <View style={SharedStyles.tabHeader}>
+        <Text style={[SharedStyles.tabTitle, { color: theme.textPrimary }]}>Insights</Text>
+        <Text style={[SharedStyles.tabSubtitle, { color: theme.textSecondary }]}>
           Your trip at a glance
         </Text>
       </View>
@@ -67,6 +79,18 @@ export default function InsightsScreen() {
           />
         )}
 
+        {/* Streak tracking */}
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Activity Streaks</Text>
+        {streaks.length > 0 ? (
+          streaks.map((s) => <StreakCard key={s.categoryId} streak={s} />)
+        ) : (
+          <EmptyState
+            title="No streaks yet"
+            message="Log activities on consecutive days to build streaks!"
+            showAnimation={false}
+          />
+        )}
+
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </ScreenContainer>
@@ -74,18 +98,6 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginBottom: Spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: Spacing.xs,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',

@@ -1,11 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { FlatList } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
 import { TargetCard } from '@/components/cards';
-import { SwipeableRow } from '@/components/feedback/SwipeableRow';
 import { EmptyState } from '@/components/feedback';
 import { SharedStyles } from '@/constants';
+import { computeTargetCurrentValue } from '@/utils/progressHelpers';
 import type { Target, Category, Activity } from '@/types';
 
 type Props = {
@@ -14,44 +12,26 @@ type Props = {
   activities: Activity[];
 };
 
-function computeCurrentValue(target: Target, activities: Activity[]): number {
-  return activities
-    .filter((a) => {
-      if (a.categoryId !== target.categoryId) return false;
-      if (target.tripId !== null && a.tripId !== target.tripId) return false;
-      return true;
-    })
-    .reduce((sum, a) => sum + a.metric, 0);
-}
-
 export default function TargetList({ targets, categories, activities }: Props) {
-  const router = useRouter();
-
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories],
   );
 
   const currentValues = useMemo(
-    () => new Map(targets.map((t) => [t.id, computeCurrentValue(t, activities)])),
+    () => new Map(targets.map((t) => [t.id, computeTargetCurrentValue(t, activities)])),
     [targets, activities],
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: Target; index: number }) => (
-      <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(14)}>
-        <SwipeableRow
-          onEdit={() => router.push({ pathname: '/target/[id]/edit', params: { id: item.id.toString() } })}
-        >
-          <TargetCard
-            target={item}
-            category={categoryMap.get(item.categoryId)}
-            currentValue={currentValues.get(item.id) ?? 0}
-          />
-        </SwipeableRow>
-      </Animated.View>
+    ({ item }: { item: Target }) => (
+      <TargetCard
+        target={item}
+        category={categoryMap.get(item.categoryId)}
+        currentValue={currentValues.get(item.id) ?? 0}
+      />
     ),
-    [categoryMap, currentValues, router],
+    [categoryMap, currentValues],
   );
 
   return (
@@ -62,7 +42,7 @@ export default function TargetList({ targets, categories, activities }: Props) {
       contentContainerStyle={SharedStyles.listContent}
       showsVerticalScrollIndicator={false}
       accessibilityRole="list"
-      accessibilityLabel="Targets list"
+      accessibilityLabel="Goals list"
       ListEmptyComponent={emptyComponent}
     />
   );
