@@ -1,4 +1,4 @@
-import { Colors } from '@/constants';
+import { Palette } from '@/constants';
 
 export type ProgressData = {
   percent: number;
@@ -24,8 +24,8 @@ export function computeProgress(
   const remaining = Math.max(0, target - current);
   const barFillWidth = Math.min(percent, 100);
   const barColor = exceeded
-    ? Colors.dangerAction
-    : accentColor ?? Colors.primaryAction;
+    ? Palette.danger
+    : accentColor ?? Palette.coral;
 
   return { percent, exceeded, met, remaining, barFillWidth, barColor };
 }

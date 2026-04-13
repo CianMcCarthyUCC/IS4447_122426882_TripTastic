@@ -8,5 +8,8 @@ export { useTargetForm } from './useTargetForm';
 export { useInsightsData } from './useInsightsData';
 export { useToast } from './useToast';
 export { useHaptics } from './useHaptics';
+export { useAppTheme } from './useAppTheme';
+export { useFilteredActivities, useTextFilter } from './useFilteredData';
+export { useSavedFilters } from './useSavedFilters';
 export { useColorScheme } from './use-color-scheme';
 export { useThemeColor } from './use-theme-color';

@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { InfoTag } from '@/components/tags';
 import { PrimaryButton } from '@/components/buttons';
-import { Colors, Spacing, SharedStyles } from '@/constants';
+import { Spacing, BorderRadius, Shadows, SharedStyles } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import type { Activity, Category } from '@/types';
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 
 function ActivityCard({ activity, category }: Props) {
   const router = useRouter();
+  const theme = useAppTheme();
 
   const openDetails = useCallback(
     () => router.push({ pathname: '/activity/[id]', params: { id: activity.id.toString() } }),
@@ -20,15 +22,17 @@ function ActivityCard({ activity, category }: Props) {
   );
 
   return (
-    <View style={SharedStyles.card} accessibilityRole="summary" accessibilityLabel={`Activity on ${activity.date}`}>
-      <Pressable onPress={openDetails} accessibilityRole="link" accessibilityHint="View activity details">
-        <View style={styles.header}>
-          {category && (
-            <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
-          )}
-          <Text style={styles.date}>{activity.date}</Text>
-        </View>
-      </Pressable>
+    <View
+      style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+      accessibilityRole="summary"
+      accessibilityLabel={`Activity on ${activity.date}`}
+    >
+      <View style={styles.header}>
+        {category && (
+          <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
+        )}
+        <Text style={[styles.date, { color: theme.textPrimary }]}>{activity.date}</Text>
+      </View>
 
       <View style={styles.tags}>
         <InfoTag label="Duration" value={`${activity.metric} min`} />
@@ -36,12 +40,16 @@ function ActivityCard({ activity, category }: Props) {
       </View>
 
       {activity.notes ? (
-        <Text style={styles.notes} numberOfLines={1} accessibilityLabel={`Notes: ${activity.notes}`}>
+        <Text
+          style={[styles.notes, { color: theme.textSecondary }]}
+          numberOfLines={1}
+          accessibilityLabel={`Notes: ${activity.notes}`}
+        >
           {activity.notes}
         </Text>
       ) : null}
 
-      <PrimaryButton compact label="View Details" onPress={openDetails} />
+      <PrimaryButton compact label="View Details" variant="accent" onPress={openDetails} />
     </View>
   );
 }
@@ -49,12 +57,18 @@ function ActivityCard({ activity, category }: Props) {
 export default memo(ActivityCard);
 
 const styles = StyleSheet.create({
+  card: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    padding: Spacing.lg,
+    ...Shadows.md,
+  },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
   },
   date: {
-    color: Colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
   },
@@ -64,7 +78,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   notes: {
-    color: Colors.textSecondary,
     fontSize: 14,
     marginBottom: Spacing.sm,
     marginTop: Spacing.xs,

@@ -32,23 +32,28 @@ export default function RegisterScreen() {
     }
     setError('');
     setLoading(true);
-
-    const authError = await register({ email, password, confirmPassword });
-    if (authError) {
-      setError(authError);
-      setLoading(false);
+    try {
+      const authError = await register({ email, password, confirmPassword });
+      if (authError) {
+        setError(authError);
+        haptics.error();
+        return;
+      }
+      haptics.success();
+      showToast('Account created!', 'success');
+    } catch {
+      setError('Something went wrong. Please try again.');
       haptics.error();
-      return;
+    } finally {
+      setLoading(false);
     }
-    haptics.success();
-    showToast('Account created!', 'success');
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <AuthHero tagline="Start planning your trips" />
+        <AuthHero tagline="Your holiday planner starts here" />
         <ScreenHeader title="Register" subtitle="Create a new account" />
 
         <View style={SharedStyles.form}>
@@ -84,7 +89,8 @@ export default function RegisterScreen() {
         ) : null}
 
         <PrimaryButton
-          label={loading ? 'Creating account...' : 'Register'}
+          label="Register"
+          loading={loading}
           onPress={handleRegister}
         />
 

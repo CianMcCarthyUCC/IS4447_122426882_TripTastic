@@ -1,8 +1,10 @@
 import { View, Text } from 'react-native';
-import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import FormField from '@/components/forms/FormField';
+import { ColorPicker } from '@/components/forms/ColorPicker';
+import { IconPicker } from '@/components/forms/IconPicker';
 import { PrimaryButton } from '@/components/buttons';
 import { SharedStyles } from '@/constants';
+import { KeyboardAwareForm } from '@/components/layout/KeyboardAwareForm';
 import type { CategoryFormData } from '@/types';
 
 type Props = {
@@ -12,6 +14,7 @@ type Props = {
   onCancel: () => void;
   submitLabel: string;
   error?: string;
+  loading?: boolean;
 };
 
 export default function CategoryForm({
@@ -21,7 +24,10 @@ export default function CategoryForm({
   onCancel,
   submitLabel,
   error,
+  loading = false,
 }: Props) {
+  const isIncomplete = !formData.name.trim();
+
   return (
     <KeyboardAwareForm>
       <View style={SharedStyles.form}>
@@ -33,21 +39,16 @@ export default function CategoryForm({
           accessibilityLabel="Category name"
           accessibilityHint="Enter the category name"
         />
-        <FormField
-          label="Color (hex)"
-          value={formData.color}
-          onChangeText={(v) => onChangeField('color', v)}
-          placeholder="e.g. #3B82F6"
-          accessibilityLabel="Category color"
-          accessibilityHint="Enter a hex color code"
+
+        <ColorPicker
+          selectedColor={formData.color}
+          onSelect={(color) => onChangeField('color', color)}
         />
-        <FormField
-          label="Icon"
-          value={formData.icon}
-          onChangeText={(v) => onChangeField('icon', v)}
-          placeholder="e.g. eye, restaurant, car"
-          accessibilityLabel="Category icon name"
-          accessibilityHint="Enter an icon name"
+
+        <IconPicker
+          selectedIcon={formData.icon}
+          accentColor={formData.color}
+          onSelect={(icon) => onChangeField('icon', icon)}
         />
       </View>
 
@@ -55,9 +56,9 @@ export default function CategoryForm({
         <Text style={SharedStyles.errorText} accessibilityRole="alert">{error}</Text>
       ) : null}
 
-      <PrimaryButton label={submitLabel} onPress={onSubmit} />
+      <PrimaryButton label={submitLabel} onPress={onSubmit} loading={loading} disabled={isIncomplete} />
       <View style={SharedStyles.buttonSpacing}>
-        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
+        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} disabled={loading} />
       </View>
     </KeyboardAwareForm>
   );

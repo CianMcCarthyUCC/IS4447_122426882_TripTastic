@@ -54,10 +54,17 @@ export default function TargetDetail() {
   const handleDelete = async () => {
     setConfirmVisible(false);
     setLoading(true);
-    await deleteTarget(Number(id));
-    haptics.success();
-    showToast('Target deleted', 'success');
-    router.back();
+    try {
+      await deleteTarget(Number(id));
+      haptics.success();
+      showToast('Target deleted', 'success');
+      router.back();
+    } catch {
+      showToast('Failed to delete. Please try again.', 'error');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,7 +78,7 @@ export default function TargetDetail() {
       <View style={SharedStyles.tagRow}>
         <InfoTag label="Target" value={`${target.targetValue} min`} />
         <InfoTag label="Period" value={target.period} />
-        <InfoTag label="Scope" value={target.tripId ? 'Per Trip' : 'Global'} />
+        <InfoTag label="Scope" value={target.tripId ? 'This Trip' : 'All Trips'} />
       </View>
 
       <View style={styles.progressSection}>
@@ -88,7 +95,8 @@ export default function TargetDetail() {
           onPress={() => router.push({ pathname: '/target/[id]/edit', params: { id } })}
         />
         <PrimaryButton
-          label={loading ? 'Deleting...' : 'Delete'}
+          label="Delete"
+          loading={loading}
           variant="danger"
           onPress={() => { haptics.warning(); setConfirmVisible(true); }}
         />
@@ -97,8 +105,8 @@ export default function TargetDetail() {
 
       <ConfirmDialog
         visible={confirmVisible}
-        title="Delete Target"
-        message="Are you sure you want to delete this target? Your progress data will be lost."
+        title="Delete Goal"
+        message="Are you sure you want to remove this goal? Your progress tracking will be lost."
         confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setConfirmVisible(false)}

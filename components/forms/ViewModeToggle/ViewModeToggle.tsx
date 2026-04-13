@@ -1,12 +1,12 @@
-import { StyleSheet, View } from 'react-native';
-import PillToggle from '@/components/forms/PillToggle/PillToggle';
-import { Colors, Spacing, BorderRadius } from '@/constants';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Spacing, BorderRadius } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import type { ViewMode } from '@/types';
 
-const MODES = [
-  { label: 'Daily', value: 'daily' as ViewMode },
-  { label: 'Weekly', value: 'weekly' as ViewMode },
-  { label: 'Monthly', value: 'monthly' as ViewMode },
+const MODES: { label: string; value: ViewMode }[] = [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
 ];
 
 type Props = {
@@ -14,31 +14,52 @@ type Props = {
   onSelect: (mode: ViewMode) => void;
 };
 
-/**
- * Segmented control for switching between daily/weekly/monthly views.
- * Wraps PillToggle in a tinted container for visual distinction.
- */
 export default function ViewModeToggle({ selected, onSelect }: Props) {
+  const theme = useAppTheme();
+
   return (
-    <View style={styles.container}>
-      <PillToggle
-        options={MODES}
-        selected={selected}
-        onSelect={onSelect}
-        accessibilityLabel="Select time view"
-      />
+    <View
+      style={[styles.container, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+      accessibilityRole="radiogroup"
+      accessibilityLabel="Select time view"
+    >
+      {MODES.map((m) => {
+        const active = selected === m.value;
+        return (
+          <Pressable
+            key={m.value}
+            style={[styles.pill, active && { backgroundColor: theme.accentAction }]}
+            onPress={() => onSelect(m.value)}
+            accessibilityRole="radio"
+            accessibilityLabel={m.label}
+            accessibilityState={{ selected: active }}
+          >
+            <Text style={[styles.pillText, { color: active ? theme.textButton : theme.textSecondary }]}>
+              {m.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.cardBackground,
-    borderColor: Colors.cardBorder,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
+    flexDirection: 'row',
     marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
+    padding: Spacing.xs,
+  },
+  pill: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.sm,
+    flex: 1,
+    paddingVertical: Spacing.sm,
+  },
+  pillText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

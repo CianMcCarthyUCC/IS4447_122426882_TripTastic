@@ -1,6 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { FlatList } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import { TargetCard } from '@/components/cards';
+import { SwipeableRow } from '@/components/feedback/SwipeableRow';
 import { EmptyState } from '@/components/feedback';
 import { SharedStyles } from '@/constants';
 import type { Target, Category, Activity } from '@/types';
@@ -11,10 +14,6 @@ type Props = {
   activities: Activity[];
 };
 
-/**
- * Computes the current metric sum for a given target by
- * matching activities on categoryId (and tripId if not global).
- */
 function computeCurrentValue(target: Target, activities: Activity[]): number {
   return activities
     .filter((a) => {
@@ -26,6 +25,8 @@ function computeCurrentValue(target: Target, activities: Activity[]): number {
 }
 
 export default function TargetList({ targets, categories, activities }: Props) {
+  const router = useRouter();
+
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories],
@@ -37,14 +38,20 @@ export default function TargetList({ targets, categories, activities }: Props) {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Target }) => (
-      <TargetCard
-        target={item}
-        category={categoryMap.get(item.categoryId)}
-        currentValue={currentValues.get(item.id) ?? 0}
-      />
+    ({ item, index }: { item: Target; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(14)}>
+        <SwipeableRow
+          onEdit={() => router.push({ pathname: '/target/[id]/edit', params: { id: item.id.toString() } })}
+        >
+          <TargetCard
+            target={item}
+            category={categoryMap.get(item.categoryId)}
+            currentValue={currentValues.get(item.id) ?? 0}
+          />
+        </SwipeableRow>
+      </Animated.View>
     ),
-    [categoryMap, currentValues],
+    [categoryMap, currentValues, router],
   );
 
   return (
@@ -64,5 +71,8 @@ export default function TargetList({ targets, categories, activities }: Props) {
 const keyExtractor = (item: Target) => item.id.toString();
 
 const emptyComponent = (
-  <EmptyState title="No targets yet" message="Tap 'Add Target' to set your first goal." />
+  <EmptyState
+    title="No goals yet"
+    message="Goals let you set weekly or monthly targets — like '300 min of sightseeing per week'. Tap + to set your first goal!"
+  />
 );

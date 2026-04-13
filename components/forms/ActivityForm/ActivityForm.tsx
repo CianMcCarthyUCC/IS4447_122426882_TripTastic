@@ -15,13 +15,9 @@ type Props = {
   submitLabel: string;
   categories: Category[];
   error?: string;
+  loading?: boolean;
 };
 
-/**
- * Activity form — composes reusable DateField, FormField, and CategoryPicker.
- * Wrapped in ScrollView so fields are reachable on smaller screens.
- * Validation is handled by the parent screen before calling onSubmit.
- */
 export default function ActivityForm({
   formData,
   onChangeField,
@@ -30,7 +26,10 @@ export default function ActivityForm({
   submitLabel,
   categories,
   error,
+  loading = false,
 }: Props) {
+  const isIncomplete = !formData.date || !formData.metric || !formData.categoryId;
+
   return (
     <KeyboardAwareForm>
       <View style={SharedStyles.form}>
@@ -44,21 +43,21 @@ export default function ActivityForm({
 
         <FormField
           label="Duration (minutes)"
+          helpText="How long did you spend on this? (e.g. a 2-hour tour = 120)"
           value={formData.metric}
           onChangeText={(v) => onChangeField('metric', v)}
           placeholder="e.g. 120"
           keyboardType="numeric"
           accessibilityLabel="Duration in minutes"
-          accessibilityHint="Enter the activity duration"
         />
 
         <FormField
           label="Notes"
+          helpText="Optional — where did you go? What did you enjoy?"
           value={formData.notes}
           onChangeText={(v) => onChangeField('notes', v)}
-          placeholder="Optional notes"
+          placeholder="e.g. Visited the Colosseum"
           accessibilityLabel="Activity notes"
-          accessibilityHint="Enter optional notes"
         />
 
         <CategoryPicker
@@ -72,9 +71,9 @@ export default function ActivityForm({
         <Text style={SharedStyles.errorText} accessibilityRole="alert">{error}</Text>
       ) : null}
 
-      <PrimaryButton label={submitLabel} onPress={onSubmit} />
+      <PrimaryButton label={submitLabel} onPress={onSubmit} loading={loading} disabled={isIncomplete} />
       <View style={SharedStyles.buttonSpacing}>
-        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} />
+        <PrimaryButton label="Cancel" variant="secondary" onPress={onCancel} disabled={loading} />
       </View>
     </KeyboardAwareForm>
   );

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing } from '@/constants';
+import { Spacing } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
   message: string;
@@ -7,15 +8,14 @@ type Props = {
   onPress: () => void;
 };
 
-/**
- * Reusable footer for auth screens — "Don't have an account? Register" pattern.
- */
 export default function AuthFooter({ message, linkLabel, onPress }: Props) {
+  const theme = useAppTheme();
+
   return (
     <View style={styles.footer}>
-      <Text style={styles.text}>{message}</Text>
+      <Text style={[styles.text, { color: theme.textSecondary }]}>{message}</Text>
       <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={linkLabel}>
-        <Text style={styles.link}> {linkLabel}</Text>
+        <Text style={[styles.link, { color: theme.accentAction }]}> {linkLabel}</Text>
       </Pressable>
     </View>
   );
@@ -29,11 +29,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   text: {
-    color: Colors.textSecondary,
     fontSize: 15,
   },
   link: {
-    color: Colors.primaryAction,
     fontSize: 15,
     fontWeight: '700',
   },

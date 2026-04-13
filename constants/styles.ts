@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from './colors';
-import { Spacing, BorderRadius } from './spacing';
+import { Spacing, BorderRadius, Shadows } from './spacing';
 
 /**
  * Shared styles reused across multiple screens.
- * Import these instead of duplicating StyleSheet definitions.
+ * These use the default (light) theme. For dynamic theming,
+ * components should use useAppTheme() and apply overrides.
  */
-
 export const SharedStyles = StyleSheet.create({
   screenContainer: {
     backgroundColor: Colors.screenBackground,
@@ -16,7 +16,7 @@ export const SharedStyles = StyleSheet.create({
   screenContainerWithTabs: {
     backgroundColor: Colors.screenBackground,
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
   },
   form: {
@@ -28,6 +28,7 @@ export const SharedStyles = StyleSheet.create({
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: Spacing.sm,
     marginBottom: Spacing.xl,
   },
   listContent: {
@@ -41,11 +42,12 @@ export const SharedStyles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: Spacing.md,
     padding: Spacing.lg,
+    ...Shadows.md,
   },
   colorDot: {
-    borderRadius: BorderRadius.xs,
-    height: 16,
-    width: 16,
+    borderRadius: BorderRadius.pill,
+    height: 14,
+    width: 14,
     marginRight: Spacing.sm,
   },
   fieldWrapper: {
@@ -55,14 +57,16 @@ export const SharedStyles = StyleSheet.create({
     color: Colors.textLabel,
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: Spacing.sm,
+    letterSpacing: 0.3,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
   },
   fieldInput: {
     backgroundColor: Colors.inputBackground,
     borderColor: Colors.inputBorder,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    fontSize: 15,
+    fontSize: 16,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
@@ -80,14 +84,14 @@ export const SharedStyles = StyleSheet.create({
   // Progress bars
   progressBarBg: {
     backgroundColor: Colors.cardBorder,
-    borderRadius: BorderRadius.xs,
-    height: 10,
+    borderRadius: BorderRadius.pill,
+    height: 8,
     marginTop: Spacing.md,
     overflow: 'hidden' as const,
   },
   progressBarFill: {
-    borderRadius: BorderRadius.xs,
-    height: 10,
+    borderRadius: BorderRadius.pill,
+    height: 8,
   },
   // Badges
   badge: {
@@ -99,6 +103,7 @@ export const SharedStyles = StyleSheet.create({
     color: Colors.textButton,
     fontSize: 11,
     fontWeight: '700' as const,
+    letterSpacing: 0.3,
   },
   // Pill toggles
   pillRow: {
@@ -109,13 +114,13 @@ export const SharedStyles = StyleSheet.create({
   pill: {
     borderColor: Colors.inputBorder,
     borderRadius: BorderRadius.pill,
-    borderWidth: 2,
+    borderWidth: 1.5,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
   pillSelected: {
-    backgroundColor: Colors.primaryAction,
-    borderColor: Colors.primaryAction,
+    backgroundColor: Colors.accentAction,
+    borderColor: Colors.accentAction,
   },
   pillText: {
     color: Colors.textPrimary,

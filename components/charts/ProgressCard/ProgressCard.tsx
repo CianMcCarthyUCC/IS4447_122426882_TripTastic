@@ -2,7 +2,8 @@ import { memo, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { InfoTag } from '@/components/tags';
 import { ProgressBar } from '@/components/feedback/ProgressBar';
-import { Colors, Spacing, SharedStyles } from '@/constants';
+import { Spacing, BorderRadius, Shadows, SharedStyles } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { computeProgress } from '@/utils/progressHelpers';
 
 type Props = {
@@ -15,17 +16,9 @@ type Props = {
   exceeded: boolean;
 };
 
-/**
- * Target progress card for Insights screen.
- * Uses shared ProgressBar and computeProgress for consistency.
- */
-function ProgressCard({
-  categoryName,
-  categoryColor,
-  current,
-  target,
-  period,
-}: Props) {
+function ProgressCard({ categoryName, categoryColor, current, target, period }: Props) {
+  const theme = useAppTheme();
+
   const progress = useMemo(
     () => computeProgress(current, target, categoryColor),
     [current, target, categoryColor],
@@ -33,13 +26,17 @@ function ProgressCard({
 
   return (
     <View
-      style={[SharedStyles.card, progress.exceeded && styles.exceededCard]}
+      style={[
+        styles.card,
+        { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
+        progress.exceeded && { borderColor: theme.dangerAction, borderWidth: 2 },
+      ]}
       accessibilityRole="summary"
       accessibilityLabel={`${categoryName} target: ${progress.percent}% complete`}
     >
       <View style={styles.header}>
         <View style={[SharedStyles.colorDot, { backgroundColor: categoryColor }]} />
-        <Text style={styles.name}>{categoryName}</Text>
+        <Text style={[styles.name, { color: theme.textPrimary }]}>{categoryName}</Text>
       </View>
 
       <ProgressBar {...progress} current={current} target={target} />
@@ -54,16 +51,18 @@ function ProgressCard({
 export default memo(ProgressCard);
 
 const styles = StyleSheet.create({
-  exceededCard: {
-    borderColor: Colors.dangerAction,
-    borderWidth: 2,
+  card: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    padding: Spacing.lg,
+    ...Shadows.sm,
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
   },
   name: {
-    color: Colors.textPrimary,
     flex: 1,
     fontSize: 16,
     fontWeight: '700',

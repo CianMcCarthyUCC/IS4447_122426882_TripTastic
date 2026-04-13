@@ -1,5 +1,5 @@
 export { db, initializeDatabase } from './client';
-export { trips, categories, activities, targets, users, sessions } from './schema';
+export { trips, categories, activities, targets, users, sessions, savedFilters, recentSearches } from './schema';
 export { seedDataIfEmpty } from './seed';
 export {
   getAllCategories,
@@ -22,4 +22,10 @@ export {
   getActiveSession,
   createSession,
   clearSessionDb,
+  getAllSavedFilters,
+  insertSavedFilter,
+  deleteSavedFilterById,
+  getRecentSearches,
+  insertRecentSearch,
+  clearRecentSearches,
 } from './repository';

@@ -37,16 +37,23 @@ export default function ActivityDetail() {
   const handleDelete = async () => {
     setConfirmVisible(false);
     setLoading(true);
-    await deleteActivity(Number(id));
-    haptics.success();
-    showToast('Activity deleted', 'success');
-    router.back();
+    try {
+      await deleteActivity(Number(id));
+      haptics.success();
+      showToast('Activity deleted', 'success');
+      router.back();
+    } catch {
+      showToast('Failed to delete. Please try again.', 'error');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title={activity.date} subtitle="Activity details" />
+      <ScreenHeader title={activity.date} subtitle="Trip activity details" />
 
       <View style={SharedStyles.tagRow}>
         <InfoTag label="Duration" value={`${activity.metric} min`} />
@@ -65,7 +72,8 @@ export default function ActivityDetail() {
           onPress={() => router.push({ pathname: '/activity/[id]/edit', params: { id } })}
         />
         <PrimaryButton
-          label={loading ? 'Deleting...' : 'Delete'}
+          label="Delete"
+          loading={loading}
           variant="danger"
           onPress={() => { haptics.warning(); setConfirmVisible(true); }}
         />
@@ -75,7 +83,7 @@ export default function ActivityDetail() {
       <ConfirmDialog
         visible={confirmVisible}
         title="Delete Activity"
-        message="Are you sure you want to delete this activity? This action cannot be undone."
+        message="Are you sure you want to remove this activity from your trip? This can't be undone."
         confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setConfirmVisible(false)}

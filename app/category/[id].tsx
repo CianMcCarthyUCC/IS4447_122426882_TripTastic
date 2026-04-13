@@ -34,10 +34,17 @@ export default function CategoryDetail() {
   const handleDelete = async () => {
     setConfirmVisible(false);
     setLoading(true);
-    await deleteCategory(Number(id));
-    haptics.success();
-    showToast('Category deleted', 'success');
-    router.back();
+    try {
+      await deleteCategory(Number(id));
+      haptics.success();
+      showToast('Category deleted', 'success');
+      router.back();
+    } catch {
+      showToast('Failed to delete. Please try again.', 'error');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,7 +63,8 @@ export default function CategoryDetail() {
           onPress={() => router.push({ pathname: '/category/[id]/edit', params: { id } })}
         />
         <PrimaryButton
-          label={loading ? 'Deleting...' : 'Delete'}
+          label="Delete"
+          loading={loading}
           variant="danger"
           onPress={() => { haptics.warning(); setConfirmVisible(true); }}
         />

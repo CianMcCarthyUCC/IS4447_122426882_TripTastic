@@ -1,5 +1,5 @@
 import { db } from './client';
-import { categories, trips, activities, targets } from './schema';
+import { categories, trips, activities, targets, savedFilters } from './schema';
 
 export async function seedDataIfEmpty() {
   const existingCategories = await db.select().from(categories);
@@ -45,5 +45,12 @@ export async function seedDataIfEmpty() {
     { tripId: 1, categoryId: 2, targetValue: 300, period: 'weekly' },
     { tripId: null, categoryId: 3, targetValue: 500, period: 'monthly' },
     { tripId: 1, categoryId: 5, targetValue: 120, period: 'weekly' },
+  ]);
+
+  // Seed default saved filters so users see them immediately
+  await db.insert(savedFilters).values([
+    { name: 'Sightseeing only', filterType: 'category', filterValue: '1', createdAt: new Date().toISOString() },
+    { name: 'Food & Dining', filterType: 'category', filterValue: '2', createdAt: new Date().toISOString() },
+    { name: 'This Week', filterType: 'dateRange', filterValue: 'week', createdAt: new Date().toISOString() },
   ]);
 }

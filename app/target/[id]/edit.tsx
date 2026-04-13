@@ -43,22 +43,30 @@ export default function EditTarget() {
     }
     setError('');
     setLoading(true);
-    await updateTarget(Number(id), formData);
-    haptics.success();
-    showToast('Target updated', 'success');
-    router.back();
+    try {
+      await updateTarget(Number(id), formData);
+      haptics.success();
+      showToast('Target updated', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Edit Target" subtitle="Update your goal." />
+      <ScreenHeader title="Edit Goal" subtitle="Update your goal." />
       <TargetForm
         formData={formData}
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Changes'}
+        submitLabel="Save Changes"
+        loading={loading}
         categories={categories}
         error={error}
       />

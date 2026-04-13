@@ -27,22 +27,30 @@ export default function AddCategory() {
     }
     setError('');
     setLoading(true);
-    await addCategory(formData);
-    haptics.success();
-    showToast('Category created', 'success');
-    router.back();
+    try {
+      await addCategory(formData);
+      haptics.success();
+      showToast('Category created', 'success');
+      router.back();
+    } catch {
+      setError('Something went wrong. Please try again.');
+      haptics.error();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Add Category" subtitle="Create a new category." />
+      <ScreenHeader title="New Category" subtitle="Organise your trip activities by type." />
       <CategoryForm
         formData={formData}
         onChangeField={onChangeField}
         onSubmit={handleSubmit}
         onCancel={() => router.back()}
-        submitLabel={loading ? 'Saving...' : 'Save Category'}
+        submitLabel="Save Category"
+        loading={loading}
         error={error}
       />
     </ScreenContainer>

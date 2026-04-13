@@ -1,7 +1,17 @@
 import { memo, useCallback, useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import LottieView from 'lottie-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius } from '@/constants';
+import { Spacing, BorderRadius, Palette } from '@/constants';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 type ToastVariant = 'success' | 'error' | 'info';
 
@@ -13,8 +23,7 @@ type Props = {
   onHide: () => void;
 };
 
-const TOAST_OFFSET_Y = -100;
-const TOAST_SLIDE_DURATION = 300;
+const TOAST_HIDDEN_Y = -120;
 const TOAST_DEFAULT_DURATION = 2500;
 
 const ICONS: Record<ToastVariant, keyof typeof Ionicons.glyphMap> = {
@@ -23,15 +32,9 @@ const ICONS: Record<ToastVariant, keyof typeof Ionicons.glyphMap> = {
   info: 'information-circle',
 };
 
-const BG_COLORS: Record<ToastVariant, string> = {
-  success: Colors.successAction,
-  error: Colors.dangerAction,
-  info: Colors.primaryAction,
-};
-
 /**
- * Animated toast notification — slides in from top, auto-hides.
- * Uses ref for onHide to avoid re-triggering animation on parent re-render.
+ * Toast notification — uses Reanimated for smooth spring animations.
+ * Slides in from top with spring physics, auto-hides with timing.
  */
 function Toast({
   visible,
@@ -40,47 +43,59 @@ function Toast({
   duration = TOAST_DEFAULT_DURATION,
   onHide,
 }: Props) {
-  const translateY = useRef(new Animated.Value(TOAST_OFFSET_Y)).current;
+  const theme = useAppTheme();
+  const translateY = useSharedValue(TOAST_HIDDEN_Y);
   const onHideRef = useRef(onHide);
   onHideRef.current = onHide;
 
-  const handleAnimationEnd = useCallback(() => {
+  const handleHide = useCallback(() => {
     onHideRef.current();
   }, []);
 
   useEffect(() => {
     if (visible) {
-      Animated.sequence([
-        Animated.spring(translateY, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 10,
+      // Slide in with spring
+      translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
+      // Then slide out after duration
+      translateY.value = withDelay(
+        duration,
+        withTiming(TOAST_HIDDEN_Y, { duration: 300 }, (finished) => {
+          if (finished) runOnJS(handleHide)();
         }),
-        Animated.delay(duration),
-        Animated.timing(translateY, {
-          toValue: TOAST_OFFSET_Y,
-          duration: TOAST_SLIDE_DURATION,
-          useNativeDriver: true,
-        }),
-      ]).start(handleAnimationEnd);
+      );
     } else {
-      translateY.setValue(TOAST_OFFSET_Y);
+      translateY.value = TOAST_HIDDEN_Y;
     }
-  }, [visible, duration, translateY, handleAnimationEnd]);
+  }, [visible, duration, translateY, handleHide]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const bgColor = {
+    success: theme.successAction,
+    error: theme.dangerAction,
+    info: theme.primaryAction,
+  }[variant];
 
   if (!visible) return null;
 
   return (
     <Animated.View
-      style={[
-        styles.container,
-        { backgroundColor: BG_COLORS[variant], transform: [{ translateY }] },
-      ]}
+      style={[styles.container, { backgroundColor: bgColor }, animatedStyle]}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
-      <Ionicons name={ICONS[variant]} size={20} color={Colors.textButton} />
+      {variant === 'success' ? (
+        <LottieView
+          source={require('@/assets/animations/success-check.json')}
+          autoPlay
+          loop={false}
+          style={styles.lottieIcon}
+        />
+      ) : (
+        <Ionicons name={ICONS[variant]} size={20} color={Palette.white} />
+      )}
       <Text style={styles.text}>{message}</Text>
     </Animated.View>
   );
@@ -103,9 +118,13 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   text: {
-    color: Colors.textButton,
+    color: Palette.white,
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
+  },
+  lottieIcon: {
+    height: 24,
+    width: 24,
   },
 });
