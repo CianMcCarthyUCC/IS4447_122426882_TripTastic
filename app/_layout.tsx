@@ -3,18 +3,21 @@ import { StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useAuthContext } from '@/context';
-import { useAppTheme } from '@/hooks/useAppTheme';
+import { useAppTheme, useThemeProvider, ThemeContext } from '@/hooks/useAppTheme';
 
 /**
- * Root layout — wraps app in GestureHandlerRootView (required for swipe gestures)
- * and AppProvider. AuthGuard handles navigation based on auth state.
+ * Root layout — wraps app in GestureHandlerRootView, ThemeContext, and AppProvider.
  */
 export default function RootLayout() {
+  const themeCtx = useThemeProvider();
+
   return (
     <GestureHandlerRootView style={styles.root}>
-      <AppProvider>
-        <AuthGuard />
-      </AppProvider>
+      <ThemeContext.Provider value={themeCtx}>
+        <AppProvider>
+          <AuthGuard />
+        </AppProvider>
+      </ThemeContext.Provider>
     </GestureHandlerRootView>
   );
 }
@@ -32,10 +35,8 @@ function AuthGuard() {
     const onAuthScreen = inAuthGroup && (segments[1] === 'login' || segments[1] === 'register');
 
     if (!isAuthenticated && !onAuthScreen) {
-      // Not logged in and not already on login/register → go to login
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Logged in but still on auth screens → go to tabs
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments, router]);
@@ -51,16 +52,18 @@ function AuthGuard() {
     >
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="profile" options={{ title: 'Profile' }} />
-      <Stack.Screen name="activity/add" options={{ title: 'Log Activity' }} />
-      <Stack.Screen name="activity/[id]" options={{ title: 'Activity' }} />
-      <Stack.Screen name="activity/[id]/edit" options={{ title: 'Edit Activity' }} />
-      <Stack.Screen name="category/add" options={{ title: 'Add Category' }} />
-      <Stack.Screen name="category/[id]" options={{ title: 'Category' }} />
-      <Stack.Screen name="category/[id]/edit" options={{ title: 'Edit Category' }} />
-      <Stack.Screen name="target/add" options={{ title: 'New Goal' }} />
-      <Stack.Screen name="target/[id]" options={{ title: 'Goal' }} />
-      <Stack.Screen name="target/[id]/edit" options={{ title: 'Edit Goal' }} />
+      <Stack.Screen name="profile" options={{ title: 'Profile', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="trip/add" options={{ title: 'New Trip', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="trip/[id]" options={{ title: 'Trip Details', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="activity/add" options={{ title: 'Log Activity', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="activity/[id]" options={{ title: 'Activity', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="activity/[id]/edit" options={{ title: 'Edit Activity', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="category/add" options={{ title: 'Add Category', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="category/[id]" options={{ title: 'Category', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="category/[id]/edit" options={{ title: 'Edit Category', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="target/add" options={{ title: 'New Goal', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="target/[id]" options={{ title: 'Goal', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="target/[id]/edit" options={{ title: 'Edit Goal', headerBackTitle: 'Back' }} />
     </Stack>
   );
 }

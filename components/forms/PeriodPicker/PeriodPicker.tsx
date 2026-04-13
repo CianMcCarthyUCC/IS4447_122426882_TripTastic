@@ -1,9 +1,9 @@
-import PillToggle from '@/components/forms/PillToggle/PillToggle';
+import Dropdown from '@/components/forms/Dropdown/Dropdown';
 import type { TargetPeriod } from '@/types';
 
-const PERIODS = [
-  { label: 'Weekly', value: 'weekly' as TargetPeriod },
-  { label: 'Monthly', value: 'monthly' as TargetPeriod },
+const OPTIONS = [
+  { label: 'Weekly', value: 'weekly', icon: 'calendar-outline' as const },
+  { label: 'Monthly', value: 'monthly', icon: 'calendar' as const },
 ];
 
 type Props = {
@@ -12,20 +12,15 @@ type Props = {
   onSelect: (period: TargetPeriod) => void;
 };
 
-/**
- * Period selector — thin wrapper over PillToggle for weekly/monthly.
- */
-export default function PeriodPicker({
-  label = 'Period',
-  selectedPeriod,
-  onSelect,
-}: Props) {
+export default function PeriodPicker({ label = 'Period', selectedPeriod, onSelect }: Props) {
   return (
-    <PillToggle
+    <Dropdown
       label={label}
-      options={PERIODS}
+      helpText="Track this goal per week or per month?"
+      options={OPTIONS}
       selected={selectedPeriod}
-      onSelect={onSelect}
+      onSelect={(v) => onSelect(v as TargetPeriod)}
+      placeholder="Choose period"
       accessibilityLabel="Select a period"
     />
   );

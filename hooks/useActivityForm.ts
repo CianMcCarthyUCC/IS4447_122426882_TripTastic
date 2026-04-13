@@ -1,19 +1,24 @@
 import { useState, useCallback } from 'react';
+import { useTripContext } from '@/context/TripContext';
 import type { ActivityFormData } from '@/types';
-
-const EMPTY_FORM: ActivityFormData = {
-  tripId: 1,
-  categoryId: 0,
-  date: '',
-  metric: '',
-  notes: '',
-};
 
 /**
  * Reusable form state hook for activity forms (add & edit).
+ * Defaults tripId to the currently selected trip.
  */
-export function useActivityForm(initial: ActivityFormData = EMPTY_FORM) {
-  const [formData, setFormData] = useState<ActivityFormData>(initial);
+export function useActivityForm(initial?: ActivityFormData) {
+  const { currentTrip } = useTripContext();
+
+  const defaultForm: ActivityFormData = initial ?? {
+    tripId: currentTrip?.id ?? 1,
+    categoryId: 0,
+    date: '',
+    metric: '',
+    status: 'planned',
+    notes: '',
+  };
+
+  const [formData, setFormData] = useState<ActivityFormData>(defaultForm);
 
   const onChangeField = useCallback(
     (field: keyof ActivityFormData, value: string | number) => {
@@ -23,8 +28,8 @@ export function useActivityForm(initial: ActivityFormData = EMPTY_FORM) {
   );
 
   const resetForm = useCallback(() => {
-    setFormData(EMPTY_FORM);
-  }, []);
+    setFormData(defaultForm);
+  }, [defaultForm]);
 
   const populateForm = useCallback((data: ActivityFormData) => {
     setFormData(data);

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { InfoTag } from '@/components/tags';
 import { PrimaryButton } from '@/components/buttons';
-import { Spacing, BorderRadius, Shadows, SharedStyles } from '@/constants';
+import { Spacing, BorderRadius, Shadows, SharedStyles, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import type { Activity, Category } from '@/types';
 
@@ -32,6 +32,9 @@ function ActivityCard({ activity, category }: Props) {
           <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
         )}
         <Text style={[styles.date, { color: theme.textPrimary }]}>{activity.date}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: activity.status === 'completed' ? theme.successAction : theme.accentAction }]}>
+          <Text style={styles.statusText}>{activity.status === 'completed' ? '✓ Done' : '◇ Planned'}</Text>
+        </View>
       </View>
 
       <View style={styles.tags}>
@@ -69,7 +72,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   date: {
+    flex: 1,
     fontSize: 18,
+    fontWeight: '700',
+  },
+  statusBadge: {
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  statusText: {
+    color: Palette.white,
+    fontSize: 11,
     fontWeight: '700',
   },
   tags: {

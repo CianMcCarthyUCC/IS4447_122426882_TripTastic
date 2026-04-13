@@ -1,9 +1,6 @@
 import { useCallback } from 'react';
 import { FlatList } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
 import { CategoryCard } from '@/components/cards';
-import { SwipeableRow } from '@/components/feedback/SwipeableRow';
 import { EmptyState } from '@/components/feedback';
 import { SharedStyles } from '@/constants';
 import type { Category } from '@/types';
@@ -13,19 +10,9 @@ type Props = {
 };
 
 export default function CategoryList({ categories }: Props) {
-  const router = useRouter();
-
   const renderItem = useCallback(
-    ({ item, index }: { item: Category; index: number }) => (
-      <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(14)}>
-        <SwipeableRow
-          onEdit={() => router.push({ pathname: '/category/[id]/edit', params: { id: item.id.toString() } })}
-        >
-          <CategoryCard category={item} />
-        </SwipeableRow>
-      </Animated.View>
-    ),
-    [router],
+    ({ item }: { item: Category }) => <CategoryCard category={item} />,
+    [],
   );
 
   return (

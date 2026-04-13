@@ -1,7 +1,27 @@
 import { eq } from 'drizzle-orm';
 import { db } from './client';
-import { categories, activities, targets, users, sessions, savedFilters, recentSearches } from './schema';
-import type { CategoryFormData, ActivityFormData, TargetFormData, Target, User } from '@/types';
+import { categories, activities, targets, users, sessions, savedFilters, recentSearches, settings, trips } from './schema';
+import type { CategoryFormData, ActivityFormData, TargetFormData, TripFormData, Activity, Target, User } from '@/types';
+
+// ── Trips ──────────────────────────────────────────────
+
+export async function getAllTrips() {
+  return db.select().from(trips);
+}
+
+export async function insertTrip(data: TripFormData) {
+  await db.insert(trips).values(data);
+}
+
+export async function updateTripById(id: number, data: TripFormData) {
+  await db.update(trips).set(data).where(eq(trips.id, id));
+}
+
+export async function deleteTripById(id: number) {
+  await db.delete(activities).where(eq(activities.tripId, id));
+  await db.delete(targets).where(eq(targets.tripId, id));
+  await db.delete(trips).where(eq(trips.id, id));
+}
 
 // ── Categories ──────────────────────────────────────────
 
@@ -23,8 +43,9 @@ export async function deleteCategoryById(id: number) {
 
 // ── Activities ──────────────────────────────────────────
 
-export async function getAllActivities() {
-  return db.select().from(activities);
+export async function getAllActivities(): Promise<Activity[]> {
+  const rows = await db.select().from(activities);
+  return rows as Activity[];
 }
 
 export async function insertActivity(data: ActivityFormData) {
@@ -33,6 +54,7 @@ export async function insertActivity(data: ActivityFormData) {
     categoryId: data.categoryId,
     date: data.date,
     metric: Number(data.metric),
+    status: data.status,
     notes: data.notes || null,
   });
 }
@@ -45,6 +67,7 @@ export async function updateActivityById(id: number, data: ActivityFormData) {
       categoryId: data.categoryId,
       date: data.date,
       metric: Number(data.metric),
+      status: data.status,
       notes: data.notes || null,
     })
     .where(eq(activities.id, id));
@@ -190,4 +213,20 @@ export async function insertRecentSearch(query: string) {
 
 export async function clearRecentSearches() {
   await db.delete(recentSearches);
+}
+
+// ── Settings (key-value store in SQLite) ───────────────
+
+export async function getSetting(key: string): Promise<string | null> {
+  const rows = await db.select().from(settings).where(eq(settings.key, key));
+  return rows.length > 0 ? rows[0].value : null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const existing = await db.select().from(settings).where(eq(settings.key, key));
+  if (existing.length > 0) {
+    await db.update(settings).set({ value }).where(eq(settings.key, key));
+  } else {
+    await db.insert(settings).values({ key, value });
+  }
 }

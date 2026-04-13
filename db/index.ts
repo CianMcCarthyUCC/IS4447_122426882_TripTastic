@@ -1,7 +1,11 @@
 export { db, initializeDatabase } from './client';
-export { trips, categories, activities, targets, users, sessions, savedFilters, recentSearches } from './schema';
+export { trips, categories, activities, targets, users, sessions, savedFilters, recentSearches, settings } from './schema';
 export { seedDataIfEmpty } from './seed';
 export {
+  getAllTrips,
+  insertTrip,
+  updateTripById,
+  deleteTripById,
   getAllCategories,
   insertCategory,
   updateCategoryById,
@@ -28,4 +32,6 @@ export {
   getRecentSearches,
   insertRecentSearch,
   clearRecentSearches,
+  getSetting,
+  setSetting,
 } from './repository';

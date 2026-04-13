@@ -1,120 +1,203 @@
-import { useMemo, useCallback } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useCallback, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useActivities, useCategories, useAppTheme, useHaptics, useFilteredActivities, useSavedFilters } from '@/hooks';
+import { Ionicons } from '@expo/vector-icons';
+import { useActivities, useCategories, useAppTheme, useHaptics, useFilteredActivities, useTrips } from '@/hooks';
 import { ScreenContainer } from '@/components/layout';
 import { ActivityList } from '@/components/lists';
-import { SearchBar, FilterChips, SavedFiltersBar } from '@/components/forms';
-import { StatsRow } from '@/components/cards';
+import { SearchBar, FilterChips } from '@/components/forms';
+import { TripInfoBar } from '@/components/cards';
 import { FAB } from '@/components/buttons';
 import { EmptyState } from '@/components/feedback';
-import { Spacing } from '@/constants';
+import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
 import type { ChipOption } from '@/components/forms/FilterChips/FilterChips';
-import type { SavedFilter } from '@/hooks/useSavedFilters';
 
-/**
- * Activities tab — search, category/date filters, saved filters, stats, FAB.
- * Filter logic extracted to useFilteredActivities for reusability.
- */
 export default function IndexScreen() {
   const router = useRouter();
   const { activities } = useActivities();
   const { categories } = useCategories();
+  const { trips, currentTrip, selectTrip } = useTrips();
   const theme = useAppTheme();
   const haptics = useHaptics();
-  const { savedFilters, saveFilter, removeFilter } = useSavedFilters();
+  const [showSearch, setShowSearch] = useState(false);
+
+  const tripActivities = useMemo(
+    () => currentTrip ? activities.filter((a) => a.tripId === currentTrip.id) : activities,
+    [activities, currentTrip],
+  );
 
   const {
-    filtered, searchQuery, selectedCategory, dateRange,
-    setSearchQuery, setSelectedCategory, setDateRange,
+    filtered, searchQuery, selectedCategory,
+    setSearchQuery, setSelectedCategory,
     resetFilters, isFiltered, activeFilterCount,
-  } = useFilteredActivities(activities, categories);
+  } = useFilteredActivities(tripActivities, categories);
 
   const categoryChips = useMemo<ChipOption[]>(() => [
     { label: 'All', value: 'all' },
     ...categories.map((c) => ({ label: c.name, value: String(c.id), color: c.color })),
   ], [categories]);
 
-  const dateChips = useMemo<ChipOption[]>(() => [
-    { label: 'All', value: 'all' },
-    { label: 'Today', value: 'today' },
-    { label: 'This Week', value: 'week' },
-    { label: 'This Month', value: 'month' },
-  ], []);
-
-  const totalMinutes = useMemo(() => filtered.reduce((s, a) => s + a.metric, 0), [filtered]);
-
-  const topCategory = useMemo(() => {
-    if (filtered.length === 0) return '—';
-    const counts = new Map<number, number>();
-    for (const a of filtered) counts.set(a.categoryId, (counts.get(a.categoryId) ?? 0) + 1);
-    const topId = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-    return categories.find((c) => c.id === topId)?.name ?? '—';
-  }, [filtered, categories]);
-
-  const handleSaveFilter = useCallback(() => {
-    const name = selectedCategory !== 'all'
-      ? categories.find((c) => c.id === Number(selectedCategory))?.name ?? 'Filter'
-      : `Date: ${dateRange}`;
-    void saveFilter(name, selectedCategory !== 'all' ? 'category' : 'dateRange', selectedCategory !== 'all' ? selectedCategory : dateRange);
-    haptics.success();
-  }, [selectedCategory, dateRange, categories, saveFilter, haptics]);
-
-  const handleApplySaved = useCallback((filter: SavedFilter) => {
-    if (filter.filterType === 'category') setSelectedCategory(filter.filterValue);
-    else if (filter.filterType === 'dateRange') setDateRange(filter.filterValue as 'all' | 'today' | 'week' | 'month');
-    haptics.light();
-  }, [setSelectedCategory, setDateRange, haptics]);
-
   const searchSuggestions = useMemo(() => categories.slice(0, 4).map((c) => c.name), [categories]);
   const noResults = isFiltered && filtered.length === 0;
+  const completed = useMemo(() => filtered.filter((a) => a.status === 'completed').length, [filtered]);
 
   return (
     <ScreenContainer withTabs>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Trip Activities</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {activities.length > 0
-            ? `${activities.length} logged · ${Math.round(activities.reduce((s, a) => s + a.metric, 0) / 60)}h on your trip`
-            : 'Log what you did on your holiday — tap + to start'}
-        </Text>
-      </View>
-
-      <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search activities, notes, categories..." suggestions={searchSuggestions} />
-
-      <SavedFiltersBar filters={savedFilters} onApply={handleApplySaved} onRemove={(id) => { void removeFilter(id); haptics.light(); }} />
-
-      <FilterChips options={categoryChips} selected={selectedCategory} onSelect={setSelectedCategory} onSave={handleSaveFilter} accessibilityLabel="Filter by category" />
-      <FilterChips options={dateChips} selected={dateRange} onSelect={(v) => setDateRange(v as 'all' | 'today' | 'week' | 'month')} accessibilityLabel="Filter by date range" />
-
-      {filtered.length > 0 && (
-        <StatsRow stats={[
-          { label: 'Activities', value: String(filtered.length), icon: 'list' },
-          { label: 'Duration', value: `${totalMinutes}m`, icon: 'time' },
-          { label: 'Top Category', value: topCategory, icon: 'trophy' },
-        ]} />
+      {/* Clean header — trip name + quick actions */}
+      {currentTrip && (
+        <View style={styles.header}>
+          <Pressable
+            style={styles.tripSelector}
+            onPress={() => router.push({ pathname: '/trip/[id]', params: { id: currentTrip.id.toString() } })}
+            accessibilityLabel="View trip details"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.tripName, { color: theme.textPrimary }]}>{currentTrip.name}</Text>
+            <Text style={[styles.tripMeta, { color: theme.textSecondary }]}>
+              {currentTrip.destination} · {completed}/{filtered.length} done
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setShowSearch(!showSearch)}
+            accessibilityLabel="Toggle search"
+            accessibilityRole="button"
+          >
+            <Ionicons name={showSearch ? 'close' : 'search'} size={22} color={theme.textSecondary} />
+          </Pressable>
+        </View>
       )}
 
+      {/* Trip switcher — compact horizontal scroll */}
+      {trips.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tripScroll} contentContainerStyle={styles.tripScrollContent}>
+          {trips.map((t) => {
+            const active = currentTrip?.id === t.id;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => { selectTrip(t.id); haptics.light(); }}
+                style={[styles.tripChip, active && { borderColor: Palette.coral }]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={t.name}
+              >
+                {t.coverImage ? (
+                  <Image source={{ uri: t.coverImage }} style={styles.tripThumb} />
+                ) : (
+                  <View style={[styles.tripThumb, { backgroundColor: theme.tagBackground }]}>
+                    <Ionicons name="airplane" size={14} color={theme.textSecondary} />
+                  </View>
+                )}
+                <Text style={[styles.tripChipText, { color: active ? Palette.coral : theme.textSecondary }]} numberOfLines={1}>
+                  {t.name.split(' ')[0]}
+                </Text>
+              </Pressable>
+            );
+          })}
+          <Pressable
+            onPress={() => router.push('/trip/add')}
+            style={styles.tripChip}
+            accessibilityLabel="Add trip"
+            accessibilityRole="button"
+          >
+            <View style={[styles.tripThumb, { backgroundColor: theme.tagBackground }]}>
+              <Ionicons name="add" size={18} color={Palette.coral} />
+            </View>
+            <Text style={[styles.tripChipText, { color: theme.textSecondary }]}>New</Text>
+          </Pressable>
+        </ScrollView>
+      )}
+
+      {/* Cover image */}
+      {currentTrip?.coverImage && (
+        <Image source={{ uri: currentTrip.coverImage }} style={styles.cover} />
+      )}
+
+      {/* Collapsible search + filters */}
+      {showSearch && (
+        <>
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search activities..." suggestions={searchSuggestions} />
+          <FilterChips options={categoryChips} selected={selectedCategory} onSelect={setSelectedCategory} accessibilityLabel="Filter by category" />
+        </>
+      )}
+
+      {/* Weather/country bar — slim */}
+      {currentTrip && !showSearch && (
+        <TripInfoBar city={currentTrip.destination} country={currentTrip.country} />
+      )}
+
+      {/* Activity feed */}
       {noResults ? (
         <EmptyState
-          title="No results found"
-          message={searchQuery ? `Nothing matches "${searchQuery}". Try a different search or clear your filters.` : 'No activities match your current filters.'}
+          title="No results"
+          message={searchQuery ? `Nothing matches "${searchQuery}".` : 'No activities match your filters.'}
           suggestions={searchSuggestions}
           onSuggestionPress={setSearchQuery}
-          actionLabel={`Clear ${activeFilterCount} filter${activeFilterCount > 1 ? 's' : ''}`}
+          actionLabel="Clear filters"
           onAction={resetFilters}
         />
       ) : (
         <ActivityList activities={filtered} categories={categories} />
       )}
 
-      <FAB onPress={() => router.push('/activity/add')} accessibilityLabel="Add activity" />
+      <FAB onPress={() => router.push('/activity/add')} accessibilityLabel="Log activity" />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: Spacing.lg },
-  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, marginTop: Spacing.xs },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
+  tripSelector: {
+    flex: 1,
+  },
+  tripName: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  tripMeta: {
+    fontSize: 13,
+    marginTop: Spacing.xs,
+  },
+  tripScroll: {
+    marginBottom: Spacing.md,
+  },
+  tripScrollContent: {
+    gap: Spacing.md,
+    paddingRight: Spacing.lg,
+  },
+  tripChip: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: BorderRadius.sm,
+    borderWidth: 2,
+    padding: Spacing.xs,
+    width: 68,
+  },
+  tripThumb: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.sm,
+    height: 48,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: 48,
+  },
+  tripChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: Spacing.xs,
+    textAlign: 'center',
+  },
+  cover: {
+    borderRadius: BorderRadius.md,
+    height: 140,
+    marginBottom: Spacing.md,
+    width: '100%',
+    ...Shadows.sm,
+  },
 });
