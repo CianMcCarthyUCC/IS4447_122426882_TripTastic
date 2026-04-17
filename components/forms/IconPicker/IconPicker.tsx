@@ -76,7 +76,8 @@ const IconSwatch = memo(function IconSwatch({ icon, selected, accentColor, theme
         animatedStyle,
       ]}
       accessibilityRole="radio"
-      accessibilityLabel={icon}
+      accessibilityLabel={`Icon ${icon}`}
+      accessibilityHint="Selects this icon"
       accessibilityState={{ selected }}
     >
       <Ionicons

@@ -19,15 +19,26 @@ export default function BarChartCard({ title, data }: Props) {
 
   if (data.length === 0) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+      <View
+        style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+        accessibilityRole="image"
+        accessibilityLabel={`${title} bar chart — no data`}
+      >
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
         <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
       </View>
     );
   }
 
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const peak = data.reduce((a, b) => (b.value > a.value ? b : a), data[0]);
+
   return (
-    <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+    <View
+      style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+      accessibilityRole="image"
+      accessibilityLabel={`${title} bar chart — ${data.length} bars, total ${total}, highest ${peak.label} at ${peak.value}`}
+    >
       <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
       <View style={styles.chartWrapper}>
         <BarChart

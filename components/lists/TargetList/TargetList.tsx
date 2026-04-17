@@ -3,6 +3,7 @@ import { FlatList } from 'react-native';
 import { TargetCard } from '@/components/cards';
 import { EmptyState } from '@/components/feedback';
 import { SharedStyles } from '@/constants';
+import { useCategoryLookup } from '@/hooks';
 import { computeTargetCurrentValue } from '@/utils/progressHelpers';
 import type { Target, Category, Activity } from '@/types';
 
@@ -13,10 +14,7 @@ type Props = {
 };
 
 export default function TargetList({ targets, categories, activities }: Props) {
-  const categoryMap = useMemo(
-    () => new Map(categories.map((c) => [c.id, c])),
-    [categories],
-  );
+  const categoryMap = useCategoryLookup(categories);
 
   const currentValues = useMemo(
     () => new Map(targets.map((t) => [t.id, computeTargetCurrentValue(t, activities)])),

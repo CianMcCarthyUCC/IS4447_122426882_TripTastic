@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTargets, useCategories, useActivities, useDeleteWithConfirm } from '@/hooks';
-import { PrimaryButton, ButtonGroup } from '@/components/buttons';
+import { EntityActions } from '@/components/buttons';
 import { InfoTag } from '@/components/tags';
-import { ProgressBar, ConfirmDialog, Toast } from '@/components/feedback';
+import { ProgressBar, ConfirmDialog, Toast, NotFoundFallback } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
 import { Colors, Spacing, BorderRadius, SharedStyles } from '@/constants';
 import { computeProgress, computeTargetCurrentValue } from '@/utils/progressHelpers';
@@ -22,12 +22,7 @@ export default function TargetDetail() {
     useDeleteWithConfirm(() => deleteTarget(Number(id)), 'Goal deleted');
 
   if (!target) {
-    return (
-      <ScreenContainer>
-        <ScreenHeader title="Not Found" subtitle="This goal may have been deleted." />
-        <PrimaryButton label="Go Back" variant="secondary" onPress={() => router.back()} />
-      </ScreenContainer>
-    );
+    return <NotFoundFallback subtitle="This goal may have been deleted." onBack={() => router.back()} />;
   }
 
   const category = findCategoryById(target.categoryId);
@@ -59,11 +54,12 @@ export default function TargetDetail() {
         {progress.met && <Text style={styles.metText}>You've hit your goal exactly!</Text>}
       </View>
 
-      <ButtonGroup>
-        <PrimaryButton label="Edit" onPress={() => router.push({ pathname: '/target/[id]/edit', params: { id } })} />
-        <PrimaryButton label="Delete" loading={loading} variant="danger" onPress={showConfirm} />
-        <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />
-      </ButtonGroup>
+      <EntityActions
+        onEdit={() => router.push({ pathname: '/target/[id]/edit', params: { id } })}
+        onDelete={showConfirm}
+        onBack={() => router.back()}
+        loading={loading}
+      />
 
       <ConfirmDialog
         visible={confirmVisible}

@@ -17,3 +17,4 @@ export { useDeleteWithConfirm } from './useDeleteWithConfirm';
 export { useGoalNotifications } from './useGoalNotifications';
 export { useTrips } from './useTrips';
 export { useTripForm } from './useTripForm';
+export { useCategoryLookup } from './useCategoryLookup';

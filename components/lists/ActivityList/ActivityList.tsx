@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { FlatList } from 'react-native';
 import { ActivityCard } from '@/components/cards';
 import { EmptyState } from '@/components/feedback';
 import { SharedStyles } from '@/constants';
+import { useCategoryLookup } from '@/hooks';
 import type { Activity, Category } from '@/types';
 
 type Props = {
@@ -11,10 +12,7 @@ type Props = {
 };
 
 export default function ActivityList({ activities, categories }: Props) {
-  const categoryMap = useMemo(
-    () => new Map(categories.map((c) => [c.id, c])),
-    [categories],
-  );
+  const categoryMap = useCategoryLookup(categories);
 
   const renderItem = useCallback(
     ({ item }: { item: Activity }) => (

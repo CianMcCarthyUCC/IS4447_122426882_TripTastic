@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Shadows } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -114,12 +114,12 @@ function SearchBar({
                 </Pressable>
               </View>
               {recents.map((q) => (
-                <Animated.View key={q} entering={SlideInDown.springify().damping(16)}>
+                <View key={q}>
                   <Pressable style={styles.dropdownItem} onPress={() => handleSuggestionPress(q)} accessibilityLabel={`Search for ${q}`} accessibilityRole="button">
                     <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
                     <Text style={[styles.dropdownItemText, { color: theme.textPrimary }]}>{q}</Text>
                   </Pressable>
-                </Animated.View>
+                </View>
               ))}
             </>
           )}

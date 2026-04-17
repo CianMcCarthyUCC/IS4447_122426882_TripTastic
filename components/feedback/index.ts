@@ -3,3 +3,4 @@ export { ConfirmDialog } from './ConfirmDialog';
 export { Toast } from './Toast';
 export { ProgressBar } from './ProgressBar';
 export { PlaneLoader } from './PlaneLoader';
+export { NotFoundFallback } from './NotFoundFallback';

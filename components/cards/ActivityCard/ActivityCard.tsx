@@ -32,7 +32,10 @@ function ActivityCard({ activity, category }: Props) {
           <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
         )}
         <Text style={[styles.date, { color: theme.textPrimary }]}>{activity.date}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: activity.status === 'completed' ? theme.successAction : theme.accentAction }]}>
+        <View
+          style={[styles.statusBadge, { backgroundColor: activity.status === 'completed' ? theme.successAction : theme.accentAction }]}
+          accessibilityLabel={`${activity.status === 'completed' ? 'Completed' : 'Planned'} activity`}
+        >
           <Text style={styles.statusText}>{activity.status === 'completed' ? '✓ Done' : '◇ Planned'}</Text>
         </View>
       </View>

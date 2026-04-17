@@ -1,6 +1,6 @@
 // Barrel export — import any component from '@/components'
-export { PrimaryButton, ButtonGroup, FAB } from './buttons';
-export { CategoryCard, ActivityCard, TargetCard, StatCard, StatsRow, SummaryBanner, StreakCard, TripInfoBar } from './cards';
+export { PrimaryButton, ButtonGroup, FAB, EntityActions } from './buttons';
+export { CategoryCard, ActivityCard, TargetCard, StatCard, StatsRow, SummaryBanner, StreakCard, TripInfoBar, TripCard, SettingsSection, SettingToggle } from './cards';
 export { BarChartCard, LineChartCard, ProgressCard } from './charts';
 export { EmptyState, ConfirmDialog, Toast, ProgressBar, PlaneLoader } from './feedback';
 export { FormField, DateField, Dropdown, CategoryPicker, ColorPicker, IconPicker, ImagePicker, CategoryForm, ActivityForm, PeriodPicker, TargetForm, ViewModeToggle, PillToggle, SearchBar, FilterChips, SavedFiltersBar, TripPicker } from './forms';

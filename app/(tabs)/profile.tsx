@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth, useToast, useHaptics, useAppTheme, useActivities, useTargets, useCategories } from '@/hooks';
 import { useThemeControl } from '@/hooks/useAppTheme';
 import { PrimaryButton, ButtonGroup } from '@/components/buttons';
@@ -9,7 +8,8 @@ import { InfoTag } from '@/components/tags';
 import { ConfirmDialog, Toast } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
 import { ProfileIcon } from '@/components/icons';
-import { Spacing, BorderRadius, Shadows } from '@/constants';
+import { SettingsSection, SettingToggle } from '@/components/cards';
+import { Spacing } from '@/constants';
 import { exportDataAsCsv } from '@/utils/csvExport';
 import { scheduleDailyReminder, cancelAllNotifications, requestNotificationPermissions } from '@/utils/notifications';
 
@@ -114,69 +114,51 @@ export default function ProfileScreen() {
         </View>
 
         {/* Account info */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Account</Text>
+        <SettingsSection title="Account">
           <View style={styles.tagRow}>
             <InfoTag label="Email" value={user.email} />
           </View>
           <View style={styles.tagRow}>
             <InfoTag label="Member since" value={new Date(user.createdAt).toLocaleDateString()} />
           </View>
-        </View>
+        </SettingsSection>
 
         {/* Appearance */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Appearance</Text>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLabel}>
-              <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={theme.accentAction} />
-              <Text style={[styles.settingText, { color: theme.textPrimary }]}>Dark Mode</Text>
-            </View>
-            <Switch
-              value={isDark}
-              onValueChange={handleThemeToggle}
-              trackColor={{ false: theme.cardBorder, true: theme.accentAction }}
-              accessibilityLabel="Toggle dark mode"
-            />
-          </View>
-          <Text style={[styles.settingHint, { color: theme.textSecondary }]}>
-            Currently: {mode === 'system' ? 'Following device' : mode}
-          </Text>
-        </View>
+        <SettingsSection title="Appearance">
+          <SettingToggle
+            icon={isDark ? 'moon' : 'sunny'}
+            label="Dark Mode"
+            hint={`Currently: ${mode === 'system' ? 'Following device' : mode}`}
+            value={isDark}
+            onValueChange={handleThemeToggle}
+            accessibilityLabel="Toggle dark mode"
+          />
+        </SettingsSection>
 
         {/* Notifications */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Notifications</Text>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLabel}>
-              <Ionicons name="notifications-outline" size={20} color={theme.accentAction} />
-              <Text style={[styles.settingText, { color: theme.textPrimary }]}>Daily Reminders</Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleNotificationToggle}
-              trackColor={{ false: theme.cardBorder, true: theme.accentAction }}
-              accessibilityLabel="Toggle daily reminders"
-            />
-          </View>
-          <Text style={[styles.settingHint, { color: theme.textSecondary }]}>
-            Get reminded at 8pm to log your activities
-          </Text>
-        </View>
+        <SettingsSection title="Notifications">
+          <SettingToggle
+            icon="notifications-outline"
+            label="Daily Reminders"
+            hint="Get reminded at 8pm to log your activities"
+            value={notificationsEnabled}
+            onValueChange={handleNotificationToggle}
+            accessibilityLabel="Toggle daily reminders"
+          />
+        </SettingsSection>
 
         {/* Data */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Data</Text>
+        <SettingsSection title="Data">
           <PrimaryButton
             label="Export Data (CSV)"
             variant="secondary"
             loading={exporting}
             onPress={handleExport}
           />
-          <Text style={[styles.settingHint, { color: theme.textSecondary, marginTop: Spacing.sm }]}>
+          <Text style={[styles.dataHint, { color: theme.textSecondary }]}>
             Export your activities and goals as a CSV file
           </Text>
-        </View>
+        </SettingsSection>
 
         {/* Account actions */}
         <ButtonGroup>
@@ -187,7 +169,6 @@ export default function ProfileScreen() {
             variant="danger"
             onPress={() => { haptics.warning(); setConfirmVisible(true); }}
           />
-          <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />
         </ButtonGroup>
 
         <View style={styles.bottomSpacer} />
@@ -210,40 +191,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
-  section: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginBottom: Spacing.lg,
-    padding: Spacing.lg,
-    ...Shadows.sm,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: Spacing.md,
-  },
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: Spacing.sm,
   },
-  settingRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  settingLabel: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  settingText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  settingHint: {
+  dataHint: {
     fontSize: 13,
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   bottomSpacer: {
     height: Spacing.xxl,

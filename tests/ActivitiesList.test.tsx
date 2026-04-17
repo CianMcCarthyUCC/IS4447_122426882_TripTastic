@@ -46,22 +46,10 @@ jest.mock('@/hooks/useAppTheme', () => ({
   useThemeControl: () => ({ mode: 'light', isDark: false, setMode: jest.fn() }),
 }));
 
-jest.mock('@/hooks/useSavedFilters', () => ({
-  useSavedFilters: () => ({ savedFilters: [], saveFilter: jest.fn(), removeFilter: jest.fn() }),
-}));
-
-jest.mock('@/hooks/useFilteredData', () => ({
-  useFilteredActivities: (activities: any) => ({
-    filtered: activities,
-    searchQuery: '', selectedCategory: 'all', dateRange: 'all',
-    setSearchQuery: jest.fn(), setSelectedCategory: jest.fn(), setDateRange: jest.fn(),
-    resetFilters: jest.fn(), isFiltered: false, activeFilterCount: 0,
-  }),
-  useTextFilter: (items: any) => ({ filtered: items, searchQuery: '', setSearchQuery: jest.fn(), isFiltered: false }),
-}));
-
-jest.mock('@/utils/weatherApi', () => ({ getWeather: jest.fn().mockResolvedValue({ city: 'Rome', temp: 24, description: 'clear', icon: '', humidity: 50, windSpeed: 5 }) }));
-jest.mock('@/utils/countriesApi', () => ({ getCountryInfo: jest.fn().mockResolvedValue({ name: 'Italy', capital: 'Rome', currency: 'Euro', language: 'Italian', timezone: 'CET', flag: '', population: 60000000 }) }));
+jest.mock('expo-linear-gradient', () => {
+  const { View } = require('react-native');
+  return { LinearGradient: View };
+});
 
 import IndexScreen from '@/app/(tabs)/index';
 
@@ -69,9 +57,9 @@ const mockTrip = { id: 1, name: 'Summer in Italy', destination: 'Rome', country:
 const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metric: 180, status: 'completed' as const, notes: 'Colosseum tour' };
 const mockCategory = { id: 1, name: 'Sightseeing', color: '#3B82F6', icon: 'eye' };
 
-describe('IndexScreen', () => {
-  it('renders the seeded activity data on the list screen', () => {
-    const { getByText, getAllByText } = render(
+describe('Trips Screen', () => {
+  it('renders the seeded trip on the home screen', () => {
+    const { getAllByText } = render(
       <TripContext.Provider value={{ trips: [mockTrip], setTrips: jest.fn(), currentTrip: mockTrip, setCurrentTrip: jest.fn() }}>
         <CategoryContext.Provider value={{ categories: [mockCategory], setCategories: jest.fn() }}>
           <ActivityContext.Provider value={{ activities: [mockActivity], setActivities: jest.fn() }}>
@@ -81,7 +69,7 @@ describe('IndexScreen', () => {
       </TripContext.Provider>
     );
 
-    expect(getByText('2026-07-02')).toBeTruthy();
     expect(getAllByText('Summer in Italy').length).toBeGreaterThan(0);
+    expect(getAllByText('My Trips').length).toBeGreaterThan(0);
   });
 });

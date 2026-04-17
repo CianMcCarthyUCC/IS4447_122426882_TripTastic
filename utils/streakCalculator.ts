@@ -1,4 +1,4 @@
-import type { Activity, Target } from '@/types';
+import type { Activity, Category, Target } from '@/types';
 
 export type StreakInfo = {
   categoryId: number;
@@ -15,7 +15,7 @@ export type StreakInfo = {
 export function computeStreaks(
   activities: Activity[],
   targets: Target[],
-  categoryNames: Map<number, string>,
+  categoryLookup: Map<number, Category>,
 ): StreakInfo[] {
   // Group activities by categoryId → sorted unique dates
   const categoryDates = new Map<number, string[]>();
@@ -56,7 +56,7 @@ export function computeStreaks(
 
     results.push({
       categoryId,
-      categoryName: categoryNames.get(categoryId) ?? 'Unknown',
+      categoryName: categoryLookup.get(categoryId)?.name ?? 'Unknown',
       currentStreak,
       longestStreak,
       unit: 'days',

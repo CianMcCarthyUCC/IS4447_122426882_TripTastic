@@ -4,4 +4,6 @@ export {
   TargetsIcon,
   InsightsIcon,
   ProfileIcon,
+  TripsIcon,
+  ExploreIcon,
 } from './TabIcons';
