@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useInsightsData, useActivities, useCategories, useTargets, useAppTheme } from '@/hooks';
-import { ScreenContainer } from '@/components/layout';
+import { useInsightsData, useActivities, useCategories, useTargets, useAppTheme, useCategoryLookup } from '@/hooks';
+import { ScreenContainer, ScreenHeader } from '@/components/layout';
 import { ViewModeToggle } from '@/components/forms';
 import { BarChartCard, LineChartCard, ProgressCard } from '@/components/charts';
 import { StatsRow, StreakCard } from '@/components/cards';
@@ -26,24 +26,16 @@ export default function InsightsScreen() {
     [activities],
   );
 
-  const categoryNames = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.name])),
-    [categories],
-  );
+  const categoryLookup = useCategoryLookup(categories);
 
   const streaks = useMemo(
-    () => computeStreaks(activities, targets, categoryNames),
-    [activities, targets, categoryNames],
+    () => computeStreaks(activities, targets, categoryLookup),
+    [activities, targets, categoryLookup],
   );
 
   return (
     <ScreenContainer withTabs>
-      <View style={SharedStyles.tabHeader}>
-        <Text style={[SharedStyles.tabTitle, { color: theme.textPrimary }]}>Insights</Text>
-        <Text style={[SharedStyles.tabSubtitle, { color: theme.textSecondary }]}>
-          Your trip at a glance
-        </Text>
-      </View>
+      <ScreenHeader title="Insights" subtitle="Your trip at a glance" />
 
       <StatsRow stats={[
         { label: 'Total', value: `${totalMinutes}m`, icon: 'time' },
@@ -58,7 +50,7 @@ export default function InsightsScreen() {
         <LineChartCard title="Cumulative Trend" data={lineChartData} />
         <BarChartCard title="By Category" data={categoryBarData} />
 
-        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Target Progress</Text>
+        <Text style={[SharedStyles.sectionTitle, { color: theme.textPrimary }]}>Target Progress</Text>
         {progressData.length > 0 ? (
           progressData.map((p) => (
             <ProgressCard
@@ -80,7 +72,7 @@ export default function InsightsScreen() {
         )}
 
         {/* Streak tracking */}
-        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Activity Streaks</Text>
+        <Text style={[SharedStyles.sectionTitle, { color: theme.textPrimary }]}>Activity Streaks</Text>
         {streaks.length > 0 ? (
           streaks.map((s) => <StreakCard key={s.categoryId} streak={s} />)
         ) : (
@@ -98,12 +90,6 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: Spacing.md,
-    marginTop: Spacing.sm,
-  },
   bottomSpacer: {
     height: Spacing.xxl,
   },

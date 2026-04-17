@@ -67,7 +67,8 @@ const ColorSwatch = memo(function ColorSwatch({ color, selected, onPress }: Swat
       onPress={onPress}
       style={[styles.swatch, { backgroundColor: color, borderColor: Palette.white }, animatedStyle]}
       accessibilityRole="radio"
-      accessibilityLabel={color}
+      accessibilityLabel={`Colour ${color}`}
+      accessibilityHint="Selects this colour"
       accessibilityState={{ selected }}
     />
   );

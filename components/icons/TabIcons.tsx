@@ -56,6 +56,27 @@ export function InsightsIcon({ size = 24, color = Palette.black }: IconProps) {
   );
 }
 
+export function TripsIcon({ size = 24, color = Palette.black }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="4" y="7" width="16" height="12" rx="2" stroke={color} strokeWidth="1.8" />
+      <Path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke={color} strokeWidth="1.8" />
+      <Line x1="4" y1="13" x2="20" y2="13" stroke={color} strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+export function ExploreIcon({ size = 24, color = Palette.black }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8" />
+      <Path d="M12 3c-2.5 4-2.5 14 0 18" stroke={color} strokeWidth="1.8" />
+      <Path d="M12 3c2.5 4 2.5 14 0 18" stroke={color} strokeWidth="1.8" />
+      <Line x1="3" y1="12" x2="21" y2="12" stroke={color} strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
 export function ProfileIcon({ size = 24, color = Palette.black }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

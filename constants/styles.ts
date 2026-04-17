@@ -130,18 +130,12 @@ export const SharedStyles = StyleSheet.create({
   pillTextSelected: {
     color: Colors.textButton,
   },
-  // Tab screen headers
-  tabHeader: {
-    marginBottom: Spacing.lg,
-  },
-  tabTitle: {
-    fontSize: 24,
-    fontWeight: '800' as const,
-    letterSpacing: -0.5,
-  },
-  tabSubtitle: {
-    fontSize: 14,
-    marginTop: Spacing.xs,
+  // In-screen section heading (between content blocks)
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    marginBottom: Spacing.md,
+    marginTop: Spacing.md,
   },
   // Card header row (shared across all card types)
   cardHeaderRow: {

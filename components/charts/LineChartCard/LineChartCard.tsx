@@ -20,15 +20,27 @@ export default function LineChartCard({ title, data, color }: Props) {
 
   if (data.length === 0) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+      <View
+        style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+        accessibilityRole="image"
+        accessibilityLabel={`${title} line chart — no data`}
+      >
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
         <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
       </View>
     );
   }
 
+  const first = data[0].value;
+  const last = data[data.length - 1].value;
+  const trend = last > first ? 'trending up' : last < first ? 'trending down' : 'flat';
+
   return (
-    <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+    <View
+      style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+      accessibilityRole="image"
+      accessibilityLabel={`${title} line chart — ${data.length} points, ${trend} from ${first} to ${last}`}
+    >
       <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
       <View style={styles.chartWrapper}>
         <LineChart

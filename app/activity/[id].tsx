@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useActivities, useCategories, useDeleteWithConfirm } from '@/hooks';
-import { PrimaryButton, ButtonGroup } from '@/components/buttons';
+import { EntityActions } from '@/components/buttons';
 import { InfoTag } from '@/components/tags';
-import { ConfirmDialog, Toast } from '@/components/feedback';
+import { ConfirmDialog, Toast, NotFoundFallback } from '@/components/feedback';
 import { ScreenHeader, ScreenContainer } from '@/components/layout';
 import { SharedStyles } from '@/constants';
 
@@ -19,12 +19,7 @@ export default function ActivityDetail() {
     useDeleteWithConfirm(() => deleteActivity(Number(id)), 'Activity deleted');
 
   if (!activity) {
-    return (
-      <ScreenContainer>
-        <ScreenHeader title="Not Found" subtitle="This activity may have been deleted." />
-        <PrimaryButton label="Go Back" variant="secondary" onPress={() => router.back()} />
-      </ScreenContainer>
-    );
+    return <NotFoundFallback subtitle="This activity may have been deleted." onBack={() => router.back()} />;
   }
 
   const category = findCategoryById(activity.categoryId);
@@ -46,11 +41,12 @@ export default function ActivityDetail() {
         </View>
       ) : null}
 
-      <ButtonGroup>
-        <PrimaryButton label="Edit" onPress={() => router.push({ pathname: '/activity/[id]/edit', params: { id } })} />
-        <PrimaryButton label="Delete" loading={loading} variant="danger" onPress={showConfirm} />
-        <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />
-      </ButtonGroup>
+      <EntityActions
+        onEdit={() => router.push({ pathname: '/activity/[id]/edit', params: { id } })}
+        onDelete={showConfirm}
+        onBack={() => router.back()}
+        loading={loading}
+      />
 
       <ConfirmDialog
         visible={confirmVisible}

@@ -27,7 +27,16 @@ function initializeDatabase() {
   db.run(sql`CREATE TABLE IF NOT EXISTS targets (id INTEGER PRIMARY KEY AUTOINCREMENT, trip_id INTEGER, category_id INTEGER NOT NULL, target_value INTEGER NOT NULL, period TEXT NOT NULL DEFAULT 'weekly')`);
 }
 
+// Migrate existing trips that have empty destination/country
+function migrateData() {
+  try {
+    db.run(sql`UPDATE trips SET destination = 'Rome', country = 'Italy', cover_image = 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80' WHERE id = 1 AND (destination = '' OR destination IS NULL)`);
+    db.run(sql`UPDATE trips SET destination = 'Paris', country = 'France', cover_image = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' WHERE id = 2 AND (destination = '' OR destination IS NULL)`);
+  } catch { /* ignore */ }
+}
+
 // Run immediately when this module is first imported
 initializeDatabase();
+migrateData();
 
 export { initializeDatabase };

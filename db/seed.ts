@@ -16,8 +16,8 @@ export async function seedDataIfEmpty() {
 
   // Seed default trips
   await db.insert(trips).values([
-    { name: 'Summer in Italy', destination: 'Rome', country: 'Italy', startDate: '2026-07-01', endDate: '2026-07-14' },
-    { name: 'Weekend in Paris', destination: 'Paris', country: 'France', startDate: '2026-08-15', endDate: '2026-08-18' },
+    { name: 'Summer in Italy', destination: 'Rome', country: 'Italy', coverImage: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80', startDate: '2026-07-01', endDate: '2026-07-14' },
+    { name: 'Weekend in Paris', destination: 'Paris', country: 'France', coverImage: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80', startDate: '2026-08-15', endDate: '2026-08-18' },
   ]);
 
   // Seed sample activities

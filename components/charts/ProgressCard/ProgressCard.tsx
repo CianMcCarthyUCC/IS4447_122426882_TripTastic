@@ -32,7 +32,7 @@ function ProgressCard({ categoryName, categoryColor, current, target, period }: 
         progress.exceeded && { borderColor: theme.dangerAction, borderWidth: 2 },
       ]}
       accessibilityRole="summary"
-      accessibilityLabel={`${categoryName} target: ${progress.percent}% complete`}
+      accessibilityLabel={`${categoryName} ${period} target: ${current} of ${target}, ${progress.percent}% complete${progress.exceeded ? ', exceeded' : ''}`}
     >
       <View style={styles.header}>
         <View style={[SharedStyles.colorDot, { backgroundColor: categoryColor }]} />

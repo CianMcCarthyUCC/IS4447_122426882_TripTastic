@@ -5,9 +5,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useAuthContext } from '@/context';
 import { useAppTheme, useThemeProvider, ThemeContext } from '@/hooks/useAppTheme';
 
-/**
- * Root layout — wraps app in GestureHandlerRootView, ThemeContext, and AppProvider.
- */
 export default function RootLayout() {
   const themeCtx = useThemeProvider();
 
@@ -30,15 +27,10 @@ function AuthGuard() {
 
   useEffect(() => {
     if (isLoading) return;
-
     const inAuthGroup = segments[0] === '(auth)';
     const onAuthScreen = inAuthGroup && (segments[1] === 'login' || segments[1] === 'register');
-
-    if (!isAuthenticated && !onAuthScreen) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
+    if (!isAuthenticated && !onAuthScreen) router.replace('/(auth)/login');
+    else if (isAuthenticated && inAuthGroup) router.replace('/(tabs)');
   }, [isAuthenticated, isLoading, segments, router]);
 
   return (
@@ -52,9 +44,8 @@ function AuthGuard() {
     >
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="profile" options={{ title: 'Profile', headerBackTitle: 'Back' }} />
       <Stack.Screen name="trip/add" options={{ title: 'New Trip', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="trip/[id]" options={{ title: 'Trip Details', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="trip/[id]" options={{ title: 'Trip', headerBackTitle: 'Trips' }} />
       <Stack.Screen name="activity/add" options={{ title: 'Log Activity', headerBackTitle: 'Back' }} />
       <Stack.Screen name="activity/[id]" options={{ title: 'Activity', headerBackTitle: 'Back' }} />
       <Stack.Screen name="activity/[id]/edit" options={{ title: 'Edit Activity', headerBackTitle: 'Back' }} />
@@ -69,7 +60,5 @@ function AuthGuard() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
+  root: { flex: 1 },
 });

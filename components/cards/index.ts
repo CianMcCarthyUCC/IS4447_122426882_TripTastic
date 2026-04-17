@@ -6,3 +6,6 @@ export { StatsRow } from './StatsRow';
 export { SummaryBanner } from './SummaryBanner';
 export { StreakCard } from './StreakCard';
 export { TripInfoBar } from './TripInfoBar';
+export { TripCard } from './TripCard';
+export { SettingsSection } from './SettingsSection';
+export { SettingToggle } from './SettingToggle';
