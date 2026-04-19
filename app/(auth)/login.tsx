@@ -51,7 +51,11 @@ export default function LoginScreen() {
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
         <AuthHero tagline="Plan, track, and relive your holidays" />
         <ScreenHeader title="Login" subtitle="Sign in to your account" />
 

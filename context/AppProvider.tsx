@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useMountedRef } from '@/hooks/useMountedRef';
 import type { ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
@@ -85,8 +85,12 @@ export default function AppProvider({ children }: Props) {
   );
 }
 
-/** Renders inside all providers so it can access every context. */
-function GoalNotificationWatcher() {
+/**
+ * Renders inside all providers so it can access every context. Wrapped in
+ * `memo` because it takes no props and produces no UI — every provider-value
+ * churn above it would otherwise re-run the hook body for free.
+ */
+const GoalNotificationWatcher = memo(function GoalNotificationWatcher() {
   useGoalNotifications();
   return null;
-}
+});

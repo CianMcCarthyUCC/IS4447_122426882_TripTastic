@@ -43,9 +43,13 @@ export default function TargetDetail() {
       <ScreenHeader title={category?.name ?? 'Goal'} subtitle={`${target.period} goal`} />
 
       <View style={SharedStyles.tagRow}>
-        <InfoTag label="Target" value={`${target.targetValue} min`} />
-        <InfoTag label="Period" value={target.period} />
-        <InfoTag label="Scope" value={target.tripId ? 'This Trip' : 'All Trips'} />
+        <InfoTag icon="flag-outline" label="Target" value={`${target.targetValue} min`} />
+        <InfoTag icon="calendar-outline" label="Period" value={target.period} />
+        <InfoTag
+          icon={target.tripId ? 'airplane-outline' : 'earth-outline'}
+          label="Scope"
+          value={target.tripId ? 'This Trip' : 'All Trips'}
+        />
       </View>
 
       <View style={styles.progressSection}>

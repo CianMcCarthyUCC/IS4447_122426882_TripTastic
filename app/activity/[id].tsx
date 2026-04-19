@@ -30,14 +30,18 @@ export default function ActivityDetail() {
       <ScreenHeader title={activity.date} subtitle="Trip activity details" />
 
       <View style={SharedStyles.tagRow}>
-        <InfoTag label="Duration" value={`${activity.metric} min`} />
-        <InfoTag label="Category" value={category?.name ?? 'Uncategorised'} />
-        <InfoTag label="Status" value={activity.status === 'completed' ? 'Completed' : 'Planned'} />
+        <InfoTag icon="time-outline" label="Duration" value={`${activity.metric} min`} />
+        <InfoTag icon="pricetag-outline" label="Category" value={category?.name ?? 'Uncategorised'} />
+        <InfoTag
+          icon={activity.status === 'completed' ? 'checkmark-circle-outline' : 'ellipse-outline'}
+          label="Status"
+          value={activity.status === 'completed' ? 'Completed' : 'Planned'}
+        />
       </View>
 
       {activity.notes ? (
         <View style={SharedStyles.tagRow}>
-          <InfoTag label="Notes" value={activity.notes} />
+          <InfoTag icon="document-text-outline" label="Notes" value={activity.notes} />
         </View>
       ) : null}
 

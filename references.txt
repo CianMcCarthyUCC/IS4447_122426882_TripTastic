@@ -20,16 +20,6 @@ Libraries & Frameworks:
 - expo-haptics (https://docs.expo.dev/versions/latest/sdk/haptics/) — haptic feedback
 - @expo/vector-icons / Ionicons (https://icons.expo.fyi) — icon library
 
-Animations (Lottie):
-- lottie-react-native (https://github.com/lottie-react-native/lottie-react-native) — Lottie animation player for React Native
-- Lottie by Airbnb (https://github.com/airbnb/lottie-web) — open-source animation rendering library
-- Plane loading animation — custom Lottie JSON, inspired by:
-  - LottieFiles free airplane animations (https://lottiefiles.com/free-animations/airplane-loading)
-  - IconScout plane loading references (https://iconscout.com/lottie-animations/plane-loading)
-  - Licensed under Lottie Simple License (https://lottiefiles.com/page/license)
-- Success checkmark animation — custom Lottie JSON
-- Empty state search animation — custom Lottie JSON
-
 Destination Photos:
 - Unsplash API (https://unsplash.com/developers) — free travel photos by destination
   API key stored in .env (EXPO_PUBLIC_UNSPLASH_ACCESS_KEY), not committed to git

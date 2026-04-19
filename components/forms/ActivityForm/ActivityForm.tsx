@@ -17,6 +17,8 @@ type Props = {
   categories: Category[];
   error?: string;
   loading?: boolean;
+  /** Optional — when provided, shows a "Pick a place" button that opens the POI picker. */
+  onPickPlace?: () => void;
 };
 
 const STATUS_OPTIONS = [
@@ -33,6 +35,7 @@ export default function ActivityForm({
   categories,
   error,
   loading = false,
+  onPickPlace,
 }: Props) {
   const isIncomplete = !formData.date || !formData.metric || !formData.categoryId;
 
@@ -65,6 +68,18 @@ export default function ActivityForm({
           keyboardType="numeric"
           accessibilityLabel="Duration in minutes"
         />
+
+        {onPickPlace ? (
+          <View style={SharedStyles.buttonSpacing}>
+            <PrimaryButton
+              label="Pick a place"
+              variant="secondary"
+              compact
+              onPress={onPickPlace}
+              accessibilityLabel="Pick a place from nearby points of interest"
+            />
+          </View>
+        ) : null}
 
         <FormField
           label="Notes"

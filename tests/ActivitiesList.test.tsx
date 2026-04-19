@@ -3,6 +3,7 @@ import { render } from '@testing-library/react-native';
 import { ActivityContext } from '@/context/ActivityContext';
 import { CategoryContext } from '@/context/CategoryContext';
 import { TripContext } from '@/context/TripContext';
+import { TargetContext } from '@/context/TargetContext';
 
 jest.mock('@/db/client', () => ({
   db: {
@@ -18,7 +19,10 @@ jest.mock('expo-router', () => ({
 
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
-  return { SafeAreaView: View };
+  return {
+    SafeAreaView: View,
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  };
 });
 
 jest.mock('expo-notifications', () => ({
@@ -54,7 +58,7 @@ jest.mock('expo-linear-gradient', () => {
 import IndexScreen from '@/app/(tabs)/index';
 
 const mockTrip = { id: 1, name: 'Summer in Italy', destination: 'Rome', country: 'Italy', coverImage: null, startDate: '2026-07-01', endDate: '2026-07-14' };
-const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metric: 180, status: 'completed' as const, notes: 'Colosseum tour' };
+const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metric: 180, status: 'completed' as const, notes: 'Colosseum tour', isFavourite: false };
 const mockCategory = { id: 1, name: 'Sightseeing', color: '#3B82F6', icon: 'eye' };
 
 describe('Trips Screen', () => {
@@ -63,13 +67,15 @@ describe('Trips Screen', () => {
       <TripContext.Provider value={{ trips: [mockTrip], setTrips: jest.fn(), currentTrip: mockTrip, setCurrentTrip: jest.fn() }}>
         <CategoryContext.Provider value={{ categories: [mockCategory], setCategories: jest.fn() }}>
           <ActivityContext.Provider value={{ activities: [mockActivity], setActivities: jest.fn() }}>
-            <IndexScreen />
+            <TargetContext.Provider value={{ targets: [], setTargets: jest.fn() }}>
+              <IndexScreen />
+            </TargetContext.Provider>
           </ActivityContext.Provider>
         </CategoryContext.Provider>
       </TripContext.Provider>
     );
 
     expect(getAllByText('Summer in Italy').length).toBeGreaterThan(0);
-    expect(getAllByText('My Trips').length).toBeGreaterThan(0);
+    expect(getAllByText('Planned Trips').length).toBeGreaterThan(0);
   });
 });

@@ -12,7 +12,7 @@ export type ProgressData = {
 
 /**
  * Pure function that computes all progress display values.
- * Used by TargetCard, ProgressCard, and target detail screen.
+ * Used by TargetCard and the target detail screen.
  */
 export function computeProgress(
   current: number,

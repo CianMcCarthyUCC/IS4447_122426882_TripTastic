@@ -5,13 +5,29 @@
  */
 
 export const Palette = {
-  // Core brand
-  navy: '#0A2463',
-  navyLight: '#1B3A7B',
+  // Core brand.
+  //
+  // `navy` is the deep anchor colour used for the top header, primary
+  // buttons, outline text on secondary buttons, and tag values. It used
+  // to be a literal navy blue (#0A2463) but now sits on the same warm
+  // yellow hue axis as the app's cream accent — effectively a very dark
+  // cream. This keeps dark surfaces on-palette with any warm elements
+  // elsewhere in the UI without introducing a second hue family.
+  navy: '#2E2910',
+  navyLight: '#4A4320',
   skyBlue: '#166AD2',
   coral: '#FE7D50',
   coralDark: '#E56A3E',
   gold: '#FFB84D',
+  // AI accent — violet reserved for AI-generated surfaces (currently the
+  // Gemini travel-guide card). Kept distinct from the navy/coral CTA pair
+  // so "AI" never competes with primary user actions for visual weight.
+  aiViolet: '#8B5CF6',
+  // Cream — pale yellow surface used as the source for the dark `navy`
+  // above (it's essentially the same hue family taken way deeper). Not
+  // currently bound to a theme token, but kept in the palette so warm
+  // highlights can reference it directly if needed later.
+  cream: '#FDFBD4',
 
   // Neutrals
   white: '#FFFFFF',
@@ -43,7 +59,9 @@ export const LightTheme = {
   screenBackground: Palette.offWhite,
   cardBackground: Palette.white,
   inputBackground: Palette.white,
-  tagBackground: Palette.infoLight,
+  // Tag surface sits on the same warm hue family as `navy`/`cream` so
+  // chips feel native to the brand palette instead of a stray cool blue.
+  tagBackground: '#F5EEDC',
   headerBackground: Palette.navy,
 
   // Borders
@@ -64,18 +82,27 @@ export const LightTheme = {
   successAction: Palette.success,
   dangerAction: Palette.danger,
 
-  // Tags
-  tagLabel: Palette.skyBlue,
-  tagValue: Palette.navy,
+  // Tags — warm deep navy pulls double-duty as icon + label tint so the
+  // chip reads as one unit. The value stays in the project's neutral
+  // body-text colour to preserve label/value contrast.
+  tagLabel: Palette.navy,
+  tagValue: Palette.grey700,
 
-  // Overlay
-  overlay: 'rgba(10, 36, 99, 0.6)',
+  // Overlay — matches the new warm-dark navy so modal scrims tint the
+  // scene on-brand instead of leaving a cool blue wash behind.
+  overlay: 'rgba(46, 41, 16, 0.6)',
 
   // Tab bar
   tabBarBackground: Palette.white,
   tabBarBorder: Palette.grey200,
   tabActive: Palette.coral,
   tabInactive: Palette.grey400,
+
+  // Info strip / segmented control track — soft low-contrast surfaces
+  // referenced by TripInfoBar + SegmentedPills.
+  infoStripBackground: Palette.infoLight,
+  segmentTrack: Palette.grey100,
+  segmentPillActive: Palette.white,
 } as const;
 
 /** Dark mode colours */
@@ -84,7 +111,9 @@ export const DarkTheme = {
   screenBackground: Palette.grey900,
   cardBackground: Palette.grey800,
   inputBackground: Palette.grey800,
-  tagBackground: '#1E3A5F',
+  // Warm dark chip surface — matches the navy hue family used in light
+  // mode but shifted to a contrast-friendly shade for dark backgrounds.
+  tagBackground: '#3A3218',
   headerBackground: Palette.black,
 
   // Borders
@@ -105,9 +134,9 @@ export const DarkTheme = {
   successAction: '#34D399',
   dangerAction: '#F87171',
 
-  // Tags
-  tagLabel: '#60A5FA',
-  tagValue: '#93C5FD',
+  // Tags — warm cream label on the dark warm chip, neutral value.
+  tagLabel: Palette.cream,
+  tagValue: Palette.grey300,
 
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.7)',
@@ -117,6 +146,11 @@ export const DarkTheme = {
   tabBarBorder: Palette.grey700,
   tabActive: Palette.coral,
   tabInactive: Palette.grey500,
+
+  // Info strip / segmented control track
+  infoStripBackground: '#1E3A5F',
+  segmentTrack: Palette.grey800,
+  segmentPillActive: Palette.grey700,
 } as const;
 
 export type ThemeColors = {

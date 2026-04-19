@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTargets, useTargetForm, useCategories, useFormSubmit } from '@/hooks';
 import { TargetForm } from '@/components/forms';
 import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { SlideUpSheet } from '@/components/modals';
 import { validateTargetForm } from '@/utils/validation';
 
 export default function AddTarget() {
@@ -15,9 +15,12 @@ export default function AddTarget() {
     useFormSubmit(() => addTarget(formData), 'Goal created');
 
   return (
-    <ScreenContainer>
+    <SlideUpSheet
+      title="New Goal"
+      subtitle="Set a weekly or monthly target for your trip."
+      onClose={() => router.back()}
+    >
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="New Goal" subtitle="Set a weekly or monthly target for your trip." />
       <TargetForm
         formData={formData}
         onChangeField={onChangeField}
@@ -28,6 +31,6 @@ export default function AddTarget() {
         categories={categories}
         error={error}
       />
-    </ScreenContainer>
+    </SlideUpSheet>
   );
 }

@@ -1,27 +1,14 @@
 import { Platform } from 'react-native';
 
 /**
- * Platform-specific font families.
- * Colors have been moved to colors.ts — import from there.
+ * Editorial serif used on the hero / card titles ("Summer in Italy").
+ * Platform-specific so iOS gets Georgia (warm, travel-magazine tone) and
+ * Android falls back to its bundled generic serif. Duplicated inline in
+ * `TripCard` and `TripHero` before consolidation — sharing the constant
+ * keeps the two surfaces visually consistent if the font ever changes.
  */
-
-export const Fonts = Platform.select({
-  ios: {
-    sans: 'system-ui',
-    serif: 'ui-serif',
-    rounded: 'ui-rounded',
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
+export const SERIF_FONT = Platform.select({
+  ios: 'Georgia',
+  android: 'serif',
+  default: 'serif',
 });

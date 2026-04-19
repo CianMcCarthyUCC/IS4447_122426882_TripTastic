@@ -1,74 +1,62 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, Callout, UrlTile, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useRouter } from 'expo-router';
-import { useTrips, useAppTheme } from '@/hooks';
+import { Ionicons } from '@expo/vector-icons';
+import { useTrips, useCategories, useAppTheme } from '@/hooks';
 import { useMountedRef } from '@/hooks/useMountedRef';
 import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
+import { geocodeCity } from '@/utils/geocode';
+import { fetchNearbyPlaces, type Place } from '@/utils/geoapify';
 import type { Trip } from '@/types';
 
 type TripPin = Trip & { latitude: number; longitude: number };
+type PoiPin = Place & { tripId: number };
 
-const CITY_COORDS: Record<string, { latitude: number; longitude: number }> = {
-  Rome: { latitude: 41.9028, longitude: 12.4964 },
-  Paris: { latitude: 48.8566, longitude: 2.3522 },
-  London: { latitude: 51.5074, longitude: -0.1278 },
-  Tokyo: { latitude: 35.6762, longitude: 139.6503 },
-  'New York': { latitude: 40.7128, longitude: -74.006 },
-  Dublin: { latitude: 53.3498, longitude: -6.2603 },
-  Barcelona: { latitude: 41.3874, longitude: 2.1686 },
-  Sydney: { latitude: -33.8688, longitude: 151.2093 },
-  Berlin: { latitude: 52.52, longitude: 13.405 },
-  Amsterdam: { latitude: 52.3676, longitude: 4.9041 },
-  Lisbon: { latitude: 38.7223, longitude: -9.1393 },
-  Prague: { latitude: 50.0755, longitude: 14.4378 },
-  Vienna: { latitude: 48.2082, longitude: 16.3738 },
-  Madrid: { latitude: 40.4168, longitude: -3.7038 },
-};
-
-async function geocodeCity(city: string, country: string): Promise<{ latitude: number; longitude: number } | null> {
-  if (CITY_COORDS[city]) return CITY_COORDS[city];
-  try {
-    const key = process.env.EXPO_PUBLIC_WEATHER_API_KEY ?? '';
-    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)},${encodeURIComponent(country)}&appid=${key}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return { latitude: data.coord.lat, longitude: data.coord.lon };
-  } catch {
-    return null;
-  }
-}
-
-// CartoDB Voyager raster tiles — free, no key, more vibrant than default OSM.
-// Blue water, green parks, warm road tones. Works on iOS + Android.
-const TILE_URL = 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
-const TILE_MAX_ZOOM = 19;
+// Default POI overlay: sightseeing + food (most interesting + dense).
+const POI_DEFAULT_CATEGORIES = [1, 2];
 
 export default function ExploreScreen() {
   const router = useRouter();
   const { trips } = useTrips();
+  const { categories } = useCategories();
   const theme = useAppTheme();
   const mounted = useMountedRef();
   const mapRef = useRef<MapView | null>(null);
   const [pins, setPins] = useState<TripPin[]>([]);
+  const [poiEnabled, setPoiEnabled] = useState(false);
+  const [pois, setPois] = useState<PoiPin[]>([]);
+  const [poiLoading, setPoiLoading] = useState(false);
+
+  const categoryColorMap = useMemo(() => {
+    const m = new Map<number, string>();
+    categories.forEach((c) => m.set(c.id, c.color));
+    return m;
+  }, [categories]);
 
   useEffect(() => {
+    if (trips.length === 0) return;
+    // Per-effect cancellation flag — if `trips` changes (add/delete/rename)
+    // while we're awaiting a geocode, the older pass must abandon before
+    // it overwrites newer pins. `mounted.current` alone only catches
+    // unmount, not stale-within-mount.
+    let cancelled = false;
     const loadPins = async () => {
       const results: TripPin[] = [];
       for (const trip of trips) {
-        // Skip trips with no destination
+        if (cancelled) return;
         if (!trip.destination) continue;
-        // Try destination first, then country, then geocode
-        const coords =
-          CITY_COORDS[trip.destination] ??
-          CITY_COORDS[trip.country] ??
-          (await geocodeCity(trip.destination, trip.country));
-        if (coords && mounted.current) results.push({ ...trip, ...coords });
+        const coords = await geocodeCity(trip.destination, trip.country);
+        if (cancelled) return;
+        if (coords) results.push({ ...trip, ...coords });
       }
-      if (mounted.current) setPins(results);
+      if (!cancelled) setPins(results);
     };
-    if (trips.length > 0) void loadPins();
-  }, [trips, mounted]);
+    void loadPins();
+    return () => {
+      cancelled = true;
+    };
+  }, [trips]);
 
   // Animate to fit all pins once they've loaded — works the same on both platforms.
   useEffect(() => {
@@ -94,14 +82,71 @@ export default function ExploreScreen() {
     }
   }, [pins]);
 
+  // Load POIs for each trip pin when the toggle is on.
+  useEffect(() => {
+    if (!poiEnabled || pins.length === 0) {
+      setPois([]);
+      return;
+    }
+    let cancelled = false;
+    const loadPois = async () => {
+      setPoiLoading(true);
+      const all: PoiPin[] = [];
+      for (const pin of pins) {
+        try {
+          const places = await fetchNearbyPlaces({
+            lat: pin.latitude,
+            lon: pin.longitude,
+            categoryIds: POI_DEFAULT_CATEGORIES,
+            radiusMeters: 3000,
+            limit: 15,
+          });
+          if (cancelled) return;
+          places.forEach((p) => all.push({ ...p, tripId: pin.id }));
+        } catch {
+          // Swallow per-trip errors; keep any POIs that loaded successfully.
+        }
+      }
+      if (!cancelled && mounted.current) {
+        setPois(all);
+        setPoiLoading(false);
+      }
+    };
+    void loadPois();
+    return () => {
+      cancelled = true;
+    };
+  }, [poiEnabled, pins, mounted]);
+
+  // Zoom controls — animate the camera by ±1 zoom level. We set both `zoom`
+  // (used by Google Maps on Android) and `altitude` (used by Apple Maps on
+  // iOS) so the behaviour is identical on both platforms.
+  const adjustZoom = useCallback(async (delta: number) => {
+    if (!mapRef.current) return;
+    const cam = await mapRef.current.getCamera();
+    const currentZoom = cam.zoom ?? 5;
+    mapRef.current.animateCamera(
+      {
+        ...cam,
+        zoom: currentZoom + delta,
+        altitude: (cam.altitude ?? 10000) * (delta > 0 ? 0.5 : 2),
+      },
+      { duration: 250 },
+    );
+  }, []);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.screenBackground }]}>
-      {/* Full-screen map — OSM tiles render the basemap on both iOS and Android */}
+      {/*
+        Single basemap: native Apple Maps (iOS) / Google Maps (Android) via
+        `PROVIDER_DEFAULT` + `mapType="standard"`. No raster tile overlay —
+        one consistent warm Apple palette on iOS and one consistent Google
+        palette on Android, never both layered on top of each other.
+      */}
       <MapView
         ref={mapRef}
         provider={PROVIDER_DEFAULT}
-        // mapType="none" hides the native Apple/Google basemap so only OSM tiles show.
-        mapType="none"
+        mapType="standard"
         style={styles.map}
         initialRegion={{
           latitude: 48,
@@ -111,20 +156,16 @@ export default function ExploreScreen() {
         }}
         showsCompass
       >
-        <UrlTile urlTemplate={TILE_URL} maximumZ={TILE_MAX_ZOOM} zIndex={-1} />
-
         {pins.map((pin) => (
           <Marker
             key={pin.id}
             coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-            // Android needs explicit anchor for custom marker views to sit correctly.
             anchor={{ x: 0.5, y: 1 }}
             calloutAnchor={{ x: 0.5, y: 0 }}
             tracksViewChanges={false}
             title={pin.destination}
             description={`${pin.name} — tap to view trip`}
           >
-            {/* Custom pin label */}
             <View
               style={styles.pinContainer}
               accessible
@@ -138,7 +179,6 @@ export default function ExploreScreen() {
               <View style={styles.pinArrow} />
             </View>
 
-            {/* Callout with image — tooltip mode renders our view identically on iOS + Android */}
             <Callout
               tooltip
               onPress={() => router.push({ pathname: '/trip/[id]/activities', params: { id: pin.id.toString() } })}
@@ -150,26 +190,100 @@ export default function ExploreScreen() {
                 accessibilityLabel={`Open ${pin.name}`}
                 accessibilityHint="Tap to view trip"
               >
-                <View style={styles.calloutInner}>
+                <View style={[styles.calloutInner, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
                   {pin.coverImage ? (
                     <Image source={{ uri: pin.coverImage }} style={styles.calloutImage} />
                   ) : (
                     <View style={[styles.calloutImage, styles.calloutPlaceholder]}>
-                      <Text style={styles.calloutFlag}>✈️</Text>
+                      <Ionicons name="airplane" size={22} color={Palette.white} />
                     </View>
                   )}
                   <View style={styles.calloutInfo}>
-                    <Text style={styles.calloutTitle} numberOfLines={1}>{pin.name}</Text>
-                    <Text style={styles.calloutDates}>{pin.startDate} → {pin.endDate}</Text>
+                    <Text style={[styles.calloutTitle, { color: theme.textPrimary }]} numberOfLines={1}>{pin.name}</Text>
+                    <Text style={[styles.calloutDates, { color: theme.textSecondary }]}>{pin.startDate} → {pin.endDate}</Text>
                     <Text style={styles.calloutAction}>Tap to view trip →</Text>
                   </View>
                 </View>
-                <View style={styles.calloutTail} />
+                <View style={[styles.calloutTail, { borderTopColor: theme.cardBackground }]} />
               </View>
             </Callout>
           </Marker>
         ))}
+
+        {/* POI overlay markers (smaller, category-coloured dots) */}
+        {poiEnabled && pois.map((poi) => (
+          <Marker
+            key={`poi-${poi.tripId}-${poi.id}`}
+            coordinate={{ latitude: poi.lat, longitude: poi.lon }}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
+            title={poi.name}
+            description={poi.address}
+          >
+            <View
+              style={[
+                styles.poiDot,
+                { backgroundColor: categoryColorMap.get(poi.categoryId) ?? Palette.coral },
+              ]}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${poi.name} point of interest`}
+            />
+          </Marker>
+        ))}
       </MapView>
+
+      {/* POI toggle floating button */}
+      <Pressable
+        style={[
+          styles.poiToggle,
+          {
+            backgroundColor: poiEnabled ? Palette.coral : theme.cardBackground,
+            borderColor: theme.cardBorder,
+          },
+        ]}
+        onPress={() => setPoiEnabled((v) => !v)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: poiEnabled }}
+        accessibilityLabel="Toggle points of interest"
+        accessibilityHint="Shows nearby sightseeing and food places around your trips"
+      >
+        <Ionicons
+          name="location"
+          size={16}
+          color={poiEnabled ? Palette.white : theme.textPrimary}
+        />
+        <Text
+          style={[
+            styles.poiToggleText,
+            { color: poiEnabled ? Palette.white : theme.textPrimary },
+          ]}
+        >
+          {poiLoading ? 'Loading…' : poiEnabled ? 'POIs on' : 'Show POIs'}
+        </Text>
+      </Pressable>
+
+      {/* Zoom controls */}
+      <View style={styles.zoomStack}>
+        <Pressable
+          style={[styles.zoomButton, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+          onPress={() => adjustZoom(1)}
+          accessibilityRole="button"
+          accessibilityLabel="Zoom in"
+          accessibilityHint="Zooms the map in by one level"
+        >
+          <Ionicons name="add" size={22} color={theme.textPrimary} />
+        </Pressable>
+        <Pressable
+          style={[styles.zoomButton, styles.zoomButtonBottom, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+          onPress={() => adjustZoom(-1)}
+          accessibilityRole="button"
+          accessibilityLabel="Zoom out"
+          accessibilityHint="Zooms the map out by one level"
+        >
+          <Ionicons name="remove" size={22} color={theme.textPrimary} />
+        </Pressable>
+      </View>
 
       {/* Empty state overlay */}
       {trips.length === 0 && (
@@ -216,14 +330,24 @@ const styles = StyleSheet.create({
     width: 0,
   },
 
+  // POI markers
+  poiDot: {
+    borderColor: Palette.white,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 2,
+    height: 14,
+    width: 14,
+    ...Shadows.sm,
+  },
+
   // Callout popup (tooltip-mode, identical on iOS + Android)
   callout: {
     alignItems: 'center',
     width: 240,
   },
   calloutInner: {
-    backgroundColor: Palette.white,
     borderRadius: BorderRadius.md,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: Spacing.sm,
     padding: Spacing.sm,
@@ -232,21 +356,62 @@ const styles = StyleSheet.create({
   },
   calloutImage: { borderRadius: BorderRadius.sm, height: 70, width: 80 },
   calloutPlaceholder: { alignItems: 'center', backgroundColor: Palette.navy, justifyContent: 'center' },
-  calloutFlag: { fontSize: 24 },
   calloutInfo: { flex: 1, justifyContent: 'center' },
-  calloutTitle: { color: Palette.navy, fontSize: 14, fontWeight: '700' },
-  calloutDates: { color: '#666', fontSize: 11, marginTop: Spacing.xs },
+  calloutTitle: { fontSize: 14, fontWeight: '700' },
+  calloutDates: { fontSize: 11, marginTop: Spacing.xs },
   calloutAction: { color: Palette.coral, fontSize: 12, fontWeight: '700', marginTop: Spacing.sm },
   calloutTail: {
     borderLeftColor: 'transparent',
     borderLeftWidth: 8,
     borderRightColor: 'transparent',
     borderRightWidth: 8,
-    borderTopColor: Palette.white,
     borderTopWidth: 8,
     height: 0,
     marginTop: -1,
     width: 0,
+  },
+
+  // POI toggle
+  poiToggle: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    position: 'absolute',
+    right: Spacing.lg,
+    top: Spacing.lg,
+    ...Shadows.md,
+  },
+  poiToggleText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // Zoom controls — stacked vertically on the right edge
+  zoomStack: {
+    position: 'absolute',
+    right: Spacing.lg,
+    top: Spacing.lg + 48 + Spacing.sm, // below the POI toggle
+    ...Shadows.md,
+  },
+  zoomButton: {
+    alignItems: 'center',
+    borderTopLeftRadius: BorderRadius.sm,
+    borderTopRightRadius: BorderRadius.sm,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  zoomButtonBottom: {
+    borderBottomLeftRadius: BorderRadius.sm,
+    borderBottomRightRadius: BorderRadius.sm,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderTopWidth: 0,
   },
 
   // Empty

@@ -1,13 +1,22 @@
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
   title: string;
   message?: string;
-  /** Show Lottie search animation */
+  /** Show the pulsing illustration above the title */
   showAnimation?: boolean;
   /** Example searches or suggestions shown below the message */
   suggestions?: string[];
@@ -18,8 +27,10 @@ type Props = {
 };
 
 /**
- * Rich empty state with Lottie animation, suggestions, and action button.
- * Uses free Lottie JSON (see references.txt).
+ * Rich empty state with an illustration, suggestions, and action button.
+ * The illustration is a Reanimated-driven pulse on a travel-themed Ionicon —
+ * a lightweight stand-in for the former looping Lottie animation, runs on
+ * the UI thread, ships no extra asset weight.
  */
 export default function EmptyState({
   title,
@@ -32,15 +43,31 @@ export default function EmptyState({
 }: Props) {
   const theme = useAppTheme();
 
+  // Gentle infinite scale-pulse — replicates the "something alive here" feel
+  // of the old looping Lottie without committing to a specific narrative.
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (!showAnimation) return;
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+  }, [pulse, showAnimation]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
   return (
     <Animated.View entering={FadeIn.duration(400)} style={styles.container}>
       {showAnimation && (
-        <LottieView
-          source={require('@/assets/animations/empty-state.json')}
-          autoPlay
-          loop
-          style={styles.animation}
-        />
+        <Animated.View style={[styles.animation, pulseStyle]}>
+          <Ionicons name="compass-outline" size={96} color={theme.accentAction} />
+        </Animated.View>
       )}
 
       <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
@@ -90,7 +117,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xxxl,
   },
   animation: {
+    alignItems: 'center',
     height: 120,
+    justifyContent: 'center',
     marginBottom: Spacing.lg,
     width: 120,
   },
@@ -124,7 +153,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   suggestionChip: {
+    alignItems: 'center',
     borderRadius: BorderRadius.pill,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },

@@ -1,6 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text } from 'react-native';
-import LottieView from 'lottie-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,6 +44,10 @@ function Toast({
 }: Props) {
   const theme = useAppTheme();
   const translateY = useSharedValue(TOAST_HIDDEN_Y);
+  // Icon scale-in spring — replaces the former one-shot Lottie checkmark on
+  // the success variant with a tactile pop. Reset to 0 each time `visible`
+  // flips true so the pop re-plays on every new toast.
+  const iconScale = useSharedValue(0);
   const onHideRef = useRef(onHide);
   onHideRef.current = onHide;
 
@@ -56,6 +59,10 @@ function Toast({
     if (visible) {
       // Slide in with spring
       translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
+      // Pop the icon in with a slight overshoot — tactile, matches the
+      // attention-grabbing feel of the previous Lottie animation.
+      iconScale.value = 0;
+      iconScale.value = withSpring(1, { damping: 9, stiffness: 180 });
       // Then slide out after duration
       translateY.value = withDelay(
         duration,
@@ -65,11 +72,16 @@ function Toast({
       );
     } else {
       translateY.value = TOAST_HIDDEN_Y;
+      iconScale.value = 0;
     }
-  }, [visible, duration, translateY, handleHide]);
+  }, [visible, duration, translateY, iconScale, handleHide]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
+  }));
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
   }));
 
   const bgColor = {
@@ -86,16 +98,9 @@ function Toast({
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
-      {variant === 'success' ? (
-        <LottieView
-          source={require('@/assets/animations/success-check.json')}
-          autoPlay
-          loop={false}
-          style={styles.lottieIcon}
-        />
-      ) : (
-        <Ionicons name={ICONS[variant]} size={20} color={Palette.white} />
-      )}
+      <Animated.View style={iconStyle}>
+        <Ionicons name={ICONS[variant]} size={22} color={Palette.white} />
+      </Animated.View>
       <Text style={styles.text}>{message}</Text>
     </Animated.View>
   );
@@ -122,9 +127,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-  },
-  lottieIcon: {
-    height: 24,
-    width: 24,
   },
 });

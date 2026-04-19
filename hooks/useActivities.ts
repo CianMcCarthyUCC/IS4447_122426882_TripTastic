@@ -1,6 +1,13 @@
 import { useCallback } from 'react';
 import { useActivityContext } from '@/context';
-import { getAllActivities, insertActivity, updateActivityById, deleteActivityById } from '@/db';
+import {
+  getAllActivities,
+  insertActivity,
+  updateActivityById,
+  deleteActivityById,
+  setFavouriteActivity,
+  clearFavouriteActivity,
+} from '@/db';
 import type { ActivityFormData } from '@/types';
 
 /**
@@ -46,6 +53,25 @@ export function useActivities() {
     [activities],
   );
 
+  /**
+   * Stars `activityId` as the trip's favourite, clearing any previously
+   * starred sibling inside the same transaction. Tapping the already-starred
+   * activity toggles it off instead of re-starring — matches the "tap the
+   * full star to unstar" convention users expect from iOS/Android.
+   */
+  const toggleFavourite = useCallback(
+    async (tripId: number, activityId: number) => {
+      const current = activities.find((a) => a.id === activityId);
+      if (current?.isFavourite) {
+        await clearFavouriteActivity(tripId);
+      } else {
+        await setFavouriteActivity(tripId, activityId);
+      }
+      await refreshActivities();
+    },
+    [activities, refreshActivities],
+  );
+
   return {
     activities,
     addActivity,
@@ -53,5 +79,6 @@ export function useActivities() {
     deleteActivity,
     findActivityById,
     refreshActivities,
+    toggleFavourite,
   };
 }

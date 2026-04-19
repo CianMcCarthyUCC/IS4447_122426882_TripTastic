@@ -7,5 +7,8 @@ export { SummaryBanner } from './SummaryBanner';
 export { StreakCard } from './StreakCard';
 export { TripInfoBar } from './TripInfoBar';
 export { TripCard } from './TripCard';
+export { TripHero } from './TripHero';
 export { SettingsSection } from './SettingsSection';
 export { SettingToggle } from './SettingToggle';
+export { PlaceCard } from './PlaceCard';
+export { AiOverviewCard } from './AiOverviewCard';

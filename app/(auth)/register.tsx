@@ -52,7 +52,11 @@ export default function RegisterScreen() {
   return (
     <ScreenContainer>
       <Toast {...toast} onHide={hideToast} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
         <AuthHero tagline="Your holiday planner starts here" />
         <ScreenHeader title="Register" subtitle="Create a new account" />
 
