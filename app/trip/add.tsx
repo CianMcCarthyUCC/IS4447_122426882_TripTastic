@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ExpoImagePicker from 'expo-image-picker';
 import { useTrips, useTripForm, useFormSubmit, useAppTheme } from '@/hooks';
 import { useMountedRef } from '@/hooks/useMountedRef';
-import { FormField, DateField, ImagePicker } from '@/components/forms';
+import { FormField, DateField } from '@/components/forms';
 import { PrimaryButton } from '@/components/buttons';
 import { Toast } from '@/components/feedback';
-import { ScreenContainer, KeyboardAwareForm } from '@/components/layout';
+import { SlideUpSheet } from '@/components/modals';
+import { KeyboardAwareForm } from '@/components/layout';
 import { Spacing, BorderRadius, Shadows, Palette, SharedStyles } from '@/constants';
 import { getDestinationPhoto } from '@/utils/unsplashApi';
 
@@ -48,6 +50,27 @@ export default function AddTrip() {
   const { error, loading, handleSubmit, toast, hideToast } =
     useFormSubmit(submitTrip, 'Trip created');
 
+  // Tap the hero → open the system image library. Writes straight to
+  // `coverImage` so the existing auto-preview effect knows not to fetch
+  // Unsplash on top of it, and so the submit path uses the user's
+  // choice as-is.
+  const pickHeroImage = useCallback(async () => {
+    const result = await ExpoImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      onChangeField('coverImage', result.assets[0].uri);
+    }
+  }, [onChangeField]);
+
+  const clearHeroImage = useCallback(() => {
+    onChangeField('coverImage', '');
+    setPreviewImage(null);
+  }, [onChangeField]);
+
   const validate = () => {
     if (!formData.name.trim()) return 'Trip name is required.';
     if (!formData.destination.trim()) return 'Destination city is required.';
@@ -60,23 +83,56 @@ export default function AddTrip() {
   const isIncomplete = !formData.name.trim() || !formData.destination.trim() || !formData.country.trim() || !formData.startDate || !formData.endDate;
 
   return (
-    <ScreenContainer>
+    <SlideUpSheet
+      title="Plan a New Trip"
+      subtitle="Where are you headed next?"
+      onClose={() => router.back()}
+    >
       <Toast {...toast} onHide={hideToast} />
 
-      {/* Live preview hero */}
+      {/* Live preview hero — tap to pick a photo from the library. If
+          the user hasn't picked one, we auto-fetch an Unsplash image
+          based on the destination. Either way, the hero is the single
+          surface for the cover photo — no separate picker below. */}
       {previewImage ? (
-        <Image source={{ uri: previewImage }} style={styles.hero} />
+        <Pressable
+          onPress={pickHeroImage}
+          accessibilityRole="button"
+          accessibilityLabel="Replace cover photo"
+          style={styles.heroWrapper}
+        >
+          <Image source={{ uri: previewImage }} style={styles.hero} />
+          <Pressable
+            onPress={clearHeroImage}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Remove cover photo"
+            style={styles.heroRemove}
+          >
+            <Ionicons name="close-circle" size={28} color={Palette.white} />
+          </Pressable>
+          {formData.coverImage ? (
+            <View style={styles.heroBadge}>
+              <Ionicons name="image" size={12} color={Palette.white} />
+              <Text style={styles.heroBadgeText}>Your photo</Text>
+            </View>
+          ) : null}
+        </Pressable>
       ) : (
-        <View style={[styles.hero, styles.heroPlaceholder, { backgroundColor: theme.tagBackground }]}>
-          <Ionicons name="airplane" size={40} color={theme.textSecondary} />
+        <Pressable
+          onPress={pickHeroImage}
+          accessibilityRole="button"
+          accessibilityLabel="Add a cover photo"
+          style={[styles.hero, styles.heroPlaceholder, { backgroundColor: theme.tagBackground }]}
+        >
+          <Ionicons name="image-outline" size={40} color={theme.textSecondary} />
           <Text style={[styles.heroText, { color: theme.textSecondary }]}>
-            {formData.destination ? 'Loading preview...' : 'Enter a destination to see a preview'}
+            {formData.destination
+              ? 'Loading preview...'
+              : "Tap to pick your own — or we'll grab one from your destination"}
           </Text>
-        </View>
+        </Pressable>
       )}
-
-      <Text style={[styles.title, { color: theme.textPrimary }]}>Plan a New Trip</Text>
-      <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Where are you headed next?</Text>
 
       <KeyboardAwareForm>
         <View style={SharedStyles.form}>
@@ -113,12 +169,6 @@ export default function AddTrip() {
             onChange={(d) => onChangeField('endDate', d)}
             accessibilityLabel="Trip end date"
           />
-          <ImagePicker
-            label="Cover Photo"
-            helpText="Leave empty to use the auto-fetched preview above"
-            imageUri={formData.coverImage}
-            onImageSelected={(uri) => onChangeField('coverImage', uri ?? '')}
-          />
         </View>
 
         {error ? <Text style={SharedStyles.errorText} accessibilityRole="alert">{error}</Text> : null}
@@ -128,11 +178,15 @@ export default function AddTrip() {
           <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} disabled={loading} />
         </View>
       </KeyboardAwareForm>
-    </ScreenContainer>
+    </SlideUpSheet>
   );
 }
 
 const styles = StyleSheet.create({
+  heroWrapper: {
+    marginBottom: Spacing.lg,
+    position: 'relative',
+  },
   hero: {
     borderRadius: BorderRadius.md,
     height: 160,
@@ -144,20 +198,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
   },
   heroText: {
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+  // Small pill in the corner flags that the image is the user's own
+  // photo rather than an auto-fetched preview — lets users know that
+  // clearing reverts to the destination-driven preview.
+  heroBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: BorderRadius.pill,
+    bottom: Spacing.sm + Spacing.lg,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    left: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    position: 'absolute',
   },
-  subtitle: {
-    fontSize: 14,
-    marginBottom: Spacing.lg,
-    marginTop: Spacing.xs,
+  heroBadgeText: {
+    color: Palette.white,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  heroRemove: {
+    position: 'absolute',
+    right: Spacing.sm,
+    top: Spacing.sm,
   },
 });

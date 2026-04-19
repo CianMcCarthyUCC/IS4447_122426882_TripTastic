@@ -27,8 +27,8 @@ export default function CategoryDetail() {
       <ScreenHeader title={category.name} subtitle="Category details" />
 
       <View style={SharedStyles.tagRow}>
-        <InfoTag label="Color" value={category.color} />
-        <InfoTag label="Icon" value={category.icon} />
+        <InfoTag icon="color-palette-outline" label="Color" value={category.color} />
+        <InfoTag icon="shapes-outline" label="Icon" value={category.icon} />
       </View>
 
       <EntityActions

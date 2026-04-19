@@ -1,13 +1,9 @@
-import { memo, useCallback, useEffect, useState } from 'react';
-import { useMountedRef } from '@/hooks/useMountedRef';
+import { memo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { getWeather } from '@/utils/weatherApi';
-import { getCountryInfo } from '@/utils/countriesApi';
-import type { WeatherData } from '@/utils/weatherApi';
-import type { CountryData } from '@/utils/countriesApi';
+import { useTripInfo } from '@/hooks/useTripInfo';
 
 type Props = {
   city: string;
@@ -15,37 +11,38 @@ type Props = {
 };
 
 /**
- * Compact inline trip info bar — weather + country in one slim row.
- * Blends into the header area without dominating the screen.
+ * Compact inline trip info bar — weather + currency + language in one slim row.
+ * Presentational wrapper over `useTripInfo`; all data-fetching logic lives in
+ * the hook so this component stays easy to test and restyle.
  */
 function TripInfoBar({ city, country }: Props) {
   const theme = useAppTheme();
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [countryInfo, setCountryInfo] = useState<CountryData | null>(null);
-  const [error, setError] = useState(false);
-  const mounted = useMountedRef();
+  const { weather, countryInfo, error, retry } = useTripInfo(city, country);
 
-  const fetchAll = useCallback(async () => {
-    try {
-      // Fetch country first to get ISO code, then use it for accurate weather
-      const countryResult = await getCountryInfo(country);
-      if (!mounted.current) return;
-      setCountryInfo(countryResult);
-
-      const weatherResult = await getWeather(city, countryResult.isoCode);
-      if (!mounted.current) return;
-      setWeather(weatherResult);
-    } catch {
-      if (mounted.current) setError(true);
-    }
-  }, [city, country]);
-
-  useEffect(() => { void fetchAll(); }, [fetchAll]);
-
-  if (error && !weather && !countryInfo) return null;
+  // Total failure: show a visible, actionable retry row rather than a blank
+  // space so the user knows the info panel is here and recoverable.
+  if (error && !weather && !countryInfo) {
+    return (
+      <Pressable
+        onPress={retry}
+        style={[styles.bar, { backgroundColor: theme.infoStripBackground }]}
+        accessibilityRole="button"
+        accessibilityLabel="Trip info failed to load. Tap to retry."
+      >
+        <View style={styles.segment}>
+          <Ionicons name="cloud-offline-outline" size={18} color={theme.textSecondary} />
+          <Text style={[styles.subtext, { color: theme.textSecondary }]}>Trip info unavailable</Text>
+        </View>
+        <View style={[styles.segment, styles.segmentRight]}>
+          <Ionicons name="refresh" size={16} color={Palette.coral} />
+          <Text style={[styles.text, { color: Palette.coral }]}>Retry</Text>
+        </View>
+      </Pressable>
+    );
+  }
 
   return (
-    <View style={[styles.bar, { backgroundColor: theme.tagBackground }]}>
+    <View style={[styles.bar, { backgroundColor: theme.infoStripBackground }]}>
       {/* Weather */}
       {weather ? (
         <View style={styles.segment}>
@@ -55,47 +52,51 @@ function TripInfoBar({ city, country }: Props) {
         </View>
       ) : (
         <View style={styles.segment}>
-          <Ionicons name="partly-sunny" size={16} color={theme.textSecondary} />
-          <Text style={[styles.subtext, { color: theme.textSecondary }]}>Loading...</Text>
+          <Ionicons name="partly-sunny" size={18} color={theme.textSecondary} />
+          <Text style={[styles.subtext, { color: theme.textSecondary }]}>Loading…</Text>
         </View>
       )}
 
-      <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
-
-      {/* Country */}
+      {/* Currency */}
       {countryInfo ? (
-        <View style={styles.segment}>
-          <Text style={styles.flag}>{countryInfo.flag}</Text>
-          <Text style={[styles.text, { color: theme.textPrimary }]}>{countryInfo.currency}</Text>
-          <Text style={[styles.subtext, { color: theme.textSecondary }]}>{countryInfo.language}</Text>
+        <View style={[styles.segment, styles.segmentRight]}>
+          <Ionicons name="cash-outline" size={20} color={theme.textPrimary} />
+          <Text style={[styles.text, { color: theme.textPrimary }]}>{capitalise(countryInfo.currency)}</Text>
         </View>
       ) : (
-        <View style={styles.segment}>
-          <Ionicons name="globe-outline" size={16} color={theme.textSecondary} />
-          <Text style={[styles.subtext, { color: theme.textSecondary }]}>Loading...</Text>
+        <View style={[styles.segment, styles.segmentRight]}>
+          <Ionicons name="cash-outline" size={20} color={theme.textSecondary} />
+          <Text style={[styles.subtext, { color: theme.textSecondary }]}>Loading…</Text>
         </View>
       )}
 
-      {/* Retry on error */}
-      {error && (
-        <Pressable onPress={fetchAll} accessibilityLabel="Retry loading trip info" accessibilityRole="button">
-          <Ionicons name="refresh" size={16} color={Palette.coral} />
-        </Pressable>
-      )}
+      {/* Language */}
+      {countryInfo ? (
+        <View style={[styles.segment, styles.segmentRight]}>
+          <Ionicons name="language-outline" size={20} color={theme.textPrimary} />
+          <Text style={[styles.text, { color: theme.textPrimary }]}>{countryInfo.language}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 export default memo(TripInfoBar);
 
+// Upper-cases only the first character. REST Countries returns currency names
+// lowercase ("euro (€)"); display wants sentence case ("Euro (€)").
+function capitalise(s: string): string {
+  return s.length === 0 ? s : s[0].toUpperCase() + s.slice(1);
+}
+
 const styles = StyleSheet.create({
   bar: {
     alignItems: 'center',
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.md,
     flexDirection: 'row',
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   segment: {
     alignItems: 'center',
@@ -103,23 +104,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.xs,
   },
-  divider: {
-    height: 20,
-    marginHorizontal: Spacing.sm,
-    width: 1,
+  segmentRight: {
+    justifyContent: 'flex-end',
   },
   weatherIcon: {
-    height: 24,
-    width: 24,
-  },
-  flag: {
-    fontSize: 16,
+    height: 26,
+    width: 26,
   },
   text: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   subtext: {
-    fontSize: 12,
+    fontSize: 13,
   },
 });

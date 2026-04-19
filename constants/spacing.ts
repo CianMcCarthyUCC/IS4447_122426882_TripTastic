@@ -24,26 +24,31 @@ export const BorderRadius = {
 
 /**
  * Shadow presets — consistent elevation system.
+ *
+ * Shadow colour is warm espresso (#1F1C0E) rather than cool navy so it
+ * harmonises with the cream-forward brand: a cool shadow on a warm
+ * surface looks subtly "wrong" — warm-on-warm keeps the elevation feel
+ * without fighting the hero colour.
  */
 export const Shadows = {
   sm: {
-    shadowColor: '#0A2463',
+    shadowColor: '#1F1C0E',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,
   },
   md: {
-    shadowColor: '#0A2463',
+    shadowColor: '#1F1C0E',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   lg: {
-    shadowColor: '#0A2463',
+    shadowColor: '#1F1C0E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.14,
     shadowRadius: 16,
     elevation: 6,
   },

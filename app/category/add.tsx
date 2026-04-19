@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useCategories, useCategoryForm, useFormSubmit } from '@/hooks';
 import { CategoryForm } from '@/components/forms';
 import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { SlideUpSheet } from '@/components/modals';
 import { validateCategoryForm } from '@/utils/validation';
 
 export default function AddCategory() {
@@ -14,9 +14,12 @@ export default function AddCategory() {
     useFormSubmit(() => addCategory(formData), 'Category created');
 
   return (
-    <ScreenContainer>
+    <SlideUpSheet
+      title="New Category"
+      subtitle="Organise your trip activities by type."
+      onClose={() => router.back()}
+    >
       <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="New Category" subtitle="Organise your trip activities by type." />
       <CategoryForm
         formData={formData}
         onChangeField={onChangeField}
@@ -26,6 +29,6 @@ export default function AddCategory() {
         loading={loading}
         error={error}
       />
-    </ScreenContainer>
+    </SlideUpSheet>
   );
 }

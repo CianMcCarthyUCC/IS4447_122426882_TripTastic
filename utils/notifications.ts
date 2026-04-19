@@ -1,5 +1,11 @@
 import * as Notifications from 'expo-notifications';
 
+// Stable identifier for the daily reminder content so the UI can query
+// the OS for its presence on startup. Any scheduled notification with
+// this title belongs to the daily-reminder feature; goal notifications
+// use different titles ("Goal Reminder", "Goal Reached!", etc.).
+const DAILY_REMINDER_TITLE = 'TripTastic';
+
 /**
  * Requests notification permissions. Call on first launch.
  */
@@ -9,6 +15,20 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
+}
+
+/**
+ * Returns whether a daily reminder is currently scheduled with the OS.
+ * Used by the Account screen to hydrate the reminder toggle on mount so
+ * the UI stays in sync with reality across app kills/reinstalls.
+ */
+export async function isDailyReminderScheduled(): Promise<boolean> {
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    return scheduled.some((n) => n.content.title === DAILY_REMINDER_TITLE);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -35,7 +55,7 @@ export async function scheduleDailyReminder(): Promise<string> {
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'TripTastic',
+      title: DAILY_REMINDER_TITLE,
       body: "Don't forget to log today's holiday activities!",
       sound: true,
     },

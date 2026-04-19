@@ -51,8 +51,12 @@ function TargetCard({ target, category, currentValue }: Props) {
       <ProgressBar {...progress} current={currentValue} target={target.targetValue} />
 
       <View style={styles.tags}>
-        <InfoTag label="Period" value={target.period} />
-        <InfoTag label="Scope" value={target.tripId ? 'This Trip' : 'All Trips'} />
+        <InfoTag icon="calendar-outline" label="Period" value={target.period} />
+        <InfoTag
+          icon={target.tripId ? 'airplane-outline' : 'earth-outline'}
+          label="Scope"
+          value={target.tripId ? 'This Trip' : 'All Trips'}
+        />
       </View>
 
       <PrimaryButton compact label="View Details" variant="accent" onPress={openDetails} />

@@ -1,9 +1,11 @@
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
+import { Spacing, BorderRadius, Shadows, Palette, SERIF_FONT } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { countryFlag } from '@/utils/countryFlag';
+import { formatDateRange, getNightsCount, getTripStatus } from '@/utils/dateHelpers';
 import type { Trip } from '@/types';
 
 type Props = {
@@ -13,14 +15,28 @@ type Props = {
   onPress: () => void;
   /** Optional explicit width — used for horizontal carousels */
   width?: number;
+  /**
+   * Applies a grey wash over the cover image so the card reads as
+   * "archived / past" in the Previous Trips rail. Keeps text fully
+   * legible by sitting below the dark-wash gradient.
+   */
+  muted?: boolean;
 };
 
 /**
- * Kiwi.com-style trip card — cover image with gradient overlay + text.
- * Works in both light and dark mode (text always white on image).
+ * Editorial-style trip card — full-bleed cover image with:
+ *  • country flag badge (top-left) + relative status pill (top-right)
+ *  • nights count label
+ *  • destination as the hero title (serif italic), trip name as subtitle
+ *  • footer row: WHEN | PROGRESS
  */
-function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width }: Props) {
+function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width, muted = false }: Props) {
   const theme = useAppTheme();
+
+  const nights = getNightsCount(trip.startDate, trip.endDate);
+  const status = getTripStatus(trip.startDate, trip.endDate);
+  const dateRange = formatDateRange(trip.startDate, trip.endDate);
+  const percent = activityCount > 0 ? Math.round((completedCount / activityCount) * 100) : 0;
 
   return (
     <Pressable
@@ -32,7 +48,7 @@ function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width 
         pressed && styles.pressed,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${trip.name} — ${trip.destination}`}
+      accessibilityLabel={`${trip.name} — ${trip.destination}, ${trip.country}`}
       accessibilityHint="Opens trip details"
     >
       {trip.coverImage ? (
@@ -43,21 +59,53 @@ function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width 
         </View>
       )}
 
+      {/* When muted (past trips), drop a warm-grey wash over the cover so
+          the card reads as "archived" at a glance. Sits under the dark
+          gradient so overlaid text stays fully legible. */}
+      {muted ? <View style={styles.mutedOverlay} pointerEvents="none" /> : null}
+
+      {/* Dark wash for legibility behind top + bottom text */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.75)']}
+        colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.85)']}
+        locations={[0, 0.35, 1]}
         style={styles.gradient}
       />
 
-      <View style={styles.overlay}>
-        <Text style={styles.name} numberOfLines={1}>{trip.name}</Text>
-        <Text style={styles.destination}>{trip.destination}, {trip.country}</Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.dates}>{trip.startDate} → {trip.endDate}</Text>
-          {activityCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{completedCount}/{activityCount}</Text>
-            </View>
-          )}
+      {/* Top row: country badge + relative status */}
+      <View style={styles.topRow}>
+        <View style={styles.countryBadge} accessibilityLabel={`Country: ${trip.country}`}>
+          <Text style={styles.countryFlag}>{countryFlag(trip.country)}</Text>
+          <Text style={styles.countryText}>{trip.country.toUpperCase()}</Text>
+        </View>
+
+        <View style={styles.statusPill} accessibilityLabel={`Status: ${status}`}>
+          <Text style={styles.statusText}>{status}</Text>
+        </View>
+      </View>
+
+      {/* Nights count */}
+      <Text style={styles.numberLabel}>
+        {nights} {nights === 1 ? 'NIGHT' : 'NIGHTS'}
+      </Text>
+
+      {/* Bottom block: hero title + subtitle + divider + footer */}
+      <View style={styles.bottomBlock}>
+        <Text style={styles.hero} numberOfLines={1}>{trip.destination}</Text>
+        <Text style={styles.subtitle} numberOfLines={1}>{trip.name}</Text>
+
+        <View style={styles.divider} />
+
+        <View style={styles.footer}>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerLabel}>WHEN</Text>
+            <Text style={styles.footerValue}>{dateRange}</Text>
+          </View>
+          <View style={[styles.footerCol, styles.footerColRight]}>
+            <Text style={styles.footerLabel}>PROGRESS</Text>
+            <Text style={styles.footerValue}>
+              {activityCount > 0 ? `${completedCount} of ${activityCount} · ${percent}%` : 'No activities yet'}
+            </Text>
+          </View>
         </View>
       </View>
     </Pressable>
@@ -68,17 +116,17 @@ export default memo(TripCard);
 
 const styles = StyleSheet.create({
   card: {
+    aspectRatio: 3 / 4,
     borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.lg,
     overflow: 'hidden',
     ...Shadows.md,
   },
   pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.95,
+    transform: [{ scale: 0.99 }],
   },
   image: {
-    height: 280,
+    height: '100%',
     width: '100%',
   },
   placeholder: {
@@ -88,50 +136,124 @@ const styles = StyleSheet.create({
   },
   gradient: {
     bottom: 0,
-    height: 120,
     left: 0,
     position: 'absolute',
     right: 0,
+    top: 0,
   },
-  overlay: {
+  mutedOverlay: {
+    backgroundColor: 'rgba(80, 80, 90, 0.45)',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+
+  // Top row
+  topRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    left: Spacing.lg,
+    position: 'absolute',
+    right: Spacing.lg,
+    top: Spacing.lg,
+  },
+  countryBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.35)',
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  countryFlag: {
+    fontSize: 14,
+  },
+  countryText: {
+    color: Palette.white,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  statusPill: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.35)',
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  statusText: {
+    color: Palette.white,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  // Nº / nights label, sits just below the top row
+  numberLabel: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    fontWeight: '600',
+    left: Spacing.lg,
+    letterSpacing: 2,
+    position: 'absolute',
+    top: Spacing.lg + 48, // below the top-row pills
+  },
+
+  // Bottom editorial block
+  bottomBlock: {
     bottom: 0,
     left: 0,
     padding: Spacing.lg,
     position: 'absolute',
     right: 0,
   },
-  name: {
+  hero: {
     color: Palette.white,
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+    fontFamily: SERIF_FONT,
+    fontSize: 44,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    letterSpacing: -1,
   },
-  destination: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
+  subtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 15,
     fontWeight: '500',
     marginTop: Spacing.xs,
   },
-  metaRow: {
-    alignItems: 'center',
+  divider: {
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    height: StyleSheet.hairlineWidth,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: Spacing.sm,
   },
-  dates: {
+  footerCol: {
+    flex: 1,
+  },
+  footerColRight: {
+    alignItems: 'flex-end',
+  },
+  footerLabel: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  badge: {
-    backgroundColor: Palette.coral,
-    borderRadius: BorderRadius.pill,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-  },
-  badgeText: {
-    color: Palette.white,
     fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+  },
+  footerValue: {
+    color: Palette.white,
+    fontSize: 15,
     fontWeight: '700',
+    marginTop: Spacing.xs,
   },
 });

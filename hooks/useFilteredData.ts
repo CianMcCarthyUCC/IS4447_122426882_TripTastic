@@ -1,7 +1,13 @@
 import { useMemo, useState, useCallback } from 'react';
+import { dateRangeBounds } from '@/utils/dateRangeFilter';
+import type { DateRange as FullDateRange } from '@/utils/dateRangeFilter';
 import type { Activity, Category, Target } from '@/types';
 
-export type DateRange = 'all' | 'today' | 'week' | 'month';
+// The list filter surfaces (ActivitiesSection, Trips, Targets) don't
+// offer a "custom" window, so this hook exposes a narrower subset of the
+// canonical DateRange union. Predicate semantics still come from the
+// shared utility so "week"/"month" match everywhere in the app.
+export type DateRange = Exclude<FullDateRange, 'custom'>;
 
 type FilterState = {
   searchQuery: string;
@@ -52,17 +58,12 @@ export function useFilteredActivities(
     }
 
     if (dateRange !== 'all') {
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      if (dateRange === 'today') {
-        result = result.filter((a) => a.date === today);
-      } else if (dateRange === 'week') {
-        const cutoff = new Date(now.getTime() - 7 * 86400000).toISOString().split('T')[0];
-        result = result.filter((a) => a.date >= cutoff);
-      } else if (dateRange === 'month') {
-        const cutoff = new Date(now.getTime() - 30 * 86400000).toISOString().split('T')[0];
-        result = result.filter((a) => a.date >= cutoff);
-      }
+      const { floor, ceil } = dateRangeBounds(dateRange);
+      result = result.filter((a) => {
+        if (floor && a.date < floor) return false;
+        if (ceil && a.date > ceil) return false;
+        return true;
+      });
     }
 
     return result;

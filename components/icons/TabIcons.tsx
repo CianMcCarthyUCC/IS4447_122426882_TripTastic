@@ -49,30 +49,42 @@ export function TargetsIcon({ size = 24, color = Palette.black }: IconProps) {
 export function InsightsIcon({ size = 24, color = Palette.black }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="3" y="12" width="4" height="9" rx="1" stroke={color} strokeWidth="1.8" />
-      <Rect x="10" y="7" width="4" height="14" rx="1" stroke={color} strokeWidth="1.8" />
-      <Rect x="17" y="3" width="4" height="18" rx="1" stroke={color} strokeWidth="1.8" />
+      <Line x1="5" y1="20" x2="5" y2="14" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Line x1="10" y1="20" x2="10" y2="10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Line x1="15" y1="20" x2="15" y2="6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Line x1="20" y1="20" x2="20" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   );
 }
 
 export function TripsIcon({ size = 24, color = Palette.black }: IconProps) {
+  // Paper-plane / airplane silhouette, tilted upper-right.
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="4" y="7" width="16" height="12" rx="2" stroke={color} strokeWidth="1.8" />
-      <Path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke={color} strokeWidth="1.8" />
-      <Line x1="4" y1="13" x2="20" y2="13" stroke={color} strokeWidth="1.8" />
+      <Path
+        d="M21 3 3 10.5l6.5 2.2L12 21l2.4-5.2L21 3Z"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Line x1="9.5" y1="12.7" x2="14.4" y2="15.8" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   );
 }
 
 export function ExploreIcon({ size = 24, color = Palette.black }: IconProps) {
+  // Folded trifold map with two vertical creases.
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8" />
-      <Path d="M12 3c-2.5 4-2.5 14 0 18" stroke={color} strokeWidth="1.8" />
-      <Path d="M12 3c2.5 4 2.5 14 0 18" stroke={color} strokeWidth="1.8" />
-      <Line x1="3" y1="12" x2="21" y2="12" stroke={color} strokeWidth="1.8" />
+      <Path
+        d="M3 6.5 9 4.5l6 2 6-2v13l-6 2-6-2-6 2v-13Z"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <Line x1="9" y1="4.5" x2="9" y2="17.5" stroke={color} strokeWidth="1.8" />
+      <Line x1="15" y1="6.5" x2="15" y2="19.5" stroke={color} strokeWidth="1.8" />
     </Svg>
   );
 }
@@ -80,8 +92,8 @@ export function ExploreIcon({ size = 24, color = Palette.black }: IconProps) {
 export function ProfileIcon({ size = 24, color = Palette.black }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth="1.8" />
-      <Path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Circle cx="12" cy="8.5" r="3.8" stroke={color} strokeWidth="1.8" />
+      <Path d="M4.5 20c1.2-3.6 4.3-5.5 7.5-5.5s6.3 1.9 7.5 5.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </Svg>
   );
 }

@@ -10,8 +10,10 @@ type Props = {
 };
 
 /**
- * Streak card — shows consecutive days/weeks of activity for a category.
- * Rubric: "Consecutive days/weeks where targets are met"
+ * Streak card — shows the global daily activity streak.
+ * Rubric: "Consecutive days where targets are met" — the implicit target is
+ * logging at least one activity per day. A live streak shows the flame;
+ * a broken one reads as a nudge to start logging again today.
  */
 function StreakCard({ streak }: Props) {
   const theme = useAppTheme();
@@ -20,13 +22,18 @@ function StreakCard({ streak }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
       <View style={styles.row}>
-        <Text style={styles.fire}>{isActive ? '🔥' : '❄️'}</Text>
+        <Ionicons
+          name={isActive ? 'flame' : 'snow-outline'}
+          size={26}
+          color={isActive ? Palette.coral : theme.textSecondary}
+          style={styles.icon}
+        />
         <View style={styles.info}>
-          <Text style={[styles.name, { color: theme.textPrimary }]}>{streak.categoryName}</Text>
+          <Text style={[styles.name, { color: theme.textPrimary }]}>Daily Streak</Text>
           <Text style={[styles.detail, { color: theme.textSecondary }]}>
             {isActive
-              ? `${streak.currentStreak} ${streak.unit} streak!`
-              : 'No active streak'}
+              ? `${streak.currentStreak} ${streak.currentStreak === 1 ? 'day' : 'days'} in a row`
+              : 'Log an activity today to start a new streak'}
           </Text>
         </View>
         <View style={styles.badge}>
@@ -43,7 +50,7 @@ export default memo(StreakCard);
 const styles = StyleSheet.create({
   card: { borderRadius: BorderRadius.md, borderWidth: 1, marginBottom: Spacing.sm, padding: Spacing.md, ...Shadows.sm },
   row: { alignItems: 'center', flexDirection: 'row', gap: Spacing.md },
-  fire: { fontSize: 24 },
+  icon: { width: 28 },
   info: { flex: 1 },
   name: { fontSize: 15, fontWeight: '700' },
   detail: { fontSize: 13, marginTop: Spacing.xs },

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { SharedStyles } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { formatIsoDate } from '@/utils/dateHelpers';
 
 type Props = {
   label: string;
@@ -42,9 +43,7 @@ function DateField({
     setVisible(false);
   };
 
-  const formattedDate = value
-    ? new Date(value + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    : null;
+  const formattedDate = value ? formatIsoDate(value) : null;
 
   return (
     <View style={SharedStyles.fieldWrapper}>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTripContext } from '@/context/TripContext';
 import type { ActivityFormData } from '@/types';
 
@@ -9,14 +9,20 @@ import type { ActivityFormData } from '@/types';
 export function useActivityForm(initial?: ActivityFormData) {
   const { currentTrip } = useTripContext();
 
-  const defaultForm: ActivityFormData = initial ?? {
-    tripId: currentTrip?.id ?? 1,
-    categoryId: 0,
-    date: '',
-    metric: '',
-    status: 'planned',
-    notes: '',
-  };
+  // Memoised so `resetForm` below has a stable reference — otherwise a
+  // fresh object literal on every render would defeat the useCallback.
+  const defaultForm = useMemo<ActivityFormData>(
+    () =>
+      initial ?? {
+        tripId: currentTrip?.id ?? 1,
+        categoryId: 0,
+        date: '',
+        metric: '',
+        status: 'planned',
+        notes: '',
+      },
+    [initial, currentTrip?.id],
+  );
 
   const [formData, setFormData] = useState<ActivityFormData>(defaultForm);
 

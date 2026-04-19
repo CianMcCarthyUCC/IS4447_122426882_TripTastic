@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "TripTastic shows your location on the map so you can see nearby trip destinations."
+        "NSLocationWhenInUseUsageDescription": "TripTastic shows your location on the map so you can see nearby trip destinations.",
+        "NSPhotoLibraryUsageDescription": "TripTastic uses your photos for your profile picture and trip cover images."
       }
     },
     "android": {

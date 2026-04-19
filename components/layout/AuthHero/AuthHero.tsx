@@ -63,7 +63,7 @@ export default function AuthHero({ tagline = 'Plan your perfect holiday' }: Prop
         </Svg>
       </Animated.View>
 
-      <Animated.Text style={[styles.appName, titleStyle]}>
+      <Animated.Text style={[styles.appName, { color: theme.textPrimary }, titleStyle]}>
         Trip<Text style={styles.accent}>Tastic</Text>
       </Animated.Text>
 
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xxxl,
   },
   appName: {
-    color: Palette.navy,
     fontSize: 36,
     fontWeight: '900',
     letterSpacing: -1,

@@ -89,11 +89,17 @@ function SearchBar({
           onSubmitEditing={handleSubmit}
           returnKeyType="search"
           autoCapitalize="none"
+          accessibilityRole="search"
           accessibilityLabel="Search"
           accessibilityHint={placeholder}
         />
         {value.length > 0 && (
-          <Pressable onPress={handleClear} accessibilityLabel="Clear search">
+          <Pressable
+            onPress={handleClear}
+            accessibilityLabel="Clear search"
+            accessibilityRole="button"
+            hitSlop={12}
+          >
             <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
           </Pressable>
         )}

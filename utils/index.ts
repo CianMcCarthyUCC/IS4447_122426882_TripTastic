@@ -29,8 +29,17 @@ export {
 } from './auth';
 
 export { exportDataAsCsv } from './csvExport';
+export { countryToContinent, CONTINENTS } from './continent';
+export type { Continent } from './continent';
 export { computeStreaks } from './streakCalculator';
 export type { StreakInfo } from './streakCalculator';
+export {
+  suggestActivityFilter,
+  suggestTripFilter,
+  suggestTargetFilter,
+} from './filterSuggestions';
+export type { FilterSuggestion } from './filterSuggestions';
+export { promptFilterName, describeFilter } from './filterNamePrompt';
 export { getWeather } from './weatherApi';
 export type { WeatherData } from './weatherApi';
 export { getCountryInfo } from './countriesApi';

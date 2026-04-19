@@ -44,17 +44,53 @@ function AuthGuard() {
     >
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="trip/add" options={{ title: 'New Trip', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="trip/[id]" options={{ title: 'Trip', headerBackTitle: 'Trips' }} />
-      <Stack.Screen name="activity/add" options={{ title: 'Log Activity', headerBackTitle: 'Back' }} />
+      <Stack.Screen
+        name="trip/add"
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'none',
+          // Override the stack-level opaque background so the previous
+          // route remains visible behind the sheet.
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
+      <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="activity/add"
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'none',
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
       <Stack.Screen name="activity/[id]" options={{ title: 'Activity', headerBackTitle: 'Back' }} />
       <Stack.Screen name="activity/[id]/edit" options={{ title: 'Edit Activity', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="category/add" options={{ title: 'Add Category', headerBackTitle: 'Back' }} />
+      <Stack.Screen
+        name="category/add"
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'none',
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
       <Stack.Screen name="category/[id]" options={{ title: 'Category', headerBackTitle: 'Back' }} />
       <Stack.Screen name="category/[id]/edit" options={{ title: 'Edit Category', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="target/add" options={{ title: 'New Goal', headerBackTitle: 'Back' }} />
+      <Stack.Screen
+        name="target/add"
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          animation: 'none',
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
       <Stack.Screen name="target/[id]" options={{ title: 'Goal', headerBackTitle: 'Back' }} />
       <Stack.Screen name="target/[id]/edit" options={{ title: 'Edit Goal', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="place-picker" options={{ presentation: 'modal', title: 'Pick a place' }} />
+      <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile', headerBackTitle: 'Back' }} />
     </Stack>
   );
 }
