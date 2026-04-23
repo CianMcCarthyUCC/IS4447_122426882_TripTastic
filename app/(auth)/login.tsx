@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth, useToast, useHaptics } from '@/hooks';
 import { FormField } from '@/components/forms';
 import { PrimaryButton } from '@/components/buttons';
 import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer, AuthHero, AuthFooter, DecorativeCircles } from '@/components/layout';
+import { ScreenHeader, ScreenContainer, AuthHero, AuthFooter, DecorativeCircles, KeyboardAwareForm } from '@/components/layout';
 import { SharedStyles } from '@/constants';
 import { validateLoginForm } from '@/utils/validation';
 
@@ -53,11 +53,7 @@ export default function LoginScreen() {
     <ScreenContainer>
       <DecorativeCircles />
       <Toast {...toast} onHide={hideToast} />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-      >
+      <KeyboardAwareForm>
         <AuthHero tagline="Plan, track and relive your holidays" />
         <ScreenHeader title="Login" subtitle="Sign in to your account" />
 
@@ -96,7 +92,7 @@ export default function LoginScreen() {
           linkLabel="Register"
           onPress={() => router.replace('/(auth)/register')}
         />
-      </ScrollView>
+      </KeyboardAwareForm>
     </ScreenContainer>
   );
 }

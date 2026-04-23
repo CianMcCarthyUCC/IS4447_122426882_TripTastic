@@ -2,6 +2,8 @@ import { useContext, useEffect } from 'react';
 import {
   BackHandler,
   Dimensions,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -34,6 +36,9 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 // backdrop. Shorter than the iOS default so the underlying screen reads
 // at a glance, not just as a sliver.
 const SHEET_HEIGHT = Math.round(SCREEN_HEIGHT * 0.7);
+// Max upward shift when the keyboard appears - never exceed the empty
+// space above the sheet so the header never scrolls off-screen.
+const MAX_KEYBOARD_SHIFT = SCREEN_HEIGHT - SHEET_HEIGHT;
 // Drag further than this and we commit to the dismiss animation.
 const DISMISS_THRESHOLD = 120;
 
@@ -66,6 +71,10 @@ export default function SlideUpSheet({
   const isDark = themeCtx?.isDark ?? false;
   // 0 = fully open (sheet at rest position), SHEET_HEIGHT = fully closed.
   const translateY = useSharedValue(SHEET_HEIGHT);
+  // Offset applied on top of translateY so the sheet slides up when the
+  // keyboard opens, keeping focused fields visible. Clamped so the top
+  // of the sheet never leaves the viewport.
+  const keyboardShift = useSharedValue(0);
 
   // Slide up on mount - heavy-feel spring so the sheet settles without
   // a visible bounce. Parameters picked to approximate iOS's native
@@ -90,6 +99,31 @@ export default function SlideUpSheet({
       },
     );
   };
+
+  // Track the on-screen keyboard so the sheet can slide up enough to
+  // keep the focused input visible. iOS exposes *Will* events for a
+  // smooth animated follow; Android only has *Did*.
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, (e) => {
+      const h = e.endCoordinates?.height ?? 0;
+      keyboardShift.value = withTiming(-Math.min(h, MAX_KEYBOARD_SHIFT), {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
+    const hideSub = Keyboard.addListener(hideEvt, () => {
+      keyboardShift.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.in(Easing.cubic),
+      });
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardShift]);
 
   // Intercept Android hardware back - we want the same animated close
   // path the user sees from the backdrop/close-button, not an instant
@@ -129,7 +163,7 @@ export default function SlideUpSheet({
     });
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value + keyboardShift.value }],
   }));
 
   // Backdrop opacity tracks the sheet - full at rest, zero when fully
