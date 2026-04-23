@@ -642,7 +642,7 @@ export default function InsightsScreen() {
 
       {/* Flat summary strip - hairline top + bottom borders, no card chrome. */}
       <View style={[styles.summary, { borderColor: theme.cardBorder }]}>
-        <SummaryCell value={`${totalMinutes}m`} label="Total" />
+        <SummaryCell value={`${totalMinutes}M`} label="Activity Total" />
         <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />
         <SummaryCell value={String(filteredActivities.length)} label="Shown" />
         <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />

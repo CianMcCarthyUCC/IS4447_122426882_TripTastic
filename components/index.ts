@@ -1,11 +1,10 @@
 // Barrel export - import any component from '@/components'
-export { PrimaryButton, ButtonGroup, FAB, EntityActions } from './buttons';
+export { PrimaryButton, ButtonGroup, EntityActions } from './buttons';
 export {
   CategoryCard,
   ActivityCard,
   TargetCard,
   StatCard,
-  StatsRow,
   SummaryBanner,
   StreakCard,
   TripInfoBar,
@@ -14,7 +13,7 @@ export {
   PlaceCard,
   SettingsListRow,
 } from './cards';
-export { BarChartCard, LineChartCard, PieChartCard } from './charts';
+export { BarChartCard, PieChartCard } from './charts';
 export {
   EmptyState,
   ConfirmDialog,
@@ -37,13 +36,9 @@ export {
   PeriodPicker,
   TargetForm,
   ViewModeToggle,
-  PillToggle,
   SearchBar,
-  FilterChips,
   SegmentedPills,
   SuggestionChip,
-  SavedFiltersBar,
-  TripPicker,
 } from './forms';
 export type { SegmentOption } from './forms';
 export {

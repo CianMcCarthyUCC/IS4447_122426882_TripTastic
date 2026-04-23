@@ -156,6 +156,7 @@ export default function SettingsScreen() {
             hint: 'Download activities & goals to share or back up',
             onPress: handleExport,
             loading: exporting,
+            trailingIcon: 'download-outline' as const,
           },
         ],
       },

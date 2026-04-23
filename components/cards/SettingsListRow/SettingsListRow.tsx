@@ -30,6 +30,10 @@ type ActionRow = CommonProps & {
   loading?: boolean;
   /** Optional right-aligned value text (e.g. "Private"). */
   trailingText?: string;
+  /** Overrides the default chevron with another Ionicon (rendered in the
+   *  secondary/grey colour). Use when the action needs a more specific
+   *  affordance than a generic forward arrow - e.g. a download glyph. */
+  trailingIcon?: React.ComponentProps<typeof Ionicons>['name'];
   value?: never;
   onValueChange?: never;
 };
@@ -107,7 +111,8 @@ function renderTrailing(props: Props, theme: ReturnType<typeof useAppTheme>) {
     );
   }
   if (props.trailing === 'none') return null;
-  return <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />;
+  const trailingName = props.trailingIcon ?? 'chevron-forward';
+  return <Ionicons name={trailingName} size={18} color={theme.textSecondary} />;
 }
 
 const styles = StyleSheet.create({

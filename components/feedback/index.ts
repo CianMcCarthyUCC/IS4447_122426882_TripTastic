@@ -7,7 +7,5 @@ export { ProgressBar } from './ProgressBar';
 export { PlaneLoader } from './PlaneLoader';
 export { NotFoundFallback } from './NotFoundFallback';
 export { NotificationsPanel } from './NotificationsPanel';
-export { SuccessOverlay } from './SuccessOverlay';
-export type { SuccessVariant } from './SuccessOverlay';
 export { Callout } from './Callout';
 export type { CalloutRow } from './Callout';

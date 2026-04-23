@@ -134,7 +134,7 @@ function SearchBar({
           <Text style={[styles.dropdownTitle, { color: theme.textSecondary, marginTop: recents.length > 0 ? Spacing.md : 0 }]}>
             Try searching
           </Text>
-          {suggestions.map((s) => (
+          {suggestions.slice(0, 2).map((s) => (
             <Pressable key={s} style={styles.dropdownItem} onPress={() => handleSuggestionPress(s)} accessibilityLabel={`Try searching ${s}`} accessibilityRole="button">
               <Ionicons name="search-outline" size={16} color={theme.accentAction} />
               <Text style={[styles.dropdownItemText, { color: theme.textPrimary }]}>{s}</Text>
