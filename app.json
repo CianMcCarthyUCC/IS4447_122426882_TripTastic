@@ -26,6 +26,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ],
       "package": "com.cianmccarthyucc.triptastic"
@@ -65,6 +67,9 @@
     "owner": "cianmccarthyucc",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cfec5f6c-bde2-471f-b4da-d22b92b99412"
     }
   }
 }
