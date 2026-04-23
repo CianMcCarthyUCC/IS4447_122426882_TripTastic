@@ -25,7 +25,7 @@ type Props = {
   onDelete?: (activity: Activity) => void;
   /**
    * Rendered as the first row of the scrollable surface. Use this for
-   * SearchBar / FilterChips / SegmentedPills / SuggestionChip so the
+   * SearchBar / SegmentedPills / SuggestionChip so the
    * whole section scrolls as one gesture surface - a drag on the search
    * bar is in-bounds for the FlatList's pan recognizer. Without it, the
    * pre-list UI sits outside the scrollable and drags on it do nothing.
