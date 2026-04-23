@@ -1,30 +1,27 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme, useCategories, useTrips, useTripScopedData } from '@/hooks';
+import { useAppTheme, useCategories, useHaptics, useTrips, useTripScopedData } from '@/hooks';
+import { useFilteredActivities } from '@/hooks/useFilteredData';
 import { TripHero } from '@/components/cards';
-import { FilterChips } from '@/components/forms';
-import { ActivityList } from '@/components/lists';
+import { FiltersPill, QuickFilterChip, SearchBar, SearchableListPicker } from '@/components/forms';
+import type { SearchableOption } from '@/components/forms';
+import { ActivityCard } from '@/components/cards';
 import { EmptyState } from '@/components/feedback';
-import { BorderRadius, Shadows, Spacing } from '@/constants';
+import { DrillDownFilterSheet } from '@/components/modals';
+import type { DrillDownFilterConfig } from '@/components/modals';
+import { Spacing } from '@/constants';
 import { formatIsoDate } from '@/utils/dateHelpers';
-import type { ChipOption } from '@/components/forms/FilterChips/FilterChips';
 import type { Category } from '@/types';
 
-const STAR_GOLD = '#F5C518';
-
 /**
- * Past-trip recap screen — read-only view of a trip whose end date is in
- * the past. Surfaces the things users care about after the fact:
- *   • A summary strip (activities, total time, categories touched)
- *   • Highlights — favourite ("priority"), top category, longest day,
- *     trip span
- *   • Category filter so the user can narrow the activity feed
- *
- * Explicitly no FAB / edit / delete affordances: this screen is a
- * scrapbook, not a planner. Edits live on `/trip/[id]/activities`.
+ * The Past Trip scrapbook. A read-only look back on a finished trip,
+ * with a flat summary strip, highlight rows for top category, longest
+ * day and trip span, and a filterable activity recap (search, category,
+ * favourites-only, sort direction) - mirroring the planned trip's
+ * filter pattern but trimmed to what is useful once a trip is done.
  */
 export default function PastTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,33 +32,97 @@ export default function PastTripScreen() {
 
   const tripId = Number(id);
   const trip = findTripById(tripId);
+  const haptics = useHaptics();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { activities, completedCount, totalMinutes } = useTripScopedData(tripId);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<'all' | number>('all');
+  // Reuse the shared filter pipeline from the planned Activities section
+  // so the past-trip recap inherits the same search / sort / favourites
+  // semantics without duplicating the filter logic.
+  const {
+    filtered,
+    searchQuery,
+    selectedCategory,
+    favouritesOnly,
+    sortDirection,
+    setSearchQuery,
+    setSelectedCategory,
+    setFavouritesOnly,
+    setSortDirection,
+    resetFilters,
+    isFiltered,
+  } = useFilteredActivities(activities, categories);
 
-  // Keep the most recent day at the top — reading order for a recap
-  // matches "what did we do last?" more naturally than chronological.
-  const sortedActivities = useMemo(
-    () => [...activities].sort((a, b) => b.date.localeCompare(a.date)),
-    [activities],
-  );
-
-  const filteredActivities = useMemo(() => {
-    if (selectedCategoryId === 'all') return sortedActivities;
-    return sortedActivities.filter((a) => a.categoryId === selectedCategoryId);
-  }, [sortedActivities, selectedCategoryId]);
+  // Default the recap to newest-first on mount so the reading order
+  // matches "what did we do last?". The user can still flip it via
+  // the sort chip; we only force it once on first render.
+  const didInitSort = useRef(false);
+  useEffect(() => {
+    if (!didInitSort.current) {
+      didInitSort.current = true;
+      setSortDirection('desc');
+    }
+  }, [setSortDirection]);
 
   const categoryById = useMemo(
     () => new Map<number, Category>(categories.map((c) => [c.id, c])),
     [categories],
   );
 
-  // Computed highlights — each returns null when there's not enough data
-  // to say anything meaningful, so the card can skip them gracefully.
-  const highlights = useMemo(() => {
-    const favourite = activities.find((a) => a.isFavourite) ?? null;
+  // Option list for the Category drill-down. Mirrors the shape used by
+  // the planned Activities section so both surfaces share one picker.
+  const categoryOptions = useMemo<SearchableOption[]>(
+    () => [
+      { label: 'All categories', value: 'all', icon: 'apps-outline' },
+      ...categories.map((c) => ({
+        label: c.name,
+        value: String(c.id),
+        color: c.color,
+        icon: c.icon as SearchableOption['icon'],
+      })),
+    ],
+    [categories],
+  );
 
-    // Top category by total minutes spent.
+  const categoryLabelFor = (v: string) =>
+    v === 'all'
+      ? 'All categories'
+      : categories.find((c) => String(c.id) === v)?.name ?? 'All categories';
+
+  const sheetFilters = useMemo<DrillDownFilterConfig[]>(
+    () => [
+      {
+        key: 'category',
+        icon: 'pricetag-outline',
+        label: 'Category',
+        subViewTitle: 'Category',
+        value: selectedCategory,
+        defaultValue: 'all',
+        describe: (v) => categoryLabelFor(v as string),
+        isActive: (v) => (v as string) !== 'all',
+        onApply: (v) => setSelectedCategory(v as string),
+        renderPicker: ({ value, setValue, close }) => (
+          <SearchableListPicker
+            options={categoryOptions}
+            selected={value as string}
+            onSelect={(v) => {
+              setValue(v);
+              close();
+            }}
+            searchPlaceholder="Search categories"
+            accessibilityLabel="Filter by category"
+          />
+        ),
+      },
+    ],
+    [categoryOptions, selectedCategory, categories, setSelectedCategory],
+  );
+
+  const appliedFilterCount = selectedCategory !== 'all' ? 1 : 0;
+
+  // Computed highlights for the flat recap rows. Each entry returns
+  // null when there is not enough data to say something meaningful.
+  const highlights = useMemo(() => {
     let topCategory: { category: Category; minutes: number } | null = null;
     if (activities.length > 0) {
       const minutesByCat = new Map<number, number>();
@@ -80,7 +141,6 @@ export default function PastTripScreen() {
       if (cat) topCategory = { category: cat, minutes: bestMinutes };
     }
 
-    // Longest single day — sum metric per date, pick the max.
     let longestDay: { date: string; minutes: number; count: number } | null = null;
     if (activities.length > 0) {
       const byDate = new Map<string, { minutes: number; count: number }>();
@@ -103,19 +163,10 @@ export default function PastTripScreen() {
       if (bestDate) longestDay = { date: bestDate, minutes: bestMinutes, count: bestCount };
     }
 
-    // Distinct categories touched — used in the summary strip.
     const categoriesTouched = new Set(activities.map((a) => a.categoryId)).size;
 
-    return { favourite, topCategory, longestDay, categoriesTouched };
+    return { topCategory, longestDay, categoriesTouched };
   }, [activities, categoryById]);
-
-  const categoryChips = useMemo<ChipOption[]>(
-    () => [
-      { label: 'All', value: 'all' },
-      ...categories.map((c) => ({ label: c.name, value: String(c.id), color: c.color })),
-    ],
-    [categories],
-  );
 
   const handleBack = () => {
     if (router.canGoBack()) router.back();
@@ -138,146 +189,152 @@ export default function PastTripScreen() {
       style={[styles.safeArea, { backgroundColor: theme.screenBackground }]}
       edges={['bottom']}
     >
-      {/* No press-wrapper — the old Pressable that dismissed the keyboard
-          on empty-space taps intercepted pan gestures and stalled scroll
-          on non-card areas. Keyboard dismissal is handled by the
-          ScrollView's `keyboardDismissMode="on-drag"` below. */}
+      {/* Hero sits outside the ScrollView so it stays pinned at the top
+          while the recap below scrolls, matching the planned trip layout. */}
+      <TripHero
+        trip={trip}
+        completedCount={completedCount}
+        totalCount={activities.length}
+        onBack={handleBack}
+        onSettings={() =>
+          router.push({ pathname: '/trip/[id]/edit', params: { id: trip.id.toString() } })
+        }
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-          <TripHero
-            trip={trip}
-            completedCount={completedCount}
-            totalCount={activities.length}
-            onBack={handleBack}
-          />
+        <View style={styles.content}>
+          {/* Flat summary strip - hairline dividers between cells, no card chrome. */}
+          <View style={[styles.summary, { borderColor: theme.cardBorder }]}>
+            <SummaryCell value={String(completedCount)} label="Activities" theme={theme} />
+            <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />
+            <SummaryCell value={formatMinutes(totalMinutes)} label="Time spent" theme={theme} />
+            <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />
+            <SummaryCell
+              value={String(highlights.categoriesTouched)}
+              label="Categories"
+              theme={theme}
+            />
+          </View>
 
-          <View style={styles.content}>
-            {/* Summary strip — three compact stats. */}
-            <View
-              style={[
-                styles.summary,
-                { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
-              ]}
-            >
-              <SummaryCell
-                value={String(completedCount)}
-                label="Activities"
-                theme={theme}
-              />
-              <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />
-              <SummaryCell
-                value={formatMinutes(totalMinutes)}
-                label="Time spent"
-                theme={theme}
-              />
-              <View style={[styles.summaryDivider, { backgroundColor: theme.cardBorder }]} />
-              <SummaryCell
-                value={String(highlights.categoriesTouched)}
-                label="Categories"
+          {/* Flat Highlights block - no card background, rows sit directly on the screen. */}
+          {activities.length > 0 ? (
+            <View style={styles.highlightsBlock}>
+              <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Highlights</Text>
+
+              {highlights.topCategory ? (
+                <HighlightRow
+                  icon="flame"
+                  iconColor={highlights.topCategory.category.color}
+                  label="Top category"
+                  value={highlights.topCategory.category.name}
+                  meta={formatMinutes(highlights.topCategory.minutes)}
+                  theme={theme}
+                />
+              ) : null}
+
+              {highlights.longestDay ? (
+                <HighlightRow
+                  icon="sunny"
+                  iconColor={theme.accentAction}
+                  label="Longest day"
+                  value={formatIsoDate(highlights.longestDay.date)}
+                  meta={`${highlights.longestDay.count} activities \u00b7 ${formatMinutes(highlights.longestDay.minutes)}`}
+                  theme={theme}
+                />
+              ) : null}
+
+              <HighlightRow
+                icon="calendar"
+                iconColor={theme.textSecondary}
+                label="Trip span"
+                value={`${formatIsoDate(trip.startDate)} - ${formatIsoDate(trip.endDate)}`}
+                meta={null}
                 theme={theme}
               />
             </View>
+          ) : null}
 
-            {/* Highlights card — optional rows, skipped when a highlight has
-                no data to show (trip with 0 activities, no favourite set). */}
-            {activities.length > 0 ? (
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
-                ]}
-              >
-                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
-                  Highlights
-                </Text>
+          <Text style={[styles.sectionTitle, styles.recapTitle, { color: theme.textPrimary }]}>
+            Activity recap
+          </Text>
 
-                {highlights.favourite ? (
-                  <HighlightRow
-                    icon="star"
-                    iconColor={STAR_GOLD}
-                    label="Priority activity"
-                    value={highlights.favourite.notes ?? 'Marked as priority'}
-                    meta={formatIsoDate(highlights.favourite.date)}
-                    theme={theme}
-                  />
-                ) : null}
-
-                {highlights.topCategory ? (
-                  <HighlightRow
-                    icon="flame"
-                    iconColor={highlights.topCategory.category.color}
-                    label="Top category"
-                    value={highlights.topCategory.category.name}
-                    meta={formatMinutes(highlights.topCategory.minutes)}
-                    theme={theme}
-                  />
-                ) : null}
-
-                {highlights.longestDay ? (
-                  <HighlightRow
-                    icon="sunny"
-                    iconColor={theme.accentAction}
-                    label="Longest day"
-                    value={formatIsoDate(highlights.longestDay.date)}
-                    meta={`${highlights.longestDay.count} activities · ${formatMinutes(highlights.longestDay.minutes)}`}
-                    theme={theme}
-                  />
-                ) : null}
-
-                <HighlightRow
-                  icon="calendar"
-                  iconColor={theme.textSecondary}
-                  label="Trip span"
-                  value={`${formatIsoDate(trip.startDate)} — ${formatIsoDate(trip.endDate)}`}
-                  meta={null}
-                  theme={theme}
-                />
-              </View>
-            ) : null}
-
-            <Text style={[styles.sectionHeader, { color: theme.textPrimary }]}>
-              Activity recap
-            </Text>
-
-            <FilterChips
-              options={categoryChips}
-              selected={selectedCategoryId === 'all' ? 'all' : String(selectedCategoryId)}
-              onSelect={(v) => setSelectedCategoryId(v === 'all' ? 'all' : Number(v))}
-              accessibilityLabel="Filter activities by category"
+          {/* Shared filter surface: search + category chips + favourites / sort chips. */}
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search activities..."
+            suggestions={categories.slice(0, 4).map((c) => c.name)}
+          />
+          <View style={styles.quickRow}>
+            <QuickFilterChip
+              label="Favourites"
+              icon={favouritesOnly ? 'heart' : 'heart-outline'}
+              active={favouritesOnly}
+              onPress={() => setFavouritesOnly(!favouritesOnly)}
+              accessibilityLabel={
+                favouritesOnly ? 'Show all activities' : 'Show favourites only'
+              }
             />
-
-            {filteredActivities.length === 0 ? (
-              <EmptyState
-                title={
-                  selectedCategoryId === 'all'
-                    ? 'No activities logged'
-                    : 'Nothing in this category'
-                }
-                message={
-                  selectedCategoryId === 'all'
-                    ? 'This trip wrapped up without any activities logged.'
-                    : 'Try another category to see what you got up to.'
-                }
-                showAnimation={false}
+            <QuickFilterChip
+              label={sortDirection === 'desc' ? 'Newest first' : 'Oldest first'}
+              icon="swap-vertical-outline"
+              active={sortDirection === 'asc'}
+              onPress={() => setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc')}
+              accessibilityLabel={`Sort by date ${sortDirection === 'desc' ? 'newest first' : 'oldest first'}, tap to flip`}
+            />
+            <FiltersPill activeCount={appliedFilterCount} onPress={() => setSheetOpen(true)} />
+            {isFiltered ? (
+              <QuickFilterChip
+                label="Clear"
+                icon="close-circle-outline"
+                active
+                onPress={resetFilters}
+                accessibilityLabel="Clear all filters"
               />
-            ) : (
-              <ActivityList
-                activities={filteredActivities}
-                categories={categories}
-                // Read-only: no onToggleFavourite so the ActivityCard hides
-                // the star control on this screen.
-              />
-            )}
+            ) : null}
           </View>
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              title={isFiltered ? 'No matches' : 'No activities logged'}
+              message={
+                isFiltered
+                  ? 'Try another category or clear your filters.'
+                  : 'This trip wrapped up without any activities logged.'
+              }
+              actionLabel={isFiltered ? 'Clear filters' : undefined}
+              onAction={isFiltered ? resetFilters : undefined}
+              showAnimation={false}
+            />
+          ) : (
+            // Render cards directly via map rather than through ActivityList
+            // (which uses a FlatList) so the list can live inside this
+            // screen's outer ScrollView without tripping React Native's
+            // "VirtualizedLists nested inside ScrollViews" warning.
+            // Read-only: no onToggleFavourite so the star control stays
+            // hidden on this recap screen.
+            filtered.map((activity) => (
+              <ActivityCard
+                key={activity.id}
+                activity={activity}
+                category={categoryById.get(activity.categoryId)}
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
+      <DrillDownFilterSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        filters={sheetFilters}
+      />
     </SafeAreaView>
   );
 }
-
-// ── Local building blocks ────────────────────────────────────────────
 
 type Theme = ReturnType<typeof useAppTheme>;
 
@@ -320,9 +377,7 @@ function HighlightRow({ icon, iconColor, label, value, meta, theme }: HighlightR
           {value}
         </Text>
         {meta ? (
-          <Text style={[styles.highlightMeta, { color: theme.textSecondary }]}>
-            {meta}
-          </Text>
+          <Text style={[styles.highlightMeta, { color: theme.textSecondary }]}>{meta}</Text>
         ) : null}
       </View>
     </View>
@@ -345,14 +400,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
   },
+  // Flat summary strip - hairline top + bottom borders, no card background.
   summary: {
     alignItems: 'center',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.md,
-    ...Shadows.sm,
   },
   summaryCell: {
     alignItems: 'center',
@@ -373,19 +427,17 @@ const styles = StyleSheet.create({
     height: 28,
     width: 1,
   },
-  card: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    ...Shadows.sm,
+  highlightsBlock: {
+    marginTop: Spacing.lg,
   },
-  cardTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.2,
     marginBottom: Spacing.sm,
+  },
+  recapTitle: {
+    marginTop: Spacing.xl,
   },
   highlightRow: {
     alignItems: 'center',
@@ -395,7 +447,7 @@ const styles = StyleSheet.create({
   },
   highlightIcon: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
+    borderRadius: 999,
     height: 36,
     justifyContent: 'center',
     width: 36,
@@ -418,11 +470,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xl,
+  quickRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
 });
+

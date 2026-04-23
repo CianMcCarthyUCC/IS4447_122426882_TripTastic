@@ -2,8 +2,9 @@ import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 
 /**
- * Hook for triggering haptic feedback on key actions.
- * Provides semantic haptic methods for consistent UX.
+ * The small hook every screen uses to add a haptic buzz to taps and
+ * confirmations. Offers named levels (light, medium, success, warning,
+ * error) so the feel of the app stays consistent.
  */
 export function useHaptics() {
   const success = useCallback(() => {

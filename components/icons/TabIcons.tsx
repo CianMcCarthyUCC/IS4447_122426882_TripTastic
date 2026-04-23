@@ -7,8 +7,8 @@ type IconProps = {
 };
 
 /**
- * Custom SVG tab icons — travel-themed, consistent stroke style.
- * All icons use stroke-based design for a clean, modern look.
+ * The custom icons shown in the bottom tab bar. Hand-drawn as SVGs so
+ * each tab has a travel-themed icon that matches the look of the app.
  */
 
 export function ActivitiesIcon({ size = 24, color = Palette.black }: IconProps) {

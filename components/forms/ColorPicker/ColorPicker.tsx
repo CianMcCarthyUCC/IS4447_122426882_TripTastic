@@ -18,9 +18,9 @@ type Props = {
 };
 
 /**
- * Visual colour palette picker — tap to select from preset swatches.
- * Replaces raw hex text input for a much better mobile UX.
- * Uses Reanimated for spring-animated selection feedback.
+ * The colour swatch picker for categories. Shows a palette of preset
+ * colours and lets the user tap one. Used in the category form so the
+ * user never has to type in a hex code.
  */
 function ColorPicker({ label = 'Colour', selectedColor, onSelect }: Props) {
   const theme = useAppTheme();

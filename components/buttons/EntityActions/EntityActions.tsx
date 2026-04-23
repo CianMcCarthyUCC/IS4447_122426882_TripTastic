@@ -6,22 +6,26 @@ type Props = {
   onEdit: () => void;
   /** Invoked when the user taps "Delete" (typically opens a confirm dialog). */
   onDelete: () => void;
-  /** Invoked when the user taps "Back". */
-  onBack: () => void;
+  /**
+   * Optional "Back" action. Leave this out on screens that already show a
+   * back chevron at the top, so the user doesn't see two back buttons.
+   */
+  onBack?: () => void;
   /** Shows the loading spinner on the Delete button. */
   loading?: boolean;
 };
 
 /**
- * Standard Edit / Delete / Back button row used on every entity detail screen.
- * Keeps button ordering and variants consistent across activity / category / target.
+ * The Edit / Delete button row shown at the bottom of every entity detail
+ * screen (activity, category, goal). Keeps the buttons looking and behaving
+ * the same everywhere they appear.
  */
 export function EntityActions({ onEdit, onDelete, onBack, loading }: Props) {
   return (
     <ButtonGroup>
       <PrimaryButton label="Edit" onPress={onEdit} />
       <PrimaryButton label="Delete" loading={loading} variant="danger" onPress={onDelete} />
-      <PrimaryButton label="Back" variant="secondary" onPress={onBack} />
+      {onBack ? <PrimaryButton label="Back" variant="secondary" onPress={onBack} /> : null}
     </ButtonGroup>
   );
 }

@@ -16,8 +16,9 @@ type ThemeContextType = {
 export const ThemeContext = createContext<ThemeContextType | null>(null);
 
 /**
- * Provides theme state — reads user preference from SQLite,
- * falls back to device scheme. Call setMode to toggle.
+ * The hook every component uses to read the current theme. Picks up
+ * the user's preference from the database and falls back to the
+ * device's light or dark setting when none is saved.
  */
 export function useThemeProvider() {
   const deviceScheme = useColorScheme();

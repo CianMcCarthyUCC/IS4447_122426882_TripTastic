@@ -1,5 +1,7 @@
 /**
- * Spacing scale — consistent rhythm across the app.
+ * The spacing scale used across the whole app. Every margin and padding
+ * picks from this small set of sizes so every screen has the same
+ * rhythm.
  */
 export const Spacing = {
   xs: 4,
@@ -12,7 +14,7 @@ export const Spacing = {
 } as const;
 
 /**
- * Border radius scale — modern rounded corners.
+ * Border radius scale - modern rounded corners.
  */
 export const BorderRadius = {
   xs: 8,
@@ -23,11 +25,11 @@ export const BorderRadius = {
 } as const;
 
 /**
- * Shadow presets — consistent elevation system.
+ * Shadow presets - consistent elevation system.
  *
  * Shadow colour is warm espresso (#1F1C0E) rather than cool navy so it
  * harmonises with the cream-forward brand: a cool shadow on a warm
- * surface looks subtly "wrong" — warm-on-warm keeps the elevation feel
+ * surface looks subtly "wrong" - warm-on-warm keeps the elevation feel
  * without fighting the hero colour.
  */
 export const Shadows = {

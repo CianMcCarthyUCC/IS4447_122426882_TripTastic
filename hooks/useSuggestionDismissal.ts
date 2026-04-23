@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /**
- * Session-scoped dismissal store for suggestion chips.
- *
- * Mirrors the notification-dismissal pattern in useNotifications.ts — a
- * module-level Set + pub/sub so every mounted consumer (Activities,
- * Trips, Goals) stays in sync when one chip is dismissed. Re-appears on
- * cold start if the underlying rule still fires, because the suggestion
- * is a *derivation* of live data, not user preference.
+ * Remembers which suggestion chips the user has dismissed for the
+ * current session. Once dismissed, a chip stays hidden until the next
+ * app start, so the app stops pestering the user about the same idea.
  */
 const dismissed = new Set<string>();
 const listeners = new Set<() => void>();

@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Returns a version of `value` that only updates after `delay` ms of
- * no changes. Canonical debounce hook — used to keep text-input driven
- * filter pipelines from thrashing re-renders / re-computing memos on
- * every keystroke.
- *
- * Default 300ms matches the UX sweet spot cited by Algolia / NN/g:
- * low enough to still feel instant, high enough that a user typing
- * at normal speed doesn't kick off work mid-word.
+ * A debounce helper used mainly for search inputs. Holds off on
+ * reporting a new value until the user has paused, so filters and
+ * charts don't re-run on every single keystroke.
  */
 export function useDebouncedValue<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);

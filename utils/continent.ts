@@ -1,11 +1,7 @@
 /**
- * Country-name → continent lookup for the Insights filter pipeline.
- *
- * Covers the same country set as `countryFlag.ts` plus common aliases.
- * A country not in the map resolves to 'Other' rather than throwing — the
- * filter UI only surfaces continents that exist in the user's actual trip
- * set, so 'Other' is visible only when real trip data includes an
- * unmapped country (cue to extend this table).
+ * A lookup table that turns a country name into its continent, used by
+ * the Insights screen when the user filters trips by continent. Any
+ * country not yet in the list shows up as "Other".
  */
 
 export const CONTINENTS = [

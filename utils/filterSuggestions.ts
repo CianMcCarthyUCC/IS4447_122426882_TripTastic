@@ -2,15 +2,9 @@ import { computeTargetCurrentValue } from './progressHelpers';
 import type { Activity, Category, Target, Trip } from '@/types';
 
 /**
- * A single "try this filter" suggestion surfaced above a list.
- *
- * Rule-based rather than model-driven — TripTastic has no LLM dependency,
- * and the rules below are cheap enough to recompute on every context
- * update without needing memoisation gymnastics.
- *
- * The `scope` field lets the UI scope its suggestion to exactly one list
- * (activities / trips / goals) so the chip dismissal set doesn't leak
- * across screens.
+ * The small engine behind the "Try this filter" chips. Looks at the
+ * user's data and, when a helpful filter combination would make sense,
+ * returns a suggestion for the relevant list.
  */
 export type FilterSuggestion<Scope extends string> = {
   scope: Scope;
@@ -54,7 +48,7 @@ export function suggestActivityFilter(
       topCat = cat;
     }
   }
-  // Need a clear majority — otherwise the suggestion is just noise.
+  // Need a clear majority - otherwise the suggestion is just noise.
   if (topCat === -1 || topSum / grand < 0.4) return null;
 
   const catName = categories.find((c) => c.id === topCat)?.name;

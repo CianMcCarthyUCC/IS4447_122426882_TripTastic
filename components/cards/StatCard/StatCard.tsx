@@ -12,8 +12,8 @@ type Props = {
 };
 
 /**
- * Compact stat card — shows a key metric with icon.
- * Used in rows of 2-3 at the top of tab screens.
+ * A single at-a-glance metric tile. Sits in rows at the top of tab screens
+ * to give the user a quick snapshot (e.g. number of trips, total minutes).
  */
 function StatCard({ label, value, icon = 'stats-chart', accentColor }: Props) {
   const theme = useAppTheme();

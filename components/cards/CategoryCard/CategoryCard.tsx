@@ -2,7 +2,8 @@ import { memo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { PrimaryButton } from '@/components/buttons';
-import { Spacing, BorderRadius, Shadows, SharedStyles } from '@/constants';
+import { CategoryIcon } from '@/components/cards/CategoryIcon';
+import { Spacing, BorderRadius, Shadows } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import type { Category } from '@/types';
 
@@ -10,6 +11,10 @@ type Props = {
   category: Category;
 };
 
+/**
+ * Card for a single category. Shows its icon, name and colour swatch, and
+ * opens the category detail screen on tap.
+ */
 function CategoryCard({ category }: Props) {
   const router = useRouter();
   const theme = useAppTheme();
@@ -26,12 +31,11 @@ function CategoryCard({ category }: Props) {
       accessibilityLabel={`Category: ${category.name}`}
     >
       <View style={styles.row}>
-        <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
-        <Text style={[styles.name, { color: theme.textPrimary }]}>{category.name}</Text>
+        <CategoryIcon category={category} size={18} />
+        <Text style={[styles.name, { color: theme.textPrimary, marginLeft: Spacing.sm }]}>
+          {category.name}
+        </Text>
       </View>
-      <Text style={[styles.icon, { color: theme.textSecondary }]} accessibilityLabel={`Icon: ${category.icon}`}>
-        {category.icon}
-      </Text>
       <PrimaryButton compact label="View" variant="accent" onPress={openDetails} />
     </View>
   );
@@ -50,14 +54,10 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
+    marginBottom: Spacing.sm,
   },
   name: {
     fontSize: 18,
     fontWeight: '700',
-  },
-  icon: {
-    fontSize: 14,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xs,
   },
 });

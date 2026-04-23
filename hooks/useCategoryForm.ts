@@ -4,7 +4,8 @@ import type { CategoryFormData } from '@/types';
 const EMPTY_FORM: CategoryFormData = { name: '', color: '#3B82F6', icon: 'eye' };
 
 /**
- * Reusable form state hook for category forms (add & edit).
+ * Holds the form state for the Category form, shared by the add-category
+ * and edit-category screens.
  */
 export function useCategoryForm(initial: CategoryFormData = EMPTY_FORM) {
   const [formData, setFormData] = useState<CategoryFormData>(initial);

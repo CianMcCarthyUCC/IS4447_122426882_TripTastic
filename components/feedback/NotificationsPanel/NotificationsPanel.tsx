@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
+import { PressableOpacity } from '@/components/buttons';
 import { BorderRadius, Shadows, Spacing } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useHaptics } from '@/hooks/useHaptics';
@@ -25,11 +26,9 @@ type Props = {
 };
 
 /**
- * Slide-down modal that surfaces the in-app notification feed computed
- * by `useNotifications`. Rows are pressable and navigate to the most
- * relevant screen for the notification kind. Each row has an X to
- * dismiss individually, and the header exposes a "Clear all" control
- * whenever the list is non-empty.
+ * The drop-down panel that shows the user's in-app notifications. Each row
+ * jumps to the relevant screen when tapped, can be swiped away on its own,
+ * and a Clear All control wipes the list when needed.
  */
 function NotificationsPanel({ visible, notifications, onClose, onDismiss, onClearAll }: Props) {
   const theme = useAppTheme();
@@ -40,7 +39,7 @@ function NotificationsPanel({ visible, notifications, onClose, onDismiss, onClea
     haptics.light();
     // Close first so the navigation transition isn't covered by the modal.
     onClose();
-    // Route shapes come straight from the hook — just forward them.
+    // Route shapes come straight from the hook - just forward them.
     router.push(item.href as Href);
   };
 
@@ -86,12 +85,10 @@ function NotificationsPanel({ visible, notifications, onClose, onDismiss, onClea
               </Text>
             </View>
             {notifications.length > 0 ? (
-              <Pressable
+              <PressableOpacity
                 onPress={handleClearAll}
-                style={({ pressed }) => [
-                  styles.clearAllBtn,
-                  { backgroundColor: theme.tagBackground, opacity: pressed ? 0.7 : 1 },
-                ]}
+                pressedOpacity={0.7}
+                style={[styles.clearAllBtn, { backgroundColor: theme.tagBackground }]}
                 accessibilityRole="button"
                 accessibilityLabel="Clear all notifications"
                 hitSlop={6}
@@ -99,20 +96,18 @@ function NotificationsPanel({ visible, notifications, onClose, onDismiss, onClea
                 <Text style={[styles.clearAllLabel, { color: theme.textPrimary }]}>
                   Clear all
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             ) : null}
-            <Pressable
+            <PressableOpacity
               onPress={onClose}
-              style={({ pressed }) => [
-                styles.closeBtn,
-                { backgroundColor: theme.tagBackground, opacity: pressed ? 0.7 : 1 },
-              ]}
+              pressedOpacity={0.7}
+              style={[styles.closeBtn, { backgroundColor: theme.tagBackground }]}
               accessibilityRole="button"
               accessibilityLabel="Close notifications"
               hitSlop={8}
             >
               <Ionicons name="close" size={18} color={theme.textPrimary} />
-            </Pressable>
+            </PressableOpacity>
           </View>
 
           {notifications.length === 0 ? (
@@ -182,9 +177,10 @@ function NotificationRow({ item, theme, onPress, onDismiss }: RowProps) {
 
   return (
     <View style={styles.rowWrap}>
-      <Pressable
+      <PressableOpacity
         onPress={onPress}
-        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+        pressedOpacity={0.7}
+        style={styles.row}
         accessibilityRole="button"
         accessibilityLabel={`${item.title}. ${item.body}. Tap to open.`}
       >
@@ -205,17 +201,17 @@ function NotificationRow({ item, theme, onPress, onDismiss }: RowProps) {
           color={theme.textSecondary}
           style={styles.chevron}
         />
-      </Pressable>
+      </PressableOpacity>
       {/* Separate dismiss target so tapping X doesn't also navigate. */}
-      <Pressable
+      <PressableOpacity
         onPress={onDismiss}
-        style={({ pressed }) => [styles.dismissBtn, { opacity: pressed ? 0.6 : 1 }]}
+        style={styles.dismissBtn}
         accessibilityRole="button"
         accessibilityLabel={`Dismiss ${item.title}`}
         hitSlop={10}
       >
         <Ionicons name="close" size={14} color={theme.textSecondary} />
-      </Pressable>
+      </PressableOpacity>
     </View>
   );
 }

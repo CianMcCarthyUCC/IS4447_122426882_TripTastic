@@ -15,11 +15,9 @@ type Props = {
 };
 
 /**
- * Circular avatar with a coloured ring. Shows the stored photo when `uri`
- * is a non-empty string; otherwise draws initials derived from
- * `displayName` (fallback: email local-part). The two-ring look is the
- * Account hero style lifted verbatim so the component drops in without
- * any visual regression.
+ * The round profile avatar. Displays the user's photo when they have set
+ * one, and falls back to their initials inside a coloured ring so the
+ * avatar never looks empty.
  */
 export default function Avatar({ uri, displayName, email, size = 96 }: Props) {
   const theme = useAppTheme();
@@ -27,7 +25,7 @@ export default function Avatar({ uri, displayName, email, size = 96 }: Props) {
   const initials = useMemo(() => {
     const trimmed = displayName?.trim();
     // Fall back to the email's local part when the user hasn't set a
-    // display name — keeps the avatar from ever reading as just "?".
+    // display name - keeps the avatar from ever reading as just "?".
     const source = trimmed || email?.split('@')[0] || '';
     const parts = source.split(/[\s._-]+/).filter(Boolean);
     if (parts.length === 0) return '?';
@@ -35,7 +33,7 @@ export default function Avatar({ uri, displayName, email, size = 96 }: Props) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }, [displayName, email]);
 
-  // Inner circle sits 6px inside the ring — keeps a consistent ring width
+  // Inner circle sits 6px inside the ring - keeps a consistent ring width
   // regardless of the caller's requested size.
   const innerSize = size - 6;
   // Initials scale with size so a smaller avatar doesn't look cramped.
@@ -77,7 +75,7 @@ export default function Avatar({ uri, displayName, email, size = 96 }: Props) {
             source={{ uri: uri as string }}
             style={[styles.image, { borderRadius: innerSize / 2 }]}
             // Avatars are rendered at small sizes but photos come from the
-            // full-resolution picker output — let RN downscale rather than
+            // full-resolution picker output - let RN downscale rather than
             // stretching.
             resizeMode="cover"
           />
@@ -105,7 +103,7 @@ const styles = StyleSheet.create({
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
-    // `overflow: 'hidden'` clips the <Image> to the rounded bounds — without
+    // `overflow: 'hidden'` clips the <Image> to the rounded bounds - without
     // it the borderRadius on the image itself is ignored on Android.
     overflow: 'hidden',
   },

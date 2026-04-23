@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Spacing, BorderRadius, SharedStyles } from '@/constants';
+import { Spacing, BorderRadius } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import type { ProgressData } from '@/utils/progressHelpers';
 
@@ -10,6 +10,11 @@ type Props = ProgressData & {
   unit?: string;
 };
 
+/**
+ * The visual progress bar used across goals and trips. Shows the current
+ * value against the target with a filled bar, a percentage and a short
+ * status line underneath so the user can see how close they are.
+ */
 function ProgressBar({
   current,
   target,
@@ -29,21 +34,6 @@ function ProgressBar({
       accessibilityLabel={`${current} of ${target} ${unit}, ${percent}%`}
       accessibilityValue={{ min: 0, max: target, now: current }}
     >
-      {(exceeded || met) && (
-        <View style={styles.badgeRow}>
-          {exceeded && (
-            <View style={[SharedStyles.badge, { backgroundColor: theme.dangerAction }]}>
-              <Text style={SharedStyles.badgeText}>Exceeded</Text>
-            </View>
-          )}
-          {met && (
-            <View style={[SharedStyles.badge, { backgroundColor: theme.successAction }]}>
-              <Text style={SharedStyles.badgeText}>Met</Text>
-            </View>
-          )}
-        </View>
-      )}
-
       <View style={[styles.barBg, { backgroundColor: theme.cardBorder }]}>
         <View style={[styles.barFill, { width: `${barFillWidth}%`, backgroundColor: barColor }]} />
       </View>
@@ -58,7 +48,7 @@ function ProgressBar({
         </Text>
       )}
       {exceeded && (
-        <Text style={[styles.exceededText, { color: theme.dangerAction }]}>
+        <Text style={[styles.exceededText, { color: theme.successAction }]}>
           {current - target} {unit} over target
         </Text>
       )}
@@ -69,11 +59,6 @@ function ProgressBar({
 export default memo(ProgressBar);
 
 const styles = StyleSheet.create({
-  badgeRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
   barBg: {
     borderRadius: BorderRadius.pill,
     height: 8,

@@ -4,9 +4,9 @@ import type { Activity, Category, Target } from '@/types';
 
 function activitiesToCsv(activities: Activity[], categories: Category[]): string {
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
-  const header = 'Date,Duration (min),Category,Notes';
+  const header = 'Date,Duration (min),Category,Place,Notes';
   const rows = activities.map((a) =>
-    `${a.date},${a.metric},"${catMap.get(a.categoryId) ?? 'Unknown'}","${(a.notes ?? '').replace(/"/g, '""')}"`,
+    `${a.date},${a.metric},"${catMap.get(a.categoryId) ?? 'Unknown'}","${(a.place ?? '').replace(/"/g, '""')}","${(a.notes ?? '').replace(/"/g, '""')}"`,
   );
   return [header, ...rows].join('\n');
 }
@@ -21,7 +21,9 @@ function targetsToCsv(targets: Target[], categories: Category[]): string {
 }
 
 /**
- * Exports activities and targets as a CSV file and opens the share sheet.
+ * Builds a CSV file of the user's activities and goals and hands it off
+ * to the system share sheet, so the user can back their data up or send
+ * it anywhere they like.
  */
 export async function exportDataAsCsv(
   activities: Activity[],

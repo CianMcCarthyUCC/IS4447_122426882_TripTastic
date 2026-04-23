@@ -11,11 +11,11 @@ export type WeatherData = {
 };
 
 /**
- * Fetches current weather for a city from OpenWeatherMap.
- * Optionally pass country name to disambiguate (e.g. "Rome" + "Italy").
+ * Fetches the current weather for a city, used in the trip info bar.
+ * Accepts an optional country to tell cities with the same name apart.
  */
 export async function getWeather(city: string, country?: string): Promise<WeatherData> {
-  // Build query — append country if provided for accuracy
+  // Build query - append country if provided for accuracy
   const query = country ? `${city},${country}` : city;
   const url = `${BASE_URL}/weather?q=${encodeURIComponent(query)}&units=metric&appid=${API_KEY}`;
   const response = await fetch(url);

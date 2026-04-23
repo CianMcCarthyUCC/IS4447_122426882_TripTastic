@@ -1,9 +1,7 @@
 /**
- * City-name → lat/lon helper.
- *
- * Tries a static lookup first (covers the seeded demo trips without a network
- * round-trip), then falls back to OpenWeather's geocode endpoint. Returns
- * null on failure so callers can handle missing coords gracefully.
+ * Turns a city name into a latitude and longitude. Checks a built-in
+ * table first for popular destinations, then falls back to an online
+ * service when the city isn't already known.
  */
 
 export type Coords = { latitude: number; longitude: number };

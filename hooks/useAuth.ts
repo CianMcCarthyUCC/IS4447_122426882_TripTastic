@@ -19,8 +19,9 @@ import { deleteAvatar } from '@/utils/avatarStorage';
 import type { RegisterFormData, LoginFormData, UpdateProfileInput } from '@/types';
 
 /**
- * Central hook for all auth operations.
- * Manages register, login, logout, delete account, and session restore.
+ * The central hook for user accounts. Covers register, log in, log out,
+ * profile updates, deleting the account and restoring the session on
+ * app start.
  */
 export function useAuth() {
   const { user, isAuthenticated, isLoading, setUser } = useAuthContext();
@@ -105,7 +106,7 @@ export function useAuth() {
       const trimmed: UpdateProfileInput = {
         displayName: data.displayName.trim(),
         homeCity: data.homeCity.trim(),
-        // URI is passed through verbatim — trimming a `file://` path would
+        // URI is passed through verbatim - trimming a `file://` path would
         // corrupt it, and the caller already resolved it via `saveAvatar`.
         profilePicture: data.profilePicture,
       };

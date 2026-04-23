@@ -58,6 +58,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Explore',
+          headerShown: false,
           tabBarIcon: ({ color }) => <ExploreIcon size={TAB_ICON_SIZE} color={color} />,
           tabBarAccessibilityLabel: 'Explore tab',
         }}
@@ -66,6 +67,7 @@ export default function TabLayout() {
         name="insights"
         options={{
           title: 'Insights',
+          headerShown: false,
           tabBarIcon: ({ color }) => <InsightsIcon size={TAB_ICON_SIZE} color={color} />,
           tabBarAccessibilityLabel: 'Insights tab',
         }}
@@ -74,9 +76,10 @@ export default function TabLayout() {
         name="profile"
         options={{
           // Route file stays `profile.tsx` (stable URL), but user-facing
-          // surfaces say "Account" — feels more appropriate once the screen
+          // surfaces say "Account" - feels more appropriate once the screen
           // covers name, home city, theme, notifications, and sign-out.
           title: 'Account',
+          headerShown: false,
           tabBarIcon: ({ color }) => <ProfileIcon size={TAB_ICON_SIZE} color={color} />,
           tabBarAccessibilityLabel: 'Account tab',
         }}

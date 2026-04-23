@@ -29,6 +29,19 @@ export {
 } from './auth';
 
 export { exportDataAsCsv } from './csvExport';
+
+export {
+  favouriteToggleLabel,
+  completeToggleLabel,
+  editLabel,
+  viewDetailsLabel,
+  deleteLabel,
+  savedFilterLabels,
+  filtersPillLabel,
+  sortToggleLabel,
+  suggestionLabel,
+  dismissOverlayLabel,
+} from './a11y';
 export { countryToContinent, CONTINENTS } from './continent';
 export type { Continent } from './continent';
 export { computeStreaks } from './streakCalculator';

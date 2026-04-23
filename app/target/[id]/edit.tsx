@@ -2,8 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useTargets, useTargetForm, useCategories, useFormSubmit } from '@/hooks';
 import { TargetForm } from '@/components/forms';
-import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { EditEntityScreen } from '@/components/layout';
 import { validateTargetForm } from '@/utils/validation';
 
 export default function EditTarget() {
@@ -23,15 +22,14 @@ export default function EditTarget() {
     populateForm({
       tripId: target.tripId, categoryId: target.categoryId,
       targetValue: String(target.targetValue), period: target.period,
+      notes: target.notes ?? '',
     });
   }, [target?.id, populateForm]);
 
   if (!target) return null;
 
   return (
-    <ScreenContainer>
-      <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Edit Goal" subtitle="Update your goal." />
+    <EditEntityScreen title="Edit Goal" toast={toast} onHideToast={hideToast}>
       <TargetForm
         formData={formData}
         onChangeField={onChangeField}
@@ -42,6 +40,6 @@ export default function EditTarget() {
         categories={categories}
         error={error}
       />
-    </ScreenContainer>
+    </EditEntityScreen>
   );
 }

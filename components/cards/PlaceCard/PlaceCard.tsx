@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, Shadows, SharedStyles, Palette } from '@/constants';
+import { Spacing, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useCategoryLookup } from '@/hooks/useCategoryLookup';
+import { CategoryIcon } from '@/components/cards/CategoryIcon';
 import type { Place } from '@/utils/geoapify';
 import type { Category } from '@/types';
 
@@ -14,8 +15,9 @@ type Props = {
 };
 
 /**
- * Row-style card showing a Geoapify POI with its mapped app category colour.
- * Used by the trip Places segment and the place-picker modal.
+ * A horizontal card for a single place of interest. Used on the trip's
+ * Places tab and inside the place-picker. Shows the place name, address
+ * and a tinted category icon so each row is easy to scan.
  */
 function PlaceCard({ place, categories, onPress }: Props) {
   const theme = useAppTheme();
@@ -23,6 +25,9 @@ function PlaceCard({ place, categories, onPress }: Props) {
   const category = categoryLookup.get(place.categoryId);
   const categoryName = category?.name ?? 'Place';
   const color = category?.color ?? Palette.navy;
+  // Fall back to a location glyph when the place maps to no known
+  // category (Geoapify returns a type we don't stock in the local DB).
+  const badgeCategory = category ?? { icon: 'location', color };
 
   const handlePress = () => onPress?.(place);
 
@@ -31,25 +36,23 @@ function PlaceCard({ place, categories, onPress }: Props) {
       onPress={handlePress}
       disabled={!onPress}
       style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
+        styles.row,
+        { borderBottomColor: theme.cardBorder },
         pressed && onPress && styles.pressed,
       ]}
       accessibilityRole={onPress ? 'button' : 'summary'}
       accessibilityLabel={`${place.name}, ${categoryName}`}
       accessibilityHint={onPress ? 'Select this place' : undefined}
     >
-      <View style={[styles.iconBubble, { backgroundColor: color }]}>
-        <Ionicons name="location" size={18} color={Palette.white} />
-      </View>
+      <CategoryIcon category={badgeCategory} variant="bubble" size={36} />
 
       <View style={styles.body}>
         <Text style={[styles.name, { color: theme.textPrimary }]} numberOfLines={1}>
           {place.name}
         </Text>
         <View style={styles.metaRow}>
-          <View style={[SharedStyles.colorDot, { backgroundColor: color }]} />
-          <Text style={[styles.meta, { color: theme.textSecondary }]}>{categoryName}</Text>
+          <CategoryIcon category={badgeCategory} size={14} />
+          <Text style={[styles.meta, { color: theme.textSecondary, marginLeft: Spacing.xs }]}>{categoryName}</Text>
         </View>
         {place.address ? (
           <Text style={[styles.address, { color: theme.textSecondary }]} numberOfLines={1}>
@@ -68,26 +71,15 @@ function PlaceCard({ place, categories, onPress }: Props) {
 export default memo(PlaceCard);
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     alignItems: 'center',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderBottomWidth: 1,
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: Spacing.md,
-    padding: Spacing.lg,
-    ...Shadows.md,
+    paddingVertical: Spacing.md,
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
-  },
-  iconBubble: {
-    alignItems: 'center',
-    borderRadius: BorderRadius.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
+    opacity: 0.6,
   },
   body: {
     flex: 1,

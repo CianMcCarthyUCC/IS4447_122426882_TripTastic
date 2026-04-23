@@ -1,39 +1,46 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
+import { Spacing } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 type Props = {
+  /** Number of goals currently hitting or exceeding their target. */
   onTrack: number;
+  /** Total number of goals. */
   total: number;
 };
 
 /**
- * Summary banner for Targets tab — "X of Y targets on track".
- * Colour-coded: green when all met, coral when some pending, red when behind.
+ * The three-number overview strip on the Goals tab. Gives the user a quick
+ * read on how many goals they've set, how many are complete and how many
+ * are still in progress.
  */
 function SummaryBanner({ onTrack, total }: Props) {
   const theme = useAppTheme();
 
   if (total === 0) return null;
 
-  const ratio = onTrack / total;
-  const color = ratio >= 1 ? theme.successAction : ratio >= 0.5 ? Palette.coral : theme.dangerAction;
-  const icon: keyof typeof Ionicons.glyphMap = ratio >= 1 ? 'checkmark-circle' : ratio >= 0.5 ? 'trending-up' : 'alert-circle';
-  const message = ratio >= 1
-    ? 'All targets on track!'
-    : `${onTrack} of ${total} targets on track`;
+  const inProgress = Math.max(0, total - onTrack);
 
   return (
-    <View style={[styles.banner, { backgroundColor: color + '14', borderColor: color + '30' }]}>
-      <Ionicons name={icon} size={22} color={color} />
-      <View style={styles.textContainer}>
-        <Text style={[styles.message, { color: theme.textPrimary }]}>{message}</Text>
-        <Text style={[styles.sub, { color: theme.textSecondary }]}>
-          {total - onTrack > 0 ? `${total - onTrack} need attention` : 'Keep it up!'}
-        </Text>
-      </View>
+    <View style={[styles.row, { borderColor: theme.cardBorder }]}>
+      <Stat label="Goals set" value={total} color={theme.textPrimary} />
+      <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+      <Stat label="Completed" value={onTrack} color={theme.successAction} />
+      <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+      <Stat label="In progress" value={inProgress} color={theme.accentAction} />
+    </View>
+  );
+}
+
+type StatProps = { label: string; value: number; color: string };
+
+function Stat({ label, value, color }: StatProps) {
+  const theme = useAppTheme();
+  return (
+    <View style={styles.stat}>
+      <Text style={[styles.value, { color }]}>{value}</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
     </View>
   );
 }
@@ -41,24 +48,31 @@ function SummaryBanner({ onTrack, total }: Props) {
 export default memo(SummaryBanner);
 
 const styles = StyleSheet.create({
-  banner: {
+  row: {
     alignItems: 'center',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
     flexDirection: 'row',
-    gap: Spacing.md,
     marginBottom: Spacing.lg,
-    padding: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
-  textContainer: {
+  stat: {
+    alignItems: 'center',
     flex: 1,
   },
-  message: {
-    fontSize: 15,
-    fontWeight: '700',
+  divider: {
+    height: 28,
+    width: 1,
   },
-  sub: {
-    fontSize: 13,
-    marginTop: Spacing.xs,
+  value: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
 });

@@ -15,6 +15,11 @@ type Props = {
   onCancel: () => void;
 };
 
+/**
+ * A small modal that asks the user to confirm before a destructive action
+ * goes through (e.g. deleting a trip or account). Comes with a clear title,
+ * message, and a pair of confirm/cancel buttons.
+ */
 function ConfirmDialog({
   visible,
   title,

@@ -1,4 +1,4 @@
-// Barrel export — import any component from '@/components'
+// Barrel export - import any component from '@/components'
 export { PrimaryButton, ButtonGroup, FAB, EntityActions } from './buttons';
 export {
   CategoryCard,
@@ -12,9 +12,7 @@ export {
   TripCard,
   TripHero,
   PlaceCard,
-  SettingsSection,
-  SettingToggle,
-  AiOverviewCard,
+  SettingsListRow,
 } from './cards';
 export { BarChartCard, LineChartCard, PieChartCard } from './charts';
 export {

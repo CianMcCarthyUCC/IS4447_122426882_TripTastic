@@ -10,7 +10,7 @@ type Props = {
   value: string;
   /**
    * Optional leading icon. Use the Ionicons set so every tag in the app
-   * shares a visual language — prefer the `-outline` variants for a light,
+   * shares a visual language - prefer the `-outline` variants for a light,
    * non-shouty chip and keep icons meaningfully paired with the label
    * (e.g. `calendar-outline` for Period, `flag-outline` for Target).
    */
@@ -18,10 +18,9 @@ type Props = {
 };
 
 /**
- * Compact label/value chip used to summarise metadata on detail screens
- * and cards. A small icon bubble is rendered when `icon` is provided so
- * the tag can be scanned at a glance — the icon, label and value all
- * share the same accent colour for a unified look.
+ * A small label + value chip, used for summarising details on cards and
+ * detail screens (for example "Duration: 30 min"). Adds a leading icon
+ * bubble when one is supplied so each tag is easy to scan.
  */
 export default function InfoTag({ label, value, icon }: Props) {
   const theme = useAppTheme();
@@ -51,7 +50,7 @@ export default function InfoTag({ label, value, icon }: Props) {
 }
 
 const styles = StyleSheet.create({
-  // Pill with a hairline border — keeps the chip legible against light
+  // Pill with a hairline border - keeps the chip legible against light
   // card surfaces where the background-only fill can otherwise wash out.
   tag: {
     alignItems: 'center',

@@ -1,16 +1,9 @@
 import { Alert, Platform } from 'react-native';
 
 /**
- * Prompt the user for a name for the filter they're about to save.
- *
- * Uses `Alert.prompt` on iOS (native inline input). Android has no
- * equivalent, so we fall back to a templated name derived from the
- * active filter keys/values — good enough to tell saved filters apart
- * at a glance. Callers can always long-press a chip to remove a
- * mis-named preset later.
- *
- * Returns `null` if the user cancels on iOS. On Android this always
- * resolves with a synthesised name (no cancel path).
+ * Asks the user what to call a filter they are about to save. On iOS
+ * this opens a small name prompt; on Android, where no such prompt
+ * exists, it generates a readable name from the active filter settings.
  */
 export function promptFilterName(
   fallbackHint: string,
@@ -35,7 +28,7 @@ export function promptFilterName(
       );
     });
   }
-  // Android — use the fallback hint directly; a modal with FormField
+  // Android - use the fallback hint directly; a modal with FormField
   // would bloat the screen tree for a marginal UX win. User can always
   // remove + re-save if they dislike the name.
   return Promise.resolve(fallbackHint);
@@ -48,11 +41,11 @@ export function promptFilterName(
  */
 export function describeFilter(
   state: Record<string, string>,
-  categoryNameById: Map<number, string>,
+  categoryById: Map<number, { name: string }>,
 ): string {
   const parts: string[] = [];
   if (state.selectedCategory && state.selectedCategory !== 'all') {
-    const name = categoryNameById.get(Number(state.selectedCategory));
+    const name = categoryById.get(Number(state.selectedCategory))?.name;
     if (name) parts.push(name);
   }
   if (state.status && state.status !== 'all') parts.push(state.status);

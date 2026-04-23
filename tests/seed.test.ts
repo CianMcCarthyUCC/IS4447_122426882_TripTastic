@@ -3,7 +3,7 @@ const mockFrom = jest.fn();
 
 // `db.transaction` hands the seed a tx-scoped client. In this mock we just
 // pass `db` itself through so the existing `insert`/`select` spies keep
-// working — the seed code's behaviour is identical whether it's talking to
+// working - the seed code's behaviour is identical whether it's talking to
 // `db` or a real transaction object.
 jest.mock('@/db/client', () => {
   const db: any = {
@@ -18,7 +18,7 @@ jest.mock('@/db/client', () => {
 // Minimal column stub that chains every builder method the schema uses
 // (`.notNull()`, `.unique()`, `.primaryKey()`, `.references()`, `.default()`).
 // Each method returns the same stub so chains of any depth work. The actual
-// values aren't meaningful for the seed test — it only cares that the
+// values aren't meaningful for the seed test - it only cares that the
 // column objects exist so `sqliteTable` can return its columns map.
 jest.mock('drizzle-orm/sqlite-core', () => {
   const makeColumn = (): any => {
@@ -34,7 +34,7 @@ jest.mock('drizzle-orm/sqlite-core', () => {
   };
   return {
     // `sqliteTable(name, columns)` and `sqliteTable(name, columns, extraFn)`
-    // both collapse to just the columns map here — indexes/foreign keys
+    // both collapse to just the columns map here - indexes/foreign keys
     // aren't exercised by the seed path.
     sqliteTable: (_name: string, columns: any) => columns,
     integer: () => makeColumn(),
@@ -68,20 +68,20 @@ describe('seedDataIfEmpty', () => {
     expect(categoriesInsert[0]).toHaveProperty('name', 'Sightseeing');
     expect(categoriesInsert[4]).toHaveProperty('name', 'Shopping');
 
-    // 4 trips — two upcoming/planned (Italy, Paris) + two past (Tokyo, NY)
+    // 4 trips - two upcoming/planned (Italy, Paris) + two past (Tokyo, NY)
     // that power the Previous Trips rail on the Trips tab.
     const tripInsert = mockValues.mock.calls[1][0];
     expect(tripInsert).toHaveLength(4);
     expect(tripInsert[0]).toHaveProperty('name', 'Summer in Italy');
     expect(tripInsert[1]).toHaveProperty('name', 'Weekend in Paris');
-    expect(tripInsert[2]).toHaveProperty('name', 'Autumn in Japan');
+    expect(tripInsert[2]).toHaveProperty('name', '9 Days in Tokyo');
     expect(tripInsert[3]).toHaveProperty('name', 'New York City Break');
 
-    // 44 activities — 14 Italy + 9 Paris + 11 Tokyo + 10 NY. This count
+    // 59 activities - 14 Italy + 9 Paris + 26 Tokyo + 10 NY. This count
     // tracks the seed, so bump it deliberately when seed data grows; a
     // stale number means the seed changed without thought.
     const activitiesInsert = mockValues.mock.calls[2][0];
-    expect(activitiesInsert).toHaveLength(44);
+    expect(activitiesInsert).toHaveLength(59);
 
     // One favourite per trip (pre-seeded so the Priority marker is
     // visible out of the box on every trip). Counting them guards against
@@ -89,17 +89,42 @@ describe('seedDataIfEmpty', () => {
     const favouriteCount = activitiesInsert.filter((a: { isFavourite?: boolean }) => a.isFavourite).length;
     expect(favouriteCount).toBe(4);
 
-    // 6 targets — four for Italy/global, two for Paris.
+    // 6 targets - four for Italy/global, two for Paris.
     const targetsInsert = mockValues.mock.calls[3][0];
     expect(targetsInsert).toHaveLength(6);
+
+    // Tail insert is the Unspecified system catch-all - the fallback that
+    // activities/goals get moved to when a user category is deleted. Added
+    // last so it lands *after* the seeded user categories by autoincrement.
+    const savedFiltersInsert = mockValues.mock.calls[4][0];
+    expect(Array.isArray(savedFiltersInsert)).toBe(true);
+    const unspecifiedInsert = mockValues.mock.calls[5][0];
+    expect(unspecifiedInsert).toMatchObject({ name: 'Unspecified', isSystem: true });
   });
 
-  it('does not insert data when categories already exist', async () => {
-    mockFrom.mockResolvedValue([{ id: 1, name: 'Existing', color: '#000', icon: 'star' }]);
+  it('does not reseed demo data when user categories already exist', async () => {
+    // Existing install with a user category AND the system row present -
+    // seed should short-circuit without any inserts.
+    mockFrom.mockResolvedValue([
+      { id: 1, name: 'Existing', color: '#000', icon: 'star', isSystem: false },
+      { id: 2, name: 'Unspecified', color: '#9CA3AF', icon: 'help-circle', isSystem: true },
+    ]);
 
     await seedDataIfEmpty();
 
     const { db } = require('@/db/client');
     expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it('adds the Unspecified catch-all to an existing install that is missing it', async () => {
+    mockFrom.mockResolvedValue([
+      { id: 1, name: 'Existing', color: '#000', icon: 'star', isSystem: false },
+    ]);
+
+    await seedDataIfEmpty();
+
+    // Exactly one insert - just the Unspecified row, no demo reseed.
+    expect(mockValues).toHaveBeenCalledTimes(1);
+    expect(mockValues.mock.calls[0][0]).toMatchObject({ name: 'Unspecified', isSystem: true });
   });
 });

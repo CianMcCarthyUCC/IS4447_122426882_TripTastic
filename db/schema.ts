@@ -15,6 +15,10 @@ export const categories = sqliteTable('categories', {
   name: text('name').notNull(),
   color: text('color').notNull(),
   icon: text('icon').notNull(),
+  // System-managed categories (e.g. "Unspecified") can't be renamed or
+  // deleted. Deleting a user category reassigns its activities + goals
+  // to the unique row flagged isSystem=true instead of cascading away.
+  isSystem: integer('is_system', { mode: 'boolean' }).notNull().default(false),
 });
 
 export const activities = sqliteTable(
@@ -30,12 +34,20 @@ export const activities = sqliteTable(
     date: text('date').notNull(),
     metric: integer('metric').notNull(),
     status: text('status').notNull(),
+    // Where the activity happens - optional. Either picked via the
+    // place-picker modal or typed free-form by the user. Kept separate
+    // from `notes` so charts/AI prompts can surface the venue without
+    // parsing prose.
+    place: text('place'),
     notes: text('notes'),
-    // Per-trip "priority" marker. Only one activity per trip should carry
-    // this flag — `setFavouriteActivity` unstars siblings inside the same
-    // transaction. Stored as 0/1 at the SQLite level via Drizzle's boolean
-    // mode so selects hand the repo `true`/`false` directly.
+    // Per-activity favourite flag. A trip can have any number of favourites;
+    // they sort to the top of the activities list in the order they were
+    // starred (earliest first) via `favouritedAt`. Stored as 0/1 at the SQLite
+    // level via Drizzle's boolean mode.
     isFavourite: integer('is_favourite', { mode: 'boolean' }).notNull().default(false),
+    // ISO timestamp set the moment `isFavourite` flips true; cleared back to
+    // null when unstarred. Drives the favourites-first ordering.
+    favouritedAt: text('favourited_at'),
   },
   (t) => ({
     tripIdx: index('activities_trip_id_idx').on(t.tripId),
@@ -50,12 +62,12 @@ export const users = sqliteTable('users', {
   passwordHash: text('password_hash').notNull(),
   createdAt: text('created_at').notNull(),
   // Display fields populated on the Account / Edit Profile screen. Nullable
-  // (sensible default: empty string at migration) — users upgrading from an
+  // (sensible default: empty string at migration) - users upgrading from an
   // earlier build won't have these populated until they visit Edit Profile.
   displayName: text('display_name').notNull().default(''),
   homeCity: text('home_city').notNull().default(''),
   // Local file URI for the user's avatar (e.g. `file:///.../avatars/user-1-<ts>.jpg`).
-  // Empty string when unset — the Account screen falls back to initials in that
+  // Empty string when unset - the Account screen falls back to initials in that
   // case. We store a URI string rather than a BLOB so the image file stays
   // streamable via `<Image source={{ uri }} />` without a round-trip through JS.
   profilePicture: text('profile_picture').notNull().default(''),
@@ -95,27 +107,6 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull(),
 });
 
-/**
- * Cached AI-generated trip overviews. One row per trip (tripId is PK) — a
- * regenerate overwrites the existing row rather than appending history, so
- * the DB never grows unboundedly in the normal flow. `recommendedOrder`
- * is a JSON-encoded `number[]` of activity IDs in the AI's suggested order;
- * stored as text because SQLite lacks a native array type and the read-path
- * only ever consumes it after a single `JSON.parse`, which is cheap relative
- * to a Gemini round-trip.
- */
-export const tripAiOverviews = sqliteTable('trip_ai_overviews', {
-  // Sharing the PK with trips.id enforces the one-row-per-trip invariant at
-  // the schema level — no composite keys, no extra unique index needed.
-  tripId: integer('trip_id')
-    .primaryKey()
-    .references(() => trips.id, { onDelete: 'cascade' }),
-  content: text('content').notNull(),
-  recommendedOrder: text('recommended_order').notNull().default('[]'),
-  model: text('model').notNull(),
-  generatedAt: text('generated_at').notNull(),
-});
-
 export const targets = sqliteTable(
   'targets',
   {
@@ -126,6 +117,8 @@ export const targets = sqliteTable(
       .references(() => categories.id, { onDelete: 'restrict' }),
     targetValue: integer('target_value').notNull(),
     period: text('period').notNull(),
+    notes: text('notes'),
+    isFavourite: integer('is_favourite', { mode: 'boolean' }).notNull().default(false),
   },
   (t) => ({
     tripIdx: index('targets_trip_id_idx').on(t.tripId),

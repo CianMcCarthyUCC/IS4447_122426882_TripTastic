@@ -4,7 +4,7 @@
 // semantics stay identical across every filter surface in the app.
 //
 // All activity dates in the DB are stored as plain YYYY-MM-DD strings, so
-// these helpers intentionally avoid parsing dates — we compare strings
+// these helpers intentionally avoid parsing dates - we compare strings
 // lexicographically, which is correct for ISO-8601 date-only values and
 // keeps the filter predicate allocation-free on large lists.
 

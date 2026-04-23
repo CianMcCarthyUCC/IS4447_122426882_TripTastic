@@ -11,7 +11,8 @@ const EMPTY_FORM: TripFormData = {
 };
 
 /**
- * Reusable form state hook for trip forms (add & edit).
+ * Holds the form state for the Trip form, shared by the add-trip and
+ * edit-trip screens so both flows behave the same way.
  */
 export function useTripForm(initial: TripFormData = EMPTY_FORM) {
   const [formData, setFormData] = useState<TripFormData>(initial);

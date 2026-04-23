@@ -13,15 +13,17 @@ type Props = {
   completedCount: number;
   totalCount: number;
   onBack: () => void;
+  /** Optional - shows a settings/gear icon in the top-right when provided. */
+  onSettings?: () => void;
 };
 
 /**
- * Editorial hero for the trip detail screen — full-bleed cover image, circular
- * back button, country + destination + date/progress line overlaid on the
- * bottom of the image. Kept presentational: the screen owns the data and the
- * back handler so navigation stays where routing logic lives.
+ * The big cover image at the top of the trip detail screen. Shows the
+ * destination, country flag, dates and progress, with a circular back
+ * button tucked into the corner. Purely presentational - the screen
+ * supplies the trip data and controls navigation.
  */
-function TripHero({ trip, completedCount, totalCount, onBack }: Props) {
+function TripHero({ trip, completedCount, totalCount, onBack, onSettings }: Props) {
   const insets = useSafeAreaInsets();
   // Sit the back button just under the status bar on every device.
   const topOffset = insets.top + Spacing.sm;
@@ -35,7 +37,13 @@ function TripHero({ trip, completedCount, totalCount, onBack }: Props) {
   return (
     <View style={styles.container}>
       {trip.coverImage ? (
-        <Image source={{ uri: trip.coverImage }} style={styles.image} />
+        <Image
+          source={{ uri: trip.coverImage }}
+          style={styles.image}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={`Photo of ${trip.destination}`}
+        />
       ) : (
         <View style={[styles.image, styles.placeholder]}>
           <Ionicons name="airplane" size={48} color={Palette.white} />
@@ -60,6 +68,21 @@ function TripHero({ trip, completedCount, totalCount, onBack }: Props) {
       >
         <Ionicons name="chevron-back" size={22} color={Palette.grey900} />
       </Pressable>
+
+      {onSettings ? (
+        <Pressable
+          onPress={onSettings}
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.circleButton,
+            { top: topOffset, right: Spacing.lg, opacity: pressed ? 0.75 : 1 },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Trip settings"
+        >
+          <Ionicons name="settings-outline" size={20} color={Palette.grey900} />
+        </Pressable>
+      ) : null}
 
       <View style={styles.caption}>
         <View style={styles.countryRow} accessibilityLabel={`Country: ${trip.country}`}>

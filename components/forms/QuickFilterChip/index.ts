@@ -1,0 +1,1 @@
+export { QuickFilterChip } from './QuickFilterChip';

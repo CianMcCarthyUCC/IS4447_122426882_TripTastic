@@ -17,9 +17,9 @@ type Result = {
 };
 
 /**
- * Fetches Geoapify POIs around a coordinate. No-ops (returns empty list)
- * until both lat and lon are defined, so callers can pass hydrated-or-not
- * coordinates without guarding.
+ * Fetches nearby points of interest around a coordinate. Waits quietly
+ * until both latitude and longitude are known, so callers don't need to
+ * guard the call themselves.
  */
 export function usePlaces({ lat, lon, categoryIds, radiusMeters, limit }: Params): Result {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -36,7 +36,7 @@ export function usePlaces({ lat, lon, categoryIds, radiusMeters, limit }: Params
       return;
     }
 
-    // Per-effect-run cancellation flag — protects against stale responses
+    // Per-effect-run cancellation flag - protects against stale responses
     // when the user changes category / coordinate while a previous fetch
     // is still in flight. Strictly stronger than a mounted-ref because it
     // flips on every re-run, not just unmount.

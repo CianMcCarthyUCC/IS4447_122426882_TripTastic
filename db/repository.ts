@@ -1,6 +1,6 @@
-import { eq, inArray } from 'drizzle-orm';
+import { desc, eq, notInArray } from 'drizzle-orm';
 import { db } from './client';
-import { categories, activities, targets, users, sessions, savedFilters, recentSearches, settings, trips, tripAiOverviews } from './schema';
+import { categories, activities, targets, users, sessions, savedFilters, recentSearches, settings, trips } from './schema';
 import type {
   CategoryFormData,
   ActivityFormData,
@@ -10,8 +10,6 @@ import type {
   Target,
   User,
   UpdateProfileInput,
-  TripAiOverview,
-  TripAiOverviewInput,
 } from '@/types';
 
 // ── Trips ──────────────────────────────────────────────
@@ -26,6 +24,10 @@ export async function insertTrip(data: TripFormData) {
 
 export async function updateTripById(id: number, data: TripFormData) {
   await db.update(trips).set(data).where(eq(trips.id, id));
+}
+
+export async function deleteActivitiesByTripId(tripId: number) {
+  await db.delete(activities).where(eq(activities.tripId, tripId));
 }
 
 export async function deleteTripById(id: number) {
@@ -44,16 +46,51 @@ export async function getAllCategories() {
   return db.select().from(categories);
 }
 
-export async function insertCategory(data: CategoryFormData) {
-  await db.insert(categories).values(data);
+export async function insertCategory(data: CategoryFormData): Promise<number> {
+  const rows = await db.insert(categories).values(data).returning({ id: categories.id });
+  return rows[0].id;
 }
 
 export async function updateCategoryById(id: number, data: CategoryFormData) {
+  // Backstop for the UI lock: the Unspecified system row must stay exactly
+  // as seeded so it's recognisable as the fallback on every screen. Throw
+  // loudly rather than silently no-op so a misuse shows up in dev.
+  const [row] = await db.select().from(categories).where(eq(categories.id, id));
+  if (row?.isSystem) {
+    throw new Error('The Unspecified category cannot be edited.');
+  }
   await db.update(categories).set(data).where(eq(categories.id, id));
 }
 
 export async function deleteCategoryById(id: number) {
-  await db.delete(categories).where(eq(categories.id, id));
+  // Reassign instead of cascade: activities and goals belonging to the
+  // deleted category are moved to the system-flagged "Unspecified" row
+  // so nothing the user logged is lost. Guarded so the Unspecified row
+  // itself can never be deleted - the app needs exactly one of these at
+  // all times to serve as the fallback target.
+  await db.transaction(async (tx) => {
+    const [row] = await tx.select().from(categories).where(eq(categories.id, id));
+    if (!row) return;
+    if (row.isSystem) {
+      throw new Error('The Unspecified category cannot be deleted.');
+    }
+    const [fallback] = await tx
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.isSystem, true));
+    if (!fallback) {
+      throw new Error('Unspecified category is missing.');
+    }
+    await tx
+      .update(activities)
+      .set({ categoryId: fallback.id })
+      .where(eq(activities.categoryId, id));
+    await tx
+      .update(targets)
+      .set({ categoryId: fallback.id })
+      .where(eq(targets.categoryId, id));
+    await tx.delete(categories).where(eq(categories.id, id));
+  });
 }
 
 // ── Activities ──────────────────────────────────────────
@@ -80,7 +117,8 @@ export async function insertActivity(data: ActivityFormData) {
     date: data.date,
     metric,
     status: data.status,
-    notes: data.notes || null,
+    place: data.place.trim() || null,
+    notes: data.notes.trim() || null,
   });
 }
 
@@ -98,7 +136,8 @@ export async function updateActivityById(id: number, data: ActivityFormData) {
       date: data.date,
       metric,
       status: data.status,
-      notes: data.notes || null,
+      place: data.place.trim() || null,
+      notes: data.notes.trim() || null,
     })
     .where(eq(activities.id, id));
 }
@@ -108,112 +147,33 @@ export async function deleteActivityById(id: number) {
 }
 
 /**
- * Marks a single activity as the trip's favourite ("number-one priority").
- * Wrapped in a transaction so the "at most one favourite per trip"
- * invariant can never be violated by a mid-operation crash — either we
- * successfully unstar the old favourite AND star the new one, or we
- * leave the DB untouched.
- *
- * Passing `activityId` as the one currently starred is a no-op (unstar
- * then restar is effectively idempotent from the user's POV).
+ * Marks an activity as a favourite and remembers when the user starred
+ * it, so the favourites list can keep them in the order they were added.
  */
-export async function setFavouriteActivity(tripId: number, activityId: number) {
-  await db.transaction(async (tx) => {
-    await tx
-      .update(activities)
-      .set({ isFavourite: false })
-      .where(eq(activities.tripId, tripId));
-    await tx
-      .update(activities)
-      .set({ isFavourite: true })
-      .where(eq(activities.id, activityId));
-  });
-}
-
-/** Clears the favourite flag for every activity on the given trip. */
-export async function clearFavouriteActivity(tripId: number) {
+export async function setFavouriteActivity(activityId: number) {
   await db
     .update(activities)
-    .set({ isFavourite: false })
-    .where(eq(activities.tripId, tripId));
+    .set({ isFavourite: true, favouritedAt: new Date().toISOString() })
+    .where(eq(activities.id, activityId));
 }
 
-// ── AI Trip Overviews ──────────────────────────────────
-
-/**
- * Read the cached AI overview for a trip, if one exists. Returns `null`
- * rather than throwing when absent so callers can branch on presence
- * without a try/catch.
- *
- * The `recommended_order` column is stored as a JSON string — parsing
- * happens here so the rest of the app never sees the raw text. Bad JSON
- * (corrupted row, schema migration mismatch) degrades gracefully to an
- * empty array; we'd rather show the overview without the ordered list
- * than crash the Summary tab.
- */
-export async function getAiOverview(tripId: number): Promise<TripAiOverview | null> {
-  // `.limit(1)` is intent documentation — the PK already guarantees a single
-  // row — but making it explicit lets SQLite short-circuit the cursor after
-  // the first match on builds without the optimisation baked in.
-  const rows = await db
-    .select()
-    .from(tripAiOverviews)
-    .where(eq(tripAiOverviews.tripId, tripId))
-    .limit(1);
-  if (rows.length === 0) return null;
-  const row = rows[0];
-  let parsedOrder: number[] = [];
-  try {
-    const candidate = JSON.parse(row.recommendedOrder);
-    if (Array.isArray(candidate)) {
-      parsedOrder = candidate.filter((n): n is number => typeof n === 'number');
-    }
-  } catch {
-    // Corrupted JSON — fall through with the empty default.
-  }
-  return {
-    tripId: row.tripId,
-    content: row.content,
-    recommendedOrder: parsedOrder,
-    model: row.model,
-    generatedAt: row.generatedAt,
-  };
-}
-
-/**
- * Upsert a trip's AI overview using SQLite's native `ON CONFLICT DO UPDATE`
- * via Drizzle's `onConflictDoUpdate`. Expo ships SQLite 3.39+ so the
- * UPSERT semantics (available since 3.24) are safe to rely on. This is a
- * single atomic statement — no transaction wrapper needed — which is both
- * faster and eliminates the brief "row deleted, row not yet inserted"
- * window the previous delete-then-insert had.
- */
-export async function upsertAiOverview(input: TripAiOverviewInput): Promise<void> {
-  const generatedAt = input.generatedAt ?? new Date().toISOString();
-  const serialisedOrder = JSON.stringify(input.recommendedOrder ?? []);
+/** Unstars a single activity, clearing its `favouritedAt` timestamp. */
+export async function unsetFavouriteActivity(activityId: number) {
   await db
-    .insert(tripAiOverviews)
-    .values({
-      tripId: input.tripId,
-      content: input.content,
-      recommendedOrder: serialisedOrder,
-      model: input.model,
-      generatedAt,
-    })
-    .onConflictDoUpdate({
-      target: tripAiOverviews.tripId,
-      set: {
-        content: input.content,
-        recommendedOrder: serialisedOrder,
-        model: input.model,
-        generatedAt,
-      },
-    });
+    .update(activities)
+    .set({ isFavourite: false, favouritedAt: null })
+    .where(eq(activities.id, activityId));
 }
 
-/** Remove the cached overview for a trip (e.g. user tapped "Clear"). */
-export async function clearAiOverview(tripId: number): Promise<void> {
-  await db.delete(tripAiOverviews).where(eq(tripAiOverviews.tripId, tripId));
+/**
+ * Flips a single activity between planned and completed. Used by the
+ * inline complete toggle on the activity card.
+ */
+export async function setActivityStatus(
+  activityId: number,
+  status: 'planned' | 'completed',
+) {
+  await db.update(activities).set({ status }).where(eq(activities.id, activityId));
 }
 
 // ── Targets ────────────────────────────────────────────
@@ -231,6 +191,7 @@ export async function insertTarget(data: TargetFormData) {
     categoryId: data.categoryId,
     targetValue: Number(data.targetValue),
     period: data.period,
+    notes: data.notes.trim() || null,
   });
 }
 
@@ -242,6 +203,7 @@ export async function updateTargetById(id: number, data: TargetFormData) {
       categoryId: data.categoryId,
       targetValue: Number(data.targetValue),
       period: data.period,
+      notes: data.notes.trim() || null,
     })
     .where(eq(targets.id, id));
 }
@@ -250,9 +212,17 @@ export async function deleteTargetById(id: number) {
   await db.delete(targets).where(eq(targets.id, id));
 }
 
+export async function setFavouriteTarget(id: number) {
+  await db.update(targets).set({ isFavourite: true }).where(eq(targets.id, id));
+}
+
+export async function unsetFavouriteTarget(id: number) {
+  await db.update(targets).set({ isFavourite: false }).where(eq(targets.id, id));
+}
+
 // ── Users ──────────────────────────────────────────────
 
-// Narrow a raw users row to the public `User` shape — strips passwordHash and
+// Narrow a raw users row to the public `User` shape - strips passwordHash and
 // keeps the selection of exposed fields in one place so adding new profile
 // columns later only touches this helper.
 type UserRow = typeof users.$inferSelect;
@@ -366,24 +336,25 @@ export async function getRecentSearches(limit = 5) {
 export async function insertRecentSearch(query: string) {
   // Dedupe + insert + trim inside a single transaction so a mid-operation
   // crash can't leave the list with an orphaned duplicate or an over-long
-  // tail. Trimming uses one batched `inArray` delete instead of the former
-  // N+1 per-row loop, which dominated latency once the list hit its cap.
+  // tail. Trimming now selects only the ids of the 10 most-recent rows
+  // and deletes everything outside that set - avoids pulling the full
+  // table into memory, and uses an explicit `createdAt` order instead of
+  // relying on insertion order (SQLite doesn't guarantee that).
   await db.transaction(async (tx) => {
-    const existing = await tx
-      .select()
-      .from(recentSearches)
-      .where(eq(recentSearches.query, query));
-    if (existing.length > 0) {
-      await tx.delete(recentSearches).where(eq(recentSearches.id, existing[0].id));
-    }
+    await tx.delete(recentSearches).where(eq(recentSearches.query, query));
     await tx.insert(recentSearches).values({
       query,
       createdAt: new Date().toISOString(),
     });
-    const all = await tx.select().from(recentSearches);
-    if (all.length > 10) {
-      const ids = all.slice(0, all.length - 10).map((r) => r.id);
-      await tx.delete(recentSearches).where(inArray(recentSearches.id, ids));
+    const keep = await tx
+      .select({ id: recentSearches.id })
+      .from(recentSearches)
+      .orderBy(desc(recentSearches.createdAt))
+      .limit(10);
+    if (keep.length > 0) {
+      await tx
+        .delete(recentSearches)
+        .where(notInArray(recentSearches.id, keep.map((r) => r.id)));
     }
   });
 }
@@ -400,10 +371,14 @@ export async function getSetting(key: string): Promise<string | null> {
 }
 
 export async function setSetting(key: string, value: string): Promise<void> {
-  const existing = await db.select().from(settings).where(eq(settings.key, key));
-  if (existing.length > 0) {
-    await db.update(settings).set({ value }).where(eq(settings.key, key));
-  } else {
-    await db.insert(settings).values({ key, value });
-  }
+  // One atomic statement via SQLite UPSERT - replaces the old
+  // SELECT → branch → INSERT/UPDATE round-trip. Avoids the race where two
+  // writers could both pass the existence check and duplicate the row.
+  await db
+    .insert(settings)
+    .values({ key, value })
+    .onConflictDoUpdate({
+      target: settings.key,
+      set: { value },
+    });
 }

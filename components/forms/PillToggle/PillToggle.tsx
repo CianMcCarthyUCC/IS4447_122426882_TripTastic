@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { SharedStyles } from '@/constants';
+import { useHaptics } from '@/hooks/useHaptics';
 
 type Option<T extends string> = {
   label: string;
@@ -15,9 +16,9 @@ type Props<T extends string> = {
 };
 
 /**
- * Generic pill toggle — reusable segmented selector.
- * Used by PeriodPicker, ViewModeToggle, scope toggles, and anywhere
- * a user picks one option from a small set.
+ * A segmented pill selector for picking one option from a small list.
+ * Used for period pickers, view-mode switches and scope toggles where a
+ * dropdown would feel heavier than it needs to.
  */
 export default function PillToggle<T extends string>({
   label,
@@ -26,6 +27,7 @@ export default function PillToggle<T extends string>({
   onSelect,
   accessibilityLabel,
 }: Props<T>) {
+  const haptics = useHaptics();
   return (
     <View style={SharedStyles.fieldWrapper}>
       {label ? (
@@ -42,7 +44,7 @@ export default function PillToggle<T extends string>({
             <Pressable
               key={opt.value}
               style={[SharedStyles.pill, active && SharedStyles.pillSelected]}
-              onPress={() => onSelect(opt.value)}
+              onPress={() => { if (!active) haptics.light(); onSelect(opt.value); }}
               accessibilityRole="radio"
               accessibilityLabel={opt.label}
               accessibilityState={{ selected: active }}

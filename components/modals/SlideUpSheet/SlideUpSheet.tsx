@@ -42,7 +42,7 @@ const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 type Props = {
   /** Short heading shown in the sheet header, e.g. "Log Activity". */
   title: string;
-  /** Optional subtitle — one short sentence under the title. */
+  /** Optional subtitle - one short sentence under the title. */
   subtitle?: string;
   /** Fired when the user taps the backdrop, drags past the threshold, or taps the close button. */
   onClose: () => void;
@@ -50,19 +50,10 @@ type Props = {
 };
 
 /**
- * Bottom-anchored sheet that slides up over the previous screen.
- *
- * Must be rendered inside an Expo-Router route configured with
- * `presentation: 'transparentModal'` + `contentStyle: { backgroundColor:
- * 'transparent' }` so the route itself is a see-through overlay. We
- * render directly into that overlay (no extra RN `Modal`) so the
- * BlurView actually has the previous route to blur behind it.
- *
- * Uses Reanimated for the translateY and for fading in an
- * `expo-blur` BlurView backdrop, plus a pan gesture for
- * swipe-down-to-dismiss. The animation is a soft, heavy spring tuned
- * to match iOS's native sheet presentation — gentle settle, no
- * overshoot bounce.
+ * The bottom sheet used for the app's add-new flows (add trip, add
+ * activity, add goal). Slides up from the bottom over a blurred
+ * backdrop, and can be swiped down to dismiss so the user always has a
+ * quick way back.
  */
 export default function SlideUpSheet({
   title,
@@ -76,7 +67,7 @@ export default function SlideUpSheet({
   // 0 = fully open (sheet at rest position), SHEET_HEIGHT = fully closed.
   const translateY = useSharedValue(SHEET_HEIGHT);
 
-  // Slide up on mount — heavy-feel spring so the sheet settles without
+  // Slide up on mount - heavy-feel spring so the sheet settles without
   // a visible bounce. Parameters picked to approximate iOS's native
   // `.pageSheet` timing curve.
   useEffect(() => {
@@ -89,7 +80,7 @@ export default function SlideUpSheet({
   }, [translateY]);
 
   const close = () => {
-    // Animate down first, then invoke onClose once off-screen — keeps
+    // Animate down first, then invoke onClose once off-screen - keeps
     // the exit visually smooth instead of popping the route instantly.
     translateY.value = withTiming(
       SHEET_HEIGHT,
@@ -100,7 +91,7 @@ export default function SlideUpSheet({
     );
   };
 
-  // Intercept Android hardware back — we want the same animated close
+  // Intercept Android hardware back - we want the same animated close
   // path the user sees from the backdrop/close-button, not an instant
   // route pop with no exit animation.
   useEffect(() => {
@@ -116,7 +107,7 @@ export default function SlideUpSheet({
 
   const pan = Gesture.Pan()
     .onUpdate((e) => {
-      // Only allow dragging downward — upward drag is a no-op so the
+      // Only allow dragging downward - upward drag is a no-op so the
       // sheet doesn't float above its rest position.
       if (e.translationY > 0) translateY.value = e.translationY;
     })
@@ -141,7 +132,7 @@ export default function SlideUpSheet({
     transform: [{ translateY: translateY.value }],
   }));
 
-  // Backdrop opacity tracks the sheet — full at rest, zero when fully
+  // Backdrop opacity tracks the sheet - full at rest, zero when fully
   // closed so it fades out as the sheet falls away.
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: interpolate(translateY.value, [0, SHEET_HEIGHT], [1, 0]),
@@ -153,7 +144,7 @@ export default function SlideUpSheet({
 
   return (
     <GestureHandlerRootView style={styles.root}>
-        {/* Blurred backdrop — tapping dismisses. The blur lets the
+        {/* Blurred backdrop - tapping dismisses. The blur lets the
             previous route peek through with just enough softening that
             it fades into context rather than competing with the sheet.
             `experimentalBlurMethod="dimezisBlurView"` enables a real
@@ -186,7 +177,7 @@ export default function SlideUpSheet({
             sheetStyle,
           ]}
         >
-          {/* Drag affordance — the grabber at the top is part of the
+          {/* Drag affordance - the grabber at the top is part of the
               pan-gesture area so users can flick to dismiss. */}
           <GestureDetector gesture={pan}>
             <View style={styles.grabberArea}>

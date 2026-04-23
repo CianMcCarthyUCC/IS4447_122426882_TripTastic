@@ -14,8 +14,9 @@ type Props = {
 };
 
 /**
- * Image picker — tap to pick from gallery or camera.
- * Shows preview when image is selected.
+ * The image picker used in forms (for example, adding a cover photo to a
+ * trip). Tapping opens the system photo library; once an image is chosen
+ * the tile shows a preview with an option to remove it.
  */
 function ImagePicker({ label = 'Cover Photo', helpText, imageUri, onImageSelected }: Props) {
   const theme = useAppTheme();
@@ -44,7 +45,12 @@ function ImagePicker({ label = 'Cover Photo', helpText, imageUri, onImageSelecte
 
       {imageUri ? (
         <View style={styles.previewContainer}>
-          <Image source={{ uri: imageUri }} style={styles.preview} />
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.preview}
+            accessibilityLabel="Selected photo preview"
+            accessibilityRole="image"
+          />
           <Pressable
             style={styles.removeButton}
             onPress={removeImage}

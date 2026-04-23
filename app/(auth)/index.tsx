@@ -3,8 +3,9 @@ import { PlaneLoader } from '@/components/feedback/PlaneLoader';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 /**
- * Auth index — shows plane loader while session is restoring.
- * Redirected away from by AuthGuard once auth state is resolved.
+ * A brief landing page shown while the app is restoring the user's
+ * session. Displays the plane loader and then hands off automatically
+ * to either the main app or the login screen.
  */
 export default function AuthIndex() {
   const theme = useAppTheme();

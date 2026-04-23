@@ -1,19 +1,23 @@
-import { createContext, useContext } from 'react';
+import { createEntityContext, type EntityContextType } from './createEntityContext';
 import type { Trip } from '@/types';
 
-export type TripContextType = {
-  trips: Trip[];
-  setTrips: React.Dispatch<React.SetStateAction<Trip[]>>;
+/**
+ * Trip context holds the list plus the currently-selected trip, so
+ * screens can quickly pick up whichever trip the user is working with
+ * without having to pass it down through props.
+ */
+export type TripContextType = EntityContextType<'trips', Trip> & {
   currentTrip: Trip | null;
   setCurrentTrip: React.Dispatch<React.SetStateAction<Trip | null>>;
 };
 
-export const TripContext = createContext<TripContextType | null>(null);
+const { Context, useEntityContext } = createEntityContext<'trips', Trip>(
+  'trips',
+  'Trip',
+);
+
+export const TripContext = Context as React.Context<TripContextType | null>;
 
 export function useTripContext(): TripContextType {
-  const context = useContext(TripContext);
-  if (!context) {
-    throw new Error('useTripContext must be used within a TripContext.Provider');
-  }
-  return context;
+  return useEntityContext() as TripContextType;
 }

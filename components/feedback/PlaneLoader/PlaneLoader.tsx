@@ -19,7 +19,7 @@ type Props = {
 };
 
 // Diameter of the orbit, icon glyph size, and how long one full loop takes.
-// Orbit-to-icon ratio is ~3:1 — chosen so the plane is unambiguously a
+// Orbit-to-icon ratio is ~3:1 - chosen so the plane is unambiguously a
 // plane (you can see the nose, wings, and tail as it travels) rather than
 // a dot orbiting empty space. At this ratio, the plane's body sweeps a
 // meaningful arc of the curve each frame, so the motion reads as "plane
@@ -38,28 +38,9 @@ const SIZE_CONFIG: Record<Size, { orbit: number; icon: number; duration: number 
 const ICON_NOSE_OFFSET_DEG = 45;
 
 /**
- * Custom "plane in a circle" loading indicator — an airplane icon flying a
- * true circular path, clockwise, with an optional "Loading…" label.
- *
- * How the motion is built:
- *   • A single shared value `progress` runs 0 → 1 on a linear, infinite
- *     loop. This is our time driver (equivalent to `t += speed` per frame).
- *   • Position is parametric:  x = radius · cos(t),  y = radius · sin(t)
- *     — so the plane's *layout position* actually changes every frame,
- *     tracing a full circle around the orbit centre (not spinning in place).
- *   • Rotation is independent: the tangent direction for a circle
- *     parametrised this way is  t + π/2, plus a fixed 45° offset to
- *     compensate for the icon's default "up-and-right" orientation.
- *   • Position and rotation live in *separate* `useAnimatedStyle` hooks so
- *     the two concerns don't interact — the inner `Animated.View` is
- *     rotated while the outer is translated.
- *
- * Everything runs on the UI thread via react-native-reanimated — no JS
- * work per frame, no re-renders, smooth at 60+fps even while the JS thread
- * is busy (e.g. during Geoapify fetches that prompt the loader).
- *
- * Three sizes: `small` (inline in buttons, no label), `medium` (section
- * loading, optional label), `large` (full-screen, always labelled).
+ * The app's on-brand loading spinner: a little plane flying a circular
+ * loop, optionally paired with a Loading label. Used anywhere the user is
+ * waiting on data, in three sizes for buttons, sections and full screens.
  */
 function PlaneLoader({ message = 'Loading...', size = 'large' }: Props) {
   const theme = useAppTheme();
@@ -77,7 +58,7 @@ function PlaneLoader({ message = 'Loading...', size = 'large' }: Props) {
     );
   }, [progress, duration]);
 
-  // Orbital position — the plane's (x, y) traces a circle of `radius` around
+  // Orbital position - the plane's (x, y) traces a circle of `radius` around
   // the orbit-box centre. Starts at (radius, 0) = 3 o'clock, moves clockwise.
   const positionStyle = useAnimatedStyle(() => {
     const t = progress.value * 2 * Math.PI;
@@ -89,7 +70,7 @@ function PlaneLoader({ message = 'Loading...', size = 'large' }: Props) {
     };
   });
 
-  // Tangent rotation — purely direction-of-travel. Decoupled from position
+  // Tangent rotation - purely direction-of-travel. Decoupled from position
   // so neither transform interferes with the other.
   const rotationStyle = useAnimatedStyle(() => {
     const t = progress.value * 2 * Math.PI;
@@ -110,7 +91,7 @@ function PlaneLoader({ message = 'Loading...', size = 'large' }: Props) {
       accessibilityLabel={message || 'Loading'}
     >
       <View style={[styles.orbitBox, { height: orbit, width: orbit }]}>
-        {/* Dotted "flight path" ring — matches the radius the plane's centre
+        {/* Dotted "flight path" ring - matches the radius the plane's centre
             traces, so the plane visibly hovers along it. Mimics the
             travel-map aesthetic of a plane following a dotted route. Hidden
             on `small` where dots don't render cleanly inside a button. */}
@@ -129,7 +110,7 @@ function PlaneLoader({ message = 'Loading...', size = 'large' }: Props) {
           />
         ) : null}
 
-        {/* Center label — sits in the middle of the dotted ring so the plane
+        {/* Center label - sits in the middle of the dotted ring so the plane
             circles around it (the "travel around the world / text in the
             centre" pattern). Absolute-positioned overlay so it doesn't push
             the plane's layout position off the orbit centre. */}

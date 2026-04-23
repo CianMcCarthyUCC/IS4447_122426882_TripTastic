@@ -1,42 +1,48 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTrips, useCategories, useAppTheme } from '@/hooks';
-import { useMountedRef } from '@/hooks/useMountedRef';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTrips, useAppTheme } from '@/hooks';
+import { useThemeControl } from '@/hooks/useAppTheme';
 import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
 import { geocodeCity } from '@/utils/geocode';
-import { fetchNearbyPlaces, type Place } from '@/utils/geoapify';
+import { countryFlag } from '@/utils/countryFlag';
 import type { Trip } from '@/types';
 
-type TripPin = Trip & { latitude: number; longitude: number };
-type PoiPin = Place & { tripId: number };
+const LOGO_LIGHT = require('@/assets/images/logo/transparent-logo-light.png');
+const LOGO_DARK = require('@/assets/images/logo/transparent-logo-dark.png');
 
-// Default POI overlay: sightseeing + food (most interesting + dense).
-const POI_DEFAULT_CATEGORIES = [1, 2];
+type TripPin = Trip & { latitude: number; longitude: number };
+
+type PinStatus = 'completed' | 'inProgress' | 'planned';
+
+function classifyPin(trip: Trip): PinStatus {
+  const today = new Date().toISOString().slice(0, 10);
+  if (trip.endDate < today) return 'completed';
+  if (trip.startDate <= today) return 'inProgress';
+  return 'planned';
+}
+
+const STATUS_META: Record<PinStatus, { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }> = {
+  completed: { icon: 'checkmark-circle', color: Palette.success, label: 'Completed' },
+  inProgress: { icon: 'airplane', color: Palette.coral, label: 'In progress' },
+  planned: { icon: 'calendar-outline', color: Palette.navy, label: 'Planned' },
+};
 
 export default function ExploreScreen() {
   const router = useRouter();
   const { trips } = useTrips();
-  const { categories } = useCategories();
   const theme = useAppTheme();
-  const mounted = useMountedRef();
+  const { isDark } = useThemeControl();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView | null>(null);
   const [pins, setPins] = useState<TripPin[]>([]);
-  const [poiEnabled, setPoiEnabled] = useState(false);
-  const [pois, setPois] = useState<PoiPin[]>([]);
-  const [poiLoading, setPoiLoading] = useState(false);
-
-  const categoryColorMap = useMemo(() => {
-    const m = new Map<number, string>();
-    categories.forEach((c) => m.set(c.id, c.color));
-    return m;
-  }, [categories]);
 
   useEffect(() => {
     if (trips.length === 0) return;
-    // Per-effect cancellation flag — if `trips` changes (add/delete/rename)
+    // Per-effect cancellation flag - if `trips` changes (add/delete/rename)
     // while we're awaiting a geocode, the older pass must abandon before
     // it overwrites newer pins. `mounted.current` alone only catches
     // unmount, not stale-within-mount.
@@ -58,7 +64,7 @@ export default function ExploreScreen() {
     };
   }, [trips]);
 
-  // Animate to fit all pins once they've loaded — works the same on both platforms.
+  // Animate to fit all pins once they've loaded - works the same on both platforms.
   useEffect(() => {
     if (pins.length === 0 || !mapRef.current) return;
     if (pins.length === 1) {
@@ -82,43 +88,7 @@ export default function ExploreScreen() {
     }
   }, [pins]);
 
-  // Load POIs for each trip pin when the toggle is on.
-  useEffect(() => {
-    if (!poiEnabled || pins.length === 0) {
-      setPois([]);
-      return;
-    }
-    let cancelled = false;
-    const loadPois = async () => {
-      setPoiLoading(true);
-      const all: PoiPin[] = [];
-      for (const pin of pins) {
-        try {
-          const places = await fetchNearbyPlaces({
-            lat: pin.latitude,
-            lon: pin.longitude,
-            categoryIds: POI_DEFAULT_CATEGORIES,
-            radiusMeters: 3000,
-            limit: 15,
-          });
-          if (cancelled) return;
-          places.forEach((p) => all.push({ ...p, tripId: pin.id }));
-        } catch {
-          // Swallow per-trip errors; keep any POIs that loaded successfully.
-        }
-      }
-      if (!cancelled && mounted.current) {
-        setPois(all);
-        setPoiLoading(false);
-      }
-    };
-    void loadPois();
-    return () => {
-      cancelled = true;
-    };
-  }, [poiEnabled, pins, mounted]);
-
-  // Zoom controls — animate the camera by ±1 zoom level. We set both `zoom`
+  // Zoom controls - animate the camera by ±1 zoom level. We set both `zoom`
   // (used by Google Maps on Android) and `altitude` (used by Apple Maps on
   // iOS) so the behaviour is identical on both platforms.
   const adjustZoom = useCallback(async (delta: number) => {
@@ -139,7 +109,7 @@ export default function ExploreScreen() {
     <View style={[styles.container, { backgroundColor: theme.screenBackground }]}>
       {/*
         Single basemap: native Apple Maps (iOS) / Google Maps (Android) via
-        `PROVIDER_DEFAULT` + `mapType="standard"`. No raster tile overlay —
+        `PROVIDER_DEFAULT` + `mapType="standard"`. No raster tile overlay -
         one consistent warm Apple palette on iOS and one consistent Google
         palette on Android, never both layered on top of each other.
       */}
@@ -156,7 +126,10 @@ export default function ExploreScreen() {
         }}
         showsCompass
       >
-        {pins.map((pin) => (
+        {pins.map((pin) => {
+          const status = classifyPin(pin);
+          const meta = STATUS_META[status];
+          return (
           <Marker
             key={pin.id}
             coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
@@ -164,17 +137,19 @@ export default function ExploreScreen() {
             calloutAnchor={{ x: 0.5, y: 0 }}
             tracksViewChanges={false}
             title={pin.destination}
-            description={`${pin.name} — tap to view trip`}
+            description={`${pin.name} - tap to view trip`}
           >
             <View
               style={styles.pinContainer}
               accessible
               accessibilityRole="button"
-              accessibilityLabel={`${pin.destination} trip marker`}
+              accessibilityLabel={`${pin.destination} trip marker, ${meta.label}`}
               accessibilityHint="Opens trip details"
             >
               <View style={styles.pinLabel}>
+                <Ionicons name={meta.icon} size={14} color={meta.color} style={styles.pinIcon} />
                 <Text style={styles.pinText}>{pin.destination}</Text>
+                <Text style={styles.pinFlag}>{countryFlag(pin.country)}</Text>
               </View>
               <View style={styles.pinArrow} />
             </View>
@@ -208,63 +183,35 @@ export default function ExploreScreen() {
               </View>
             </Callout>
           </Marker>
-        ))}
+          );
+        })}
 
-        {/* POI overlay markers (smaller, category-coloured dots) */}
-        {poiEnabled && pois.map((poi) => (
-          <Marker
-            key={`poi-${poi.tripId}-${poi.id}`}
-            coordinate={{ latitude: poi.lat, longitude: poi.lon }}
-            anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={false}
-            title={poi.name}
-            description={poi.address}
-          >
-            <View
-              style={[
-                styles.poiDot,
-                { backgroundColor: categoryColorMap.get(poi.categoryId) ?? Palette.coral },
-              ]}
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={`${poi.name} point of interest`}
-            />
-          </Marker>
-        ))}
       </MapView>
 
-      {/* POI toggle floating button */}
-      <Pressable
+      {/* Floating brand header */}
+      <View
         style={[
-          styles.poiToggle,
+          styles.header,
           {
-            backgroundColor: poiEnabled ? Palette.coral : theme.cardBackground,
+            top: insets.top + Spacing.sm,
+            backgroundColor: theme.cardBackground,
             borderColor: theme.cardBorder,
           },
         ]}
-        onPress={() => setPoiEnabled((v) => !v)}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: poiEnabled }}
-        accessibilityLabel="Toggle points of interest"
-        accessibilityHint="Shows nearby sightseeing and food places around your trips"
+        accessible
+        accessibilityRole="header"
+        accessibilityLabel="Your TripTastic Map"
       >
-        <Ionicons
-          name="location"
-          size={16}
-          color={poiEnabled ? Palette.white : theme.textPrimary}
+        <Image
+          source={isDark ? LOGO_DARK : LOGO_LIGHT}
+          style={styles.headerLogo}
+          resizeMode="contain"
         />
-        <Text
-          style={[
-            styles.poiToggleText,
-            { color: poiEnabled ? Palette.white : theme.textPrimary },
-          ]}
-        >
-          {poiLoading ? 'Loading…' : poiEnabled ? 'POIs on' : 'Show POIs'}
-        </Text>
-      </Pressable>
+        <Text style={[styles.headerLabel, { color: theme.textSecondary }]}>MAP</Text>
+      </View>
 
       {/* Zoom controls */}
-      <View style={styles.zoomStack}>
+      <View style={[styles.zoomStack, { top: insets.top + Spacing.sm + 48 + Spacing.md }]}>
         <Pressable
           style={[styles.zoomButton, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
           onPress={() => adjustZoom(1)}
@@ -312,13 +259,18 @@ const styles = StyleSheet.create({
   // Custom pin
   pinContainer: { alignItems: 'center' },
   pinLabel: {
+    alignItems: 'center',
     backgroundColor: Palette.white,
     borderRadius: BorderRadius.sm,
+    flexDirection: 'row',
+    gap: Spacing.xs,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     ...Shadows.md,
   },
+  pinIcon: { marginRight: 2 },
   pinText: { color: Palette.navy, fontSize: 12, fontWeight: '800' },
+  pinFlag: { fontSize: 14, marginLeft: 2 },
   pinArrow: {
     borderLeftColor: 'transparent',
     borderLeftWidth: 6,
@@ -328,16 +280,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 6,
     height: 0,
     width: 0,
-  },
-
-  // POI markers
-  poiDot: {
-    borderColor: Palette.white,
-    borderRadius: BorderRadius.pill,
-    borderWidth: 2,
-    height: 14,
-    width: 14,
-    ...Shadows.sm,
   },
 
   // Callout popup (tooltip-mode, identical on iOS + Android)
@@ -371,30 +313,36 @@ const styles = StyleSheet.create({
     width: 0,
   },
 
-  // POI toggle
-  poiToggle: {
+  // Floating brand header - rounded pill centred at the top of the map.
+  // Uses the transparent logo variants so the coral airplane reads against
+  // the themed card fill, same visual family as the zoom buttons.
+  header: {
     alignItems: 'center',
+    alignSelf: 'center',
     borderRadius: BorderRadius.pill,
     borderWidth: 1,
     flexDirection: 'row',
     gap: Spacing.xs,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
     position: 'absolute',
-    right: Spacing.lg,
-    top: Spacing.lg,
     ...Shadows.md,
   },
-  poiToggleText: {
-    fontSize: 13,
-    fontWeight: '700',
+  headerLogo: {
+    height: 28,
+    width: 100,
+  },
+  headerLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.6,
   },
 
-  // Zoom controls — stacked vertically on the right edge
+  // Zoom controls - stacked vertically on the right edge, top offset set
+  // inline to clear the floating header regardless of safe-area inset.
   zoomStack: {
     position: 'absolute',
     right: Spacing.lg,
-    top: Spacing.lg + 48 + Spacing.sm, // below the POI toggle
     ...Shadows.md,
   },
   zoomButton: {

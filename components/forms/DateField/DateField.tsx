@@ -17,8 +17,8 @@ type Props = {
 };
 
 /**
- * Date picker — opens a modal calendar (react-native-calendars).
- * Selected date highlighted in coral. Theme-aware.
+ * The labelled date field used on every form. Tapping it opens a full
+ * calendar so the user can pick a date without typing anything.
  */
 function DateField({
   label,

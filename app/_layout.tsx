@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppProvider, useAuthContext } from '@/context';
 import { useAppTheme, useThemeProvider, ThemeContext } from '@/hooks/useAppTheme';
+import { GlobalToast } from '@/components/feedback';
 
 export default function RootLayout() {
   const themeCtx = useThemeProvider();
@@ -13,6 +14,7 @@ export default function RootLayout() {
       <ThemeContext.Provider value={themeCtx}>
         <AppProvider>
           <AuthGuard />
+          <GlobalToast />
         </AppProvider>
       </ThemeContext.Provider>
     </GestureHandlerRootView>
@@ -36,61 +38,45 @@ function AuthGuard() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: theme.headerBackground },
-        headerTintColor: theme.textOnHeader,
-        headerTitleStyle: { fontWeight: '700' },
+        headerShown: false,
         contentStyle: { backgroundColor: theme.screenBackground },
       }}
     >
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/* Add-entity routes present as transparent modals over the previous
+          route, so they override the stack-level opaque background. */}
       <Stack.Screen
         name="trip/add"
         options={{
-          headerShown: false,
           presentation: 'transparentModal',
           animation: 'none',
-          // Override the stack-level opaque background so the previous
-          // route remains visible behind the sheet.
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
-      <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="activity/add"
         options={{
-          headerShown: false,
           presentation: 'transparentModal',
           animation: 'none',
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
-      <Stack.Screen name="activity/[id]" options={{ title: 'Activity', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="activity/[id]/edit" options={{ title: 'Edit Activity', headerBackTitle: 'Back' }} />
       <Stack.Screen
         name="category/add"
         options={{
-          headerShown: false,
           presentation: 'transparentModal',
           animation: 'none',
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
-      <Stack.Screen name="category/[id]" options={{ title: 'Category', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="category/[id]/edit" options={{ title: 'Edit Category', headerBackTitle: 'Back' }} />
       <Stack.Screen
         name="target/add"
         options={{
-          headerShown: false,
           presentation: 'transparentModal',
           animation: 'none',
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />
-      <Stack.Screen name="target/[id]" options={{ title: 'Goal', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="target/[id]/edit" options={{ title: 'Edit Goal', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="place-picker" options={{ presentation: 'modal', title: 'Pick a place' }} />
-      <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="place-picker" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

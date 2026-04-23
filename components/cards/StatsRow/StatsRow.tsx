@@ -16,7 +16,8 @@ type Props = {
 };
 
 /**
- * Reusable row of StatCards — avoids duplicating the flex row + gap pattern.
+ * A side-by-side row of stat cards. Lines them up with even spacing so each
+ * screen displaying summary numbers looks consistent.
  */
 function StatsRow({ stats }: Props) {
   return (

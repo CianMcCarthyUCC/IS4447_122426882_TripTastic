@@ -1,10 +1,7 @@
 /**
- * Geoapify Places API wrapper.
- *
- * Fetches points-of-interest (POIs) around a coordinate, filtered by one or
- * more of the app's existing categories (1–5). Results are normalised into
- * a `Place[]` shape with the matched app `categoryId` attached so callers
- * can colour / filter consistently with the rest of the app.
+ * Wraps the Geoapify "Places" service, which finds interesting places
+ * near a coordinate. Returns the places mapped to the app's own
+ * categories so they can be filtered and coloured like everything else.
  */
 
 export type Place = {
@@ -16,7 +13,7 @@ export type Place = {
   lat: number;
   lon: number;
   address?: string;
-  /** Nearest app category (1–5). Used for colour + list filtering. */
+  /** Nearest app category (1-5). Used for colour + list filtering. */
   categoryId: number;
 };
 
@@ -36,7 +33,7 @@ export const GEOAPIFY_CATEGORY_MAP: Record<number, string> = {
 /**
  * Reverse-lookup: given a raw Geoapify category like "catering.restaurant",
  * return the nearest app categoryId. Falls back to 1 (Sightseeing) if no
- * prefix matches — acceptable since Sightseeing is the "general interest" bucket.
+ * prefix matches - acceptable since Sightseeing is the "general interest" bucket.
  */
 export function mapGeoapifyCategoryToApp(geoapifyCategories: string[]): number {
   for (const raw of geoapifyCategories) {
@@ -94,7 +91,12 @@ export async function fetchNearbyPlaces({
       const p = f?.properties;
       if (!p || typeof p.lat !== 'number' || typeof p.lon !== 'number') return null;
       const id = p.place_id ?? `${p.lat},${p.lon}`;
-      const name: string = p.name ?? p.address_line1 ?? 'Unnamed place';
+      // Drop rows Geoapify can't name at all - an "Unnamed place" card is
+      // effectively noise for the user since they can't tell one from the
+      // next, and the surrounding list already has plenty of real POIs.
+      const resolvedName: string | undefined = p.name ?? p.address_line1;
+      if (!resolvedName) return null;
+      const name: string = resolvedName;
       const rawCategories: string[] = Array.isArray(p.categories) ? p.categories : [];
       return {
         id,

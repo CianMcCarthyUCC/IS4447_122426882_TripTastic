@@ -1,10 +1,9 @@
 import { Directory, File, Paths } from 'expo-file-system';
 
 /**
- * Avatar files live in a dedicated sub-directory of the app's private
- * document space — `documentDirectory/avatars/`. `expo-image-picker`
- * returns URIs in the system cache which iOS/Android can purge at will,
- * so we copy picked images here to keep them valid across app restarts.
+ * Helpers for saving and deleting profile-picture files. Copies images
+ * the user picks into a dedicated folder the system won't clear, so the
+ * avatar sticks around between app launches.
  */
 const AVATARS_SUBDIR = 'avatars';
 
@@ -53,6 +52,6 @@ export async function deleteAvatar(uri: string): Promise<void> {
     const file = new File(uri);
     if (file.exists) file.delete();
   } catch {
-    /* ignore — file already gone or unreadable */
+    /* ignore - file already gone or unreadable */
   }
 }

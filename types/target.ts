@@ -6,6 +6,8 @@ export type Target = {
   categoryId: number;
   targetValue: number;
   period: TargetPeriod;
+  notes: string | null;
+  isFavourite: boolean;
 };
 
 export type TargetFormData = {
@@ -13,4 +15,5 @@ export type TargetFormData = {
   categoryId: number;
   targetValue: string;
   period: TargetPeriod;
+  notes: string;
 };

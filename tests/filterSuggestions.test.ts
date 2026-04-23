@@ -5,7 +5,7 @@ import {
 } from '@/utils/filterSuggestions';
 import type { Activity, Category, Target, Trip } from '@/types';
 
-// Helper — a date string N days ago. The suggestion logic compares
+// Helper - a date string N days ago. The suggestion logic compares
 // ISO-date prefixes, so we format to `YYYY-MM-DD` and never mutate.
 const daysAgo = (n: number): string =>
   new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -15,6 +15,7 @@ const cat = (id: number, name: string): Category => ({
   name,
   color: '#000000',
   icon: 'star',
+  isSystem: false,
 });
 
 const activity = (id: number, categoryId: number, date: string, metric: number): Activity => ({
@@ -24,8 +25,9 @@ const activity = (id: number, categoryId: number, date: string, metric: number):
   date,
   metric,
   status: 'completed',
+  place: null,
   notes: null,
-  isFavourite: false,
+  isFavourite: false, favouritedAt: null,
 });
 
 describe('suggestActivityFilter', () => {
@@ -48,7 +50,7 @@ describe('suggestActivityFilter', () => {
   });
 
   it('returns null when no single category clears 40% of recent minutes', () => {
-    // Three categories, deliberately balanced so the top one is ~35% — no
+    // Three categories, deliberately balanced so the top one is ~35% - no
     // single category deserves the focus chip.
     const activities = [
       activity(1, 1, daysAgo(1), 35),
@@ -60,7 +62,7 @@ describe('suggestActivityFilter', () => {
 
   it('ignores activities older than 7 days', () => {
     const activities = [
-      activity(1, 1, daysAgo(60), 1000), // old — should be ignored
+      activity(1, 1, daysAgo(60), 1000), // old - should be ignored
       activity(2, 2, daysAgo(1), 10),
     ];
     const result = suggestActivityFilter(activities, categories);
@@ -111,6 +113,8 @@ describe('suggestTargetFilter', () => {
     categoryId,
     targetValue,
     period: 'weekly',
+    notes: null,
+    isFavourite: false,
   });
 
   it('suggests "in-progress" when at least one target is unmet', () => {

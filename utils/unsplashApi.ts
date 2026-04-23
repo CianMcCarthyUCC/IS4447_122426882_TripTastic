@@ -2,8 +2,9 @@ const ACCESS_KEY = process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY ?? '';
 const BASE_URL = 'https://api.unsplash.com';
 
 /**
- * Fetches a travel photo URL for a destination from Unsplash.
- * Returns the regular-sized image URL or null on failure.
+ * Fetches a nice travel photo for a destination from Unsplash, used as
+ * the cover image on trips. Returns null when nothing suitable is found
+ * so the UI can fall back gracefully.
  */
 export async function getDestinationPhoto(destination: string): Promise<string | null> {
   try {

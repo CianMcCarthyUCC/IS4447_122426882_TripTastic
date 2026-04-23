@@ -2,11 +2,12 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useToast } from './useToast';
 import { useHaptics } from './useHaptics';
+import { emitToast } from './toastBus';
 
 /**
- * Reusable delete-with-confirmation hook.
- * Handles confirm dialog state, loading, try-catch, toast, haptics, navigation.
- * Eliminates duplicated delete pattern across all 3 detail screens.
+ * The shared helper used on every detail screen for the delete button.
+ * Opens the confirmation dialog, shows a toast on success and navigates
+ * back, so each detail screen keeps the same safe flow.
  */
 export function useDeleteWithConfirm(
   onDelete: () => Promise<void>,
@@ -33,7 +34,8 @@ export function useDeleteWithConfirm(
     try {
       await onDelete();
       haptics.success();
-      showToast(successMessage, 'success');
+      // Emit globally so the toast outlives router.back() unmounting this screen.
+      emitToast(successMessage, 'success');
       router.back();
     } catch {
       showToast('Failed to delete. Please try again.', 'error');

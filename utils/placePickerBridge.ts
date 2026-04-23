@@ -1,10 +1,7 @@
 /**
- * Tiny module-scoped bridge for passing a picked Place from the
- * place-picker modal back to the presenting screen (Activity add).
- *
- * Expo Router params are string-only, so serialising a full Place object
- * via params is noisy. Using a module-level ref keeps the flow one-way and
- * simple: picker `set()`s → navigates back → presenter `consume()`s on focus.
+ * A tiny hand-off used to send a picked place from the place-picker
+ * modal back to the activity form. Simpler than round-tripping the
+ * full place through navigation parameters.
  */
 import type { Place } from './geoapify';
 

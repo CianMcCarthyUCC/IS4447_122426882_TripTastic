@@ -5,12 +5,13 @@ import { useAuth, useToast, useHaptics } from '@/hooks';
 import { FormField } from '@/components/forms';
 import { PrimaryButton } from '@/components/buttons';
 import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer, AuthHero, AuthFooter } from '@/components/layout';
+import { ScreenHeader, ScreenContainer, AuthHero, AuthFooter, DecorativeCircles } from '@/components/layout';
 import { SharedStyles } from '@/constants';
 import { validateLoginForm } from '@/utils/validation';
 
 /**
- * Login screen — email + password form with link to register.
+ * The Login screen, where returning users sign in with their email and
+ * password. Also has a link through to the Register screen for new users.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -50,13 +51,14 @@ export default function LoginScreen() {
 
   return (
     <ScreenContainer>
+      <DecorativeCircles />
       <Toast {...toast} onHide={hideToast} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-        <AuthHero tagline="Plan, track, and relive your holidays" />
+        <AuthHero tagline="Plan, track and relive your holidays" />
         <ScreenHeader title="Login" subtitle="Sign in to your account" />
 
         <View style={SharedStyles.form}>

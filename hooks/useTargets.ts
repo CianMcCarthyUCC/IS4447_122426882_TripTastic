@@ -1,11 +1,19 @@
 import { useCallback } from 'react';
 import { useTargetContext } from '@/context';
-import { getAllTargets, insertTarget, updateTargetById, deleteTargetById } from '@/db';
-import type { TargetFormData } from '@/types';
+import {
+  getAllTargets,
+  insertTarget,
+  updateTargetById,
+  deleteTargetById,
+  setFavouriteTarget,
+  unsetFavouriteTarget,
+} from '@/db';
+import type { Target, TargetFormData } from '@/types';
 
 /**
- * Central hook for all target CRUD operations.
- * Handles DATA only — no navigation.
+ * The central hook for reading and changing goals. Wraps the create,
+ * update and delete calls so every screen touches goal data through
+ * one place.
  */
 export function useTargets() {
   const { targets, setTargets } = useTargetContext();
@@ -39,6 +47,15 @@ export function useTargets() {
     [refreshTargets],
   );
 
+  const toggleFavourite = useCallback(
+    async (target: Target) => {
+      if (target.isFavourite) await unsetFavouriteTarget(target.id);
+      else await setFavouriteTarget(target.id);
+      await refreshTargets();
+    },
+    [refreshTargets],
+  );
+
   const findTargetById = useCallback(
     (id: number) => {
       return targets.find((t) => t.id === id);
@@ -51,6 +68,7 @@ export function useTargets() {
     addTarget,
     updateTarget,
     deleteTarget,
+    toggleFavourite,
     findTargetById,
     refreshTargets,
   };

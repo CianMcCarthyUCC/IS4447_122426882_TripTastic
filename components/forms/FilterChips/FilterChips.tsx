@@ -1,14 +1,17 @@
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export type ChipOption = {
   label: string;
   value: string;
   color?: string;
+  // Ionicons glyph rendered tinted in `colour` for the inactive state,
+  // white for the active state. Used to carry each category's stored icon.
+  icon?: keyof typeof Ionicons.glyphMap;
 };
 
 type Props = {
@@ -20,11 +23,13 @@ type Props = {
 };
 
 /**
- * Horizontal scrollable filter chips with animated selection.
- * Optional save button persists the current filter to SQLite.
+ * The row of filter chips used on list screens. Each chip represents an
+ * option (such as a category) the user can tap to filter the list; an
+ * optional save button pins the current filter for next time.
  */
 function FilterChips({ options, selected, onSelect, onSave, accessibilityLabel = 'Filter' }: Props) {
   const theme = useAppTheme();
+  const haptics = useHaptics();
 
   return (
     <View style={styles.wrapper}>
@@ -41,14 +46,14 @@ function FilterChips({ options, selected, onSelect, onSave, accessibilityLabel =
             option={opt}
             active={selected === opt.value}
             theme={theme}
-            onPress={() => onSelect(opt.value)}
+            onPress={() => { haptics.light(); onSelect(opt.value); }}
           />
         ))}
 
         {onSave && selected !== 'all' && (
           <Pressable
             style={[styles.saveButton, { borderColor: theme.accentAction }]}
-            onPress={onSave}
+            onPress={() => { haptics.light(); onSave(); }}
             accessibilityLabel="Save this filter"
           >
             <Ionicons name="bookmark-outline" size={14} color={theme.accentAction} />
@@ -69,36 +74,35 @@ type ChipProps = {
   onPress: () => void;
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 const Chip = memo(function Chip({ option, active, theme, onPress }: ChipProps) {
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(active ? 1.05 : 1, { damping: 14 }) }],
-  }));
-
   const bgColor = active
     ? (option.color ?? theme.accentAction)
     : theme.cardBackground;
 
   return (
-    <AnimatedPressable
+    <Pressable
       style={[
         styles.chip,
         { backgroundColor: bgColor, borderColor: active ? bgColor : theme.cardBorder },
-        animatedStyle,
       ]}
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityLabel={option.label}
       accessibilityState={{ selected: active }}
     >
-      {option.color && !active && (
+      {option.icon ? (
+        <Ionicons
+          name={option.icon}
+          size={14}
+          color={active ? Palette.white : (option.color ?? theme.textPrimary)}
+        />
+      ) : option.color && !active ? (
         <View style={[styles.colorDot, { backgroundColor: option.color }]} />
-      )}
+      ) : null}
       <Text style={[styles.chipText, { color: active ? Palette.white : theme.textPrimary }]}>
         {option.label}
       </Text>
-    </AnimatedPressable>
+    </Pressable>
   );
 });
 

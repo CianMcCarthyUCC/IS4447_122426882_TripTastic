@@ -15,6 +15,7 @@ export default function TripLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="activities" />
+      <Stack.Screen name="edit" />
     </Stack>
   );
 }
