@@ -68,6 +68,16 @@ export function GoalsSection({ activities, targets }: Props) {
     setPendingDelete(target);
   }, []);
 
+  const handleToggleFavourite = useCallback(
+    (target: Target) => {
+      const wasFavourite = target.isFavourite;
+      haptics.success();
+      showToast(wasFavourite ? 'Removed from favourites' : 'Added to favourites', 'accent');
+      void toggleFavourite(target);
+    },
+    [toggleFavourite, haptics, showToast],
+  );
+
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
 
   const confirmDelete = useCallback(async () => {
@@ -346,7 +356,7 @@ export function GoalsSection({ activities, targets }: Props) {
         targets={visibleTargets}
         categories={categories}
         activities={activities}
-        onToggleFavourite={toggleFavourite}
+        onToggleFavourite={handleToggleFavourite}
         onDelete={handleRequestDelete}
         listHeaderComponent={listHeader}
         listEmptyComponent={listEmpty}

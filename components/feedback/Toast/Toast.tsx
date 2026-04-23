@@ -45,7 +45,7 @@ function Toast({
   message,
   variant = 'success',
   duration = TOAST_DEFAULT_DURATION,
-  position = 'top',
+  position = 'bottom',
   onHide,
 }: Props) {
   const theme = useAppTheme();

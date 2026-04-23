@@ -26,6 +26,7 @@ export function GlobalToast() {
       visible={visible}
       message={toast?.message ?? ''}
       variant={toast?.variant}
+      position="bottom"
       onHide={() => setVisible(false)}
     />
   );

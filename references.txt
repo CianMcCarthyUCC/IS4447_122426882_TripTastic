@@ -2,33 +2,27 @@ References & Attributions
 =========================
 
 UI/UX Inspiration:
-- Expedia mobile app — card layout, search/filter patterns, travel-themed design
-- Hopper — colour palette inspiration, floating action button pattern
-- TripAdvisor — category organisation, activity logging UX
-- Mobbin (https://mobbin.com) — mobile design pattern library for travel apps
+- Expedia mobile app - card layout, search/filter patterns, travel-themed design
+- TripAdvisor - category organisation, activity logging UX
+- Mobbin (https://mobbin.com) - mobile design pattern library for travel apps
+- Instagram - Settings and Profile
+- Tiktok - Added to favourites inspiration
 
 Libraries & Frameworks:
-- React Native (https://reactnative.dev) — mobile framework
-- Expo SDK 54 (https://docs.expo.dev) — development platform
-- Expo Router (https://docs.expo.dev/router/introduction/) — file-based routing
-- Drizzle ORM (https://orm.drizzle.team) — TypeScript SQL ORM
-- react-native-gifted-charts (https://github.com/Abhinandan-Kushwaha/react-native-gifted-charts) — bar/line chart components
-- react-native-reanimated (https://docs.swmansion.com/react-native-reanimated/) — animations
-- react-native-gesture-handler (https://docs.swmansion.com/react-native-gesture-handler/) — swipe gestures
-- react-native-svg (https://github.com/software-mansion/react-native-svg) — SVG rendering for custom icons
-- expo-crypto (https://docs.expo.dev/versions/latest/sdk/crypto/) — password hashing (SHA256)
-- expo-haptics (https://docs.expo.dev/versions/latest/sdk/haptics/) — haptic feedback
-- @expo/vector-icons / Ionicons (https://icons.expo.fyi) — icon library
+- React Native (https://reactnative.dev) - mobile framework
+- Expo SDK 54 (https://docs.expo.dev) - development platform
+- Expo Router (https://docs.expo.dev/router/introduction/) - file-based routing
+- Drizzle ORM (https://orm.drizzle.team) - TypeScript SQL ORM
+- react-native-gifted-charts (https://github.com/Abhinandan-Kushwaha/react-native-gifted-charts) - bar/line chart components
+- react-native-reanimated (https://docs.swmansion.com/react-native-reanimated/) - animations
+- react-native-gesture-handler (https://docs.swmansion.com/react-native-gesture-handler/) - swipe gestures
+- react-native-svg (https://github.com/software-mansion/react-native-svg) - SVG rendering for custom icons
+- expo-crypto (https://docs.expo.dev/versions/latest/sdk/crypto/) - password hashing (SHA256)
+- expo-haptics (https://docs.expo.dev/versions/latest/sdk/haptics/) - haptic feedback
+- @expo/vector-icons / Ionicons (https://icons.expo.fyi) - icon library
 
 Destination Photos:
-- Unsplash API (https://unsplash.com/developers) — free travel photos by destination
-  API key stored in .env (EXPO_PUBLIC_UNSPLASH_ACCESS_KEY), not committed to git
+- Unsplash API (https://unsplash.com/developers) - free travel photos by destination
+- OpenWeather (https://openweathermap.org/api) - Weather for the
 
-Colour Palette:
-- Deep Navy (#0A2463) + Coral (#FE7D50) — inspired by travel app colour trends
-  Reference: https://colorhexpro.com/top-color-combinations-for-ui-design-in-2025/
 
-React Native Best Practices:
-- React Navigation Bottom Tabs (https://reactnavigation.org/docs/bottom-tab-navigator/)
-- Expo Router typed routes (https://docs.expo.dev/router/reference/typed-routes/)
-- React Native SVG animation guide (https://www.svgai.org/blog/guides/react-native-svg-animation)

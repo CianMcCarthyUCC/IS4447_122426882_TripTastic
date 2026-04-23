@@ -1,5 +1,6 @@
 export { default as FormField } from './FormField';
 export { DateField } from './DateField';
+export { DateRangeCalendar } from './DateRangeCalendar';
 export { Dropdown } from './Dropdown';
 export { CategoryPicker } from './CategoryPicker';
 export { ColorPicker } from './ColorPicker';

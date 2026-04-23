@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ExpoImagePicker from 'expo-image-picker';
 import { useTrips, useTripForm, useFormSubmit, useAppTheme, useHaptics } from '@/hooks';
 import { useMountedRef } from '@/hooks/useMountedRef';
-import { FormField, DateField } from '@/components/forms';
+import { FormField, DateRangeCalendar } from '@/components/forms';
 import { PrimaryButton } from '@/components/buttons';
 import { Toast } from '@/components/feedback';
 import { SlideUpSheet } from '@/components/modals';
@@ -292,17 +292,14 @@ export default function AddTrip() {
       ) : (
         <KeyboardAwareForm>
           <View style={SharedStyles.form}>
-            <DateField
-              label="Start Date"
-              value={formData.startDate}
-              onChange={(d) => onChangeField('startDate', d)}
-              accessibilityLabel="Trip start date"
-            />
-            <DateField
-              label="End Date"
-              value={formData.endDate}
-              onChange={(d) => onChangeField('endDate', d)}
-              accessibilityLabel="Trip end date"
+            <DateRangeCalendar
+              start={formData.startDate || null}
+              end={formData.endDate || null}
+              onChange={(s, e) => {
+                onChangeField('startDate', s ?? '');
+                onChangeField('endDate', e ?? '');
+              }}
+              minDate={new Date().toISOString().slice(0, 10)}
             />
           </View>
 

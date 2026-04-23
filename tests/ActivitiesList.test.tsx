@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act } from '@testing-library/react-native';
 import { ActivityContext } from '@/context/ActivityContext';
 import { CategoryContext } from '@/context/CategoryContext';
 import { TripContext } from '@/context/TripContext';
@@ -62,7 +62,7 @@ const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metr
 const mockCategory = { id: 1, name: 'Sightseeing', color: '#3B82F6', icon: 'eye', isSystem: false };
 
 describe('Trips Screen', () => {
-  it('renders the seeded trip on the home screen', () => {
+  it('renders the seeded trip on the home screen', async () => {
     const { getAllByText } = render(
       <TripContext.Provider value={{ trips: [mockTrip], setTrips: jest.fn(), currentTrip: mockTrip, setCurrentTrip: jest.fn() }}>
         <CategoryContext.Provider value={{ categories: [mockCategory], setCategories: jest.fn() }}>
@@ -74,6 +74,10 @@ describe('Trips Screen', () => {
         </CategoryContext.Provider>
       </TripContext.Provider>
     );
+
+    // Flush pending async state updates (e.g. @expo/vector-icons font loader)
+    // so React doesn't warn about updates not wrapped in act(...).
+    await act(async () => {});
 
     expect(getAllByText('Summer in Italy').length).toBeGreaterThan(0);
     expect(getAllByText('Planned Trips').length).toBeGreaterThan(0);

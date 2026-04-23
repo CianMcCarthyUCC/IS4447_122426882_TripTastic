@@ -24,7 +24,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.cianmccarthyucc.triptastic"
     },
     "web": {
       "output": "static",
@@ -55,15 +59,12 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0c1d33ff-849f-4cbd-86b3-79efbfa0ae26"
+        "projectId": "cfec5f6c-bde2-471f-b4da-d22b92b99412"
       }
     },
-    "owner": "rory1",
+    "owner": "cianmccarthyucc",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/0c1d33ff-849f-4cbd-86b3-79efbfa0ae26"
     }
   }
 }

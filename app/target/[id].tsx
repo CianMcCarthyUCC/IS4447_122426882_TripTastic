@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { useTargets, useCategories, useActivities, useDeleteWithConfirm } from '@/hooks';
+import { useTargets, useCategories, useActivities, useTrips, useDeleteWithConfirm } from '@/hooks';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ProgressBar, NotFoundFallback } from '@/components/feedback';
 import { EntityDetailScreen } from '@/components/layout';
 import { Colors, Spacing, BorderRadius } from '@/constants';
 import { computeProgress, computeTargetCurrentValue } from '@/utils/progressHelpers';
+import { countryFlag } from '@/utils/countryFlag';
 
 export default function TargetDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function TargetDetail() {
   const { findTargetById, deleteTarget } = useTargets();
   const { findCategoryById } = useCategories();
   const { activities } = useActivities();
+  const { findTripById } = useTrips();
 
   const target = findTargetById(Number(id));
 
@@ -60,7 +62,11 @@ export default function TargetDetail() {
         <DetailRow label="Period" value={target.period} theme={theme} />
         <DetailRow
           label="Scope"
-          value={target.tripId ? 'This Trip' : 'All Trips'}
+          value={
+            target.tripId
+              ? `This Trip ${countryFlag(findTripById(target.tripId)?.country ?? '')}`.trim()
+              : 'All Trips 🌍'
+          }
           theme={theme}
           isLast
         />

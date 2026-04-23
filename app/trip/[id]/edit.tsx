@@ -12,7 +12,7 @@ import {
   useTrips,
   useActivities,
 } from '@/hooks';
-import { FormField, DateField } from '@/components/forms';
+import { FormField, DateRangeCalendar } from '@/components/forms';
 import { PrimaryButton } from '@/components/buttons';
 import { ConfirmDialog, Toast } from '@/components/feedback';
 import { EditEntityScreen, KeyboardAwareForm } from '@/components/layout';
@@ -211,17 +211,13 @@ export default function EditTrip() {
               onChangeText={(v) => onChangeField('country', v)}
               placeholder="e.g. Italy"
             />
-            <DateField
-              label="Start Date"
-              value={formData.startDate}
-              onChange={(d) => onChangeField('startDate', d)}
-              accessibilityLabel="Trip start date"
-            />
-            <DateField
-              label="End Date"
-              value={formData.endDate}
-              onChange={(d) => onChangeField('endDate', d)}
-              accessibilityLabel="Trip end date"
+            <DateRangeCalendar
+              start={formData.startDate || null}
+              end={formData.endDate || null}
+              onChange={(s, e) => {
+                onChangeField('startDate', s ?? '');
+                onChangeField('endDate', e ?? '');
+              }}
             />
           </View>
 
