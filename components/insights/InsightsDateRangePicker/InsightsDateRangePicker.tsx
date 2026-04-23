@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, Palette, Spacing } from '@/constants';
-import { SegmentedPills } from '@/components/forms';
+import { DateRangeCalendar } from '@/components/forms';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatIsoDate } from '@/utils/dateHelpers';
 import type { InsightsDateRange } from '@/hooks';
@@ -21,10 +20,6 @@ const OPTIONS = [
   { label: 'Custom', value: 'custom' },
 ] as const;
 
-function iso(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 type Props = {
   value: InsightsDateRangeValue;
   setValue: (v: InsightsDateRangeValue) => void;
@@ -33,14 +28,13 @@ type Props = {
 };
 
 /**
- * The date-range picker used in the Insights filter sheet. Lets the user
- * pick a preset range (today, week, month, all time) or a custom start
- * and end date, so they can narrow the insights to the period they care
- * about.
+ * The date-range picker used on filter surfaces. Preset options stack on
+ * the left; selecting "Custom" reveals a single range-selecting calendar
+ * on the right (shared `DateRangeCalendar`). Two taps build the range,
+ * then Apply commits it.
  */
 export function InsightsDateRangePicker({ value, setValue, close, onToast }: Props) {
   const theme = useAppTheme();
-  // Local draft so the parent filter isn't re-applied on every picker tap.
   const [draftStart, setDraftStart] = useState<string | null>(value.customStart);
   const [draftEnd, setDraftEnd] = useState<string | null>(value.customEnd);
 
@@ -69,73 +63,104 @@ export function InsightsDateRangePicker({ value, setValue, close, onToast }: Pro
   };
 
   const isCustom = value.range === 'custom';
-  const startAsDate = draftStart ? new Date(`${draftStart}T00:00:00`) : new Date();
-  const endAsDate = draftEnd ? new Date(`${draftEnd}T00:00:00`) : new Date();
 
   return (
     <View>
-      <SegmentedPills
-        options={OPTIONS}
-        selected={value.range}
-        onSelect={handleSelect}
-        accessibilityLabel="Filter by date range"
-        accentActive
-      />
-      {isCustom ? (
-        <View style={styles.customWrap}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>START DATE</Text>
-          <DateTimePicker
-            mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            value={startAsDate}
-            maximumDate={draftEnd ? new Date(`${draftEnd}T00:00:00`) : undefined}
-            onChange={(_e, d) => {
-              if (d) setDraftStart(iso(d));
-            }}
-            accessibilityLabel="Custom start date"
-          />
-          <Text style={[styles.label, { color: theme.textSecondary }]}>END DATE</Text>
-          <DateTimePicker
-            mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            value={endAsDate}
-            minimumDate={draftStart ? new Date(`${draftStart}T00:00:00`) : undefined}
-            onChange={(_e, d) => {
-              if (d) setDraftEnd(iso(d));
-            }}
-            accessibilityLabel="Custom end date"
-          />
-          <Pressable
-            onPress={applyCustom}
-            disabled={!draftStart && !draftEnd}
-            accessibilityRole="button"
-            accessibilityLabel="Apply custom date range"
-            style={({ pressed }) => [
-              styles.apply,
-              { backgroundColor: Palette.coral },
-              !draftStart && !draftEnd && styles.applyDisabled,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.applyText}>Apply range</Text>
-          </Pressable>
+      <View style={styles.row}>
+        <View
+          style={styles.stack}
+          accessibilityRole="tablist"
+          accessibilityLabel="Filter by date range"
+        >
+          {OPTIONS.map((opt) => {
+            const active = opt.value === value.range;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => handleSelect(opt.value)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={opt.label}
+                style={({ pressed }) => [
+                  styles.stackItem,
+                  {
+                    backgroundColor: active ? theme.accentAction : theme.segmentTrack,
+                    borderColor: active ? theme.accentAction : theme.cardBorder,
+                  },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.stackItemLabel,
+                    { color: active ? Palette.white : theme.textPrimary },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
+
+        {isCustom ? (
+          <View style={styles.calendarWrap}>
+            <DateRangeCalendar
+              start={draftStart}
+              end={draftEnd}
+              onChange={(s, e) => {
+                setDraftStart(s);
+                setDraftEnd(e);
+              }}
+            />
+          </View>
+        ) : null}
+      </View>
+
+      {isCustom ? (
+        <Pressable
+          onPress={applyCustom}
+          disabled={!draftStart && !draftEnd}
+          accessibilityRole="button"
+          accessibilityLabel="Apply custom date range"
+          style={({ pressed }) => [
+            styles.apply,
+            { backgroundColor: Palette.coral },
+            !draftStart && !draftEnd && styles.applyDisabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.applyText}>Apply range</Text>
+        </Pressable>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  customWrap: {
-    marginTop: Spacing.md,
+  row: {
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
-  label: {
-    fontSize: 11,
+  stack: {
+    flexDirection: 'column',
+    gap: Spacing.sm,
+    width: 120,
+  },
+  stackItem: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingVertical: Spacing.md,
+  },
+  stackItemLabel: {
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.6,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
-    textTransform: 'uppercase',
+  },
+  calendarWrap: {
+    flex: 1,
   },
   apply: {
     alignItems: 'center',

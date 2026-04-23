@@ -3,11 +3,10 @@ import { dateRangeBounds } from '@/utils/dateRangeFilter';
 import type { DateRange as FullDateRange } from '@/utils/dateRangeFilter';
 import type { Activity, ActivityStatus, Category, Target } from '@/types';
 
-// The list filter surfaces (ActivitiesSection, Trips, Targets) don't
-// offer a "custom" window, so this hook exposes a narrower subset of the
-// canonical DateRange union. Predicate semantics still come from the
-// shared utility so "week"/"month" match everywhere in the app.
-export type DateRange = Exclude<FullDateRange, 'custom'>;
+// List filters (ActivitiesSection, Trips, Targets) share the same
+// DateRange union as insights so "custom" start/end bounds work anywhere
+// a date filter is surfaced.
+export type DateRange = FullDateRange;
 
 export type StatusFilter = 'all' | ActivityStatus;
 export type SortDirection = 'asc' | 'desc';
@@ -16,6 +15,8 @@ type FilterState = {
   searchQuery: string;
   selectedCategory: string;
   dateRange: DateRange;
+  customStart: string | null;
+  customEnd: string | null;
   status: StatusFilter;
   favouritesOnly: boolean;
   sortDirection: SortDirection;
@@ -25,6 +26,7 @@ type FilterActions = {
   setSearchQuery: (q: string) => void;
   setSelectedCategory: (id: string) => void;
   setDateRange: (range: DateRange) => void;
+  setCustomDateRange: (start: string | null, end: string | null) => void;
   setStatus: (status: StatusFilter) => void;
   setFavouritesOnly: (v: boolean) => void;
   setSortDirection: (d: SortDirection) => void;
@@ -45,7 +47,14 @@ export function useFilteredActivities(
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [dateRange, setDateRange] = useState<DateRange>('all');
+  const [customStart, setCustomStart] = useState<string | null>(null);
+  const [customEnd, setCustomEnd] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusFilter>('all');
+
+  const setCustomDateRange = useCallback((start: string | null, end: string | null) => {
+    setCustomStart(start);
+    setCustomEnd(end);
+  }, []);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -72,7 +81,7 @@ export function useFilteredActivities(
     }
 
     if (dateRange !== 'all') {
-      const { floor, ceil } = dateRangeBounds(dateRange);
+      const { floor, ceil } = dateRangeBounds(dateRange, customStart, customEnd);
       result = result.filter((a) => {
         if (floor && a.date < floor) return false;
         if (ceil && a.date > ceil) return false;
@@ -93,12 +102,14 @@ export function useFilteredActivities(
     );
 
     return sorted;
-  }, [activities, categoryMap, searchQuery, selectedCategory, dateRange, status, favouritesOnly, sortDirection]);
+  }, [activities, categoryMap, searchQuery, selectedCategory, dateRange, customStart, customEnd, status, favouritesOnly, sortDirection]);
 
   const resetFilters = useCallback(() => {
     setSearchQuery('');
     setSelectedCategory('all');
     setDateRange('all');
+    setCustomStart(null);
+    setCustomEnd(null);
     setStatus('all');
     setFavouritesOnly(false);
     setSortDirection('asc');
@@ -116,12 +127,15 @@ export function useFilteredActivities(
     searchQuery,
     selectedCategory,
     dateRange,
+    customStart,
+    customEnd,
     status,
     favouritesOnly,
     sortDirection,
     setSearchQuery,
     setSelectedCategory,
     setDateRange,
+    setCustomDateRange,
     setStatus,
     setFavouritesOnly,
     setSortDirection,

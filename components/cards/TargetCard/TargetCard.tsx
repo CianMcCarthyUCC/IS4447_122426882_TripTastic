@@ -76,12 +76,6 @@ function TargetCard({ target, category, currentValue, onToggleFavourite, onDelet
         <Text style={[styles.title, { color: theme.textPrimary }]}>
           {category?.name ?? 'Unknown'}
         </Text>
-        {target.isFavourite ? (
-          <View style={[styles.priorityPill, { backgroundColor: Palette.starGold }]}>
-            <Ionicons name="star" size={10} color={Palette.white} />
-            <Text style={styles.priorityPillText}>PRIORITY</Text>
-          </View>
-        ) : null}
         {/* Top-right status pill: green when the goal is met or exceeded,
             muted when it's still in progress. Replaces the previous dual
             "EXCEEDED" text + Exceeded pill inside ProgressBar so there's
@@ -97,11 +91,6 @@ function TargetCard({ target, category, currentValue, onToggleFavourite, onDelet
 
       <View style={styles.tags}>
         <InfoTag icon="calendar-outline" label="Period" value={target.period} />
-        <InfoTag
-          icon={target.tripId ? 'airplane-outline' : 'earth-outline'}
-          label="Scope"
-          value={target.tripId ? 'This Trip' : 'All Trips'}
-        />
       </View>
 
       <View style={styles.actionRow}>
@@ -190,20 +179,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
-  },
-  priorityPill: {
-    alignItems: 'center',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 3,
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-  },
-  priorityPillText: {
-    color: Palette.white,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.8,
   },
   statusPill: {
     borderRadius: 999,

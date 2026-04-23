@@ -21,6 +21,8 @@ import {
 import type { SearchableOption } from '@/components/forms';
 import { PressableOpacity } from '@/components/buttons';
 import { ConfirmDialog, EmptyState, Toast } from '@/components/feedback';
+import { InsightsDateRangePicker } from '@/components/insights/InsightsDateRangePicker/InsightsDateRangePicker';
+import { formatIsoDate } from '@/utils/dateHelpers';
 import { DrillDownFilterSheet } from '@/components/modals';
 import type { DrillDownFilterConfig, DrillDownPreset } from '@/components/modals';
 import type { SegmentOption } from '@/components/forms/SegmentedPills';
@@ -43,6 +45,7 @@ const DATE_RANGE_OPTIONS: ReadonlyArray<SegmentOption<DateRange>> = [
   { label: 'Today', value: 'today' },
   { label: 'Week', value: 'week' },
   { label: 'Month', value: 'month' },
+  { label: 'Custom', value: 'custom' },
 ];
 
 const STATUS_OPTIONS: ReadonlyArray<{
@@ -76,12 +79,15 @@ export function ActivitiesSection({ activities }: Props) {
     searchQuery,
     selectedCategory,
     dateRange,
+    customStart,
+    customEnd,
     status,
     favouritesOnly,
     sortDirection,
     setSearchQuery,
     setSelectedCategory,
     setDateRange,
+    setCustomDateRange,
     setStatus,
     setFavouritesOnly,
     setSortDirection,
@@ -225,14 +231,16 @@ export function ActivitiesSection({ activities }: Props) {
       ? 'All categories'
       : categories.find((c) => String(c.id) === v)?.name ?? 'All categories';
 
-  const dateRangeLabelForValue = (v: DateRange) =>
-    v === 'all'
-      ? 'All time'
-      : v === 'today'
-        ? 'Today'
-        : v === 'week'
-          ? 'This week'
-          : 'This month';
+  const dateRangeLabelForValue = (v: DateRange) => {
+    if (v === 'all') return 'All time';
+    if (v === 'today') return 'Today';
+    if (v === 'week') return 'This week';
+    if (v === 'month') return 'This month';
+    if (customStart && customEnd) return `${formatIsoDate(customStart)} - ${formatIsoDate(customEnd)}`;
+    if (customStart) return `From ${formatIsoDate(customStart)}`;
+    if (customEnd) return `Until ${formatIsoDate(customEnd)}`;
+    return 'Custom';
+  };
 
   const sheetFilters = useMemo<DrillDownFilterConfig[]>(
     () => [
@@ -270,22 +278,25 @@ export function ActivitiesSection({ activities }: Props) {
         isActive: (v) => (v as DateRange) !== 'all',
         onApply: (v) => setDateRange(v as DateRange),
         renderPicker: ({ value, setValue, close }) => (
-          <SegmentedPills
-            options={DATE_RANGE_OPTIONS}
-            selected={value as DateRange}
-            onSelect={(v) => {
-              setValue(v);
-              close();
+          <InsightsDateRangePicker
+            value={{
+              range: value as DateRange,
+              customStart,
+              customEnd,
             }}
-            accessibilityLabel="Filter by date range"
-            accentActive
+            setValue={(v) => {
+              setValue(v.range);
+              setDateRange(v.range);
+              setCustomDateRange(v.customStart, v.customEnd);
+            }}
+            close={close}
           />
         ),
       },
     ],
     // categoryOptions already memoised, selected/dateRange drive re-render,
     // setters are stable from useFilteredActivities.
-    [categoryOptions, selectedCategory, dateRange, categories, setSelectedCategory, setDateRange],
+    [categoryOptions, selectedCategory, dateRange, customStart, customEnd, categories, setSelectedCategory, setDateRange, setCustomDateRange],
   );
 
   const appliedFilterCount =

@@ -1,17 +1,14 @@
-# IS4447 - Student Manager
+## GitHub Link
 
-**Student ID:** 122426882
-**Name:** Cian McCarthy
-
-A React Native student management app built with Expo, Drizzle ORM, and SQLite for local offline persistence.
-
-## GitHub
-
-https://github.com/CianMcCarthyUCC/IS4447_122426882_CianMcCarthy
+https://github.com/CianMcCarthyUCC/IS4447_122426882_TripTastic
 
 ## Expo
 
 https://expo.dev/projects/0c1d33ff-849f-4cbd-86b3-79efbfa0ae26
+
+## App Name and Option
+
+TripTastic and Option B
 
 ## Getting Started
 
@@ -20,7 +17,11 @@ npm install
 npx expo start
 ```
 
-## Tech Stack
+## To run the 3 required tests (I have 7 tests in the project included the 3 required)
+npm test
+
+
+## Project Tech Stack
 
 - **Framework:** React Native + Expo (SDK 54)
 - **Routing:** Expo Router (file-based)

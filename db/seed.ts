@@ -50,12 +50,12 @@ export async function seedDataIfEmpty() {
     // keeps the short descriptive blurb so cards still have something
     // readable under the venue.
     await tx.insert(activities).values([
-      { tripId: 1, categoryId: 1, date: '2026-07-01', metric: 180, status: 'completed', place: 'Colosseum', notes: 'Guided tour', isFavourite: true, favouritedAt: '2026-07-01T10:00:00.000Z'},
-      { tripId: 1, categoryId: 2, date: '2026-07-01', metric: 60, status: 'completed', place: 'Trattoria da Enzo', notes: 'Lunch with locals' },
-      { tripId: 1, categoryId: 1, date: '2026-07-02', metric: 120, status: 'completed', place: 'Vatican Museums', notes: 'Sistine Chapel highlight' },
-      { tripId: 1, categoryId: 3, date: '2026-07-02', metric: 90, status: 'completed', place: 'Roma Termini', notes: 'Train to Florence' },
-      { tripId: 1, categoryId: 2, date: '2026-07-03', metric: 45, status: 'completed', place: 'Mercato Centrale', notes: 'Pasta making class' },
-      { tripId: 1, categoryId: 1, date: '2026-07-03', metric: 150, status: 'completed', place: 'Uffizi Gallery', notes: 'Botticelli room' },
+      { tripId: 1, categoryId: 1, date: '2026-07-01', metric: 180, status: 'planned', place: 'Colosseum', notes: 'Guided tour', isFavourite: true, favouritedAt: '2026-07-01T10:00:00.000Z'},
+      { tripId: 1, categoryId: 2, date: '2026-07-01', metric: 60, status: 'planned', place: 'Trattoria da Enzo', notes: 'Lunch with locals' },
+      { tripId: 1, categoryId: 1, date: '2026-07-02', metric: 120, status: 'planned', place: 'Vatican Museums', notes: 'Sistine Chapel highlight' },
+      { tripId: 1, categoryId: 3, date: '2026-07-02', metric: 90, status: 'planned', place: 'Roma Termini', notes: 'Train to Florence' },
+      { tripId: 1, categoryId: 2, date: '2026-07-03', metric: 45, status: 'planned', place: 'Mercato Centrale', notes: 'Pasta making class' },
+      { tripId: 1, categoryId: 1, date: '2026-07-03', metric: 150, status: 'planned', place: 'Uffizi Gallery', notes: 'Botticelli room' },
       { tripId: 1, categoryId: 5, date: '2026-07-04', metric: 60, status: 'planned', place: 'San Lorenzo Market', notes: 'Leather shopping' },
       { tripId: 1, categoryId: 2, date: '2026-07-04', metric: 30, status: 'planned', place: 'Vivoli Gelateria', notes: 'Gelato tasting' },
       { tripId: 1, categoryId: 3, date: '2026-07-05', metric: 45, status: 'planned', place: 'SITA bus terminal', notes: 'Bus to Siena' },
@@ -66,12 +66,12 @@ export async function seedDataIfEmpty() {
       { tripId: 1, categoryId: 3, date: '2026-07-07', metric: 120, status: 'planned', place: 'La Spezia Centrale', notes: 'Train to Cinque Terre' },
 
       // Paris (trip 2) - spans 2026-08-15 to 2026-08-18 across multiple categories + statuses
-      { tripId: 2, categoryId: 3, date: '2026-08-15', metric: 90, status: 'completed', place: 'Gare du Nord', notes: 'Eurostar arrival' },
-      { tripId: 2, categoryId: 4, date: '2026-08-15', metric: 30, status: 'completed', place: 'Hôtel du Petit Moulin', notes: 'Check-in Le Marais' },
-      { tripId: 2, categoryId: 1, date: '2026-08-15', metric: 120, status: 'completed', place: 'Notre-Dame Cathedral', notes: 'Evening walk' },
-      { tripId: 2, categoryId: 1, date: '2026-08-16', metric: 180, status: 'completed', place: 'Louvre Museum', notes: 'Mona Lisa + Egyptian wing', isFavourite: true, favouritedAt: '2026-08-16T12:00:00.000Z'},
-      { tripId: 2, categoryId: 2, date: '2026-08-16', metric: 75, status: 'completed', place: 'Tuileries Garden cafés', notes: 'Lunch near the gardens' },
-      { tripId: 2, categoryId: 1, date: '2026-08-16', metric: 90, status: 'completed', place: 'Eiffel Tower', notes: 'Sunset viewing' },
+      { tripId: 2, categoryId: 3, date: '2026-08-15', metric: 90, status: 'planned', place: 'Gare du Nord', notes: 'Eurostar arrival' },
+      { tripId: 2, categoryId: 4, date: '2026-08-15', metric: 30, status: 'planned', place: 'Hôtel du Petit Moulin', notes: 'Check-in Le Marais' },
+      { tripId: 2, categoryId: 1, date: '2026-08-15', metric: 120, status: 'planned', place: 'Notre-Dame Cathedral', notes: 'Evening walk' },
+      { tripId: 2, categoryId: 1, date: '2026-08-16', metric: 180, status: 'planned', place: 'Louvre Museum', notes: 'Mona Lisa + Egyptian wing', isFavourite: true, favouritedAt: '2026-08-16T12:00:00.000Z'},
+      { tripId: 2, categoryId: 2, date: '2026-08-16', metric: 75, status: 'planned', place: 'Tuileries Garden cafés', notes: 'Lunch near the gardens' },
+      { tripId: 2, categoryId: 1, date: '2026-08-16', metric: 90, status: 'planned', place: 'Eiffel Tower', notes: 'Sunset viewing' },
       { tripId: 2, categoryId: 5, date: '2026-08-17', metric: 120, status: 'planned', place: 'Champs-Élysées', notes: 'Shopping stroll' },
       { tripId: 2, categoryId: 2, date: '2026-08-17', metric: 90, status: 'planned', place: 'Montmartre', notes: 'Dinner up the hill' },
       { tripId: 2, categoryId: 1, date: '2026-08-18', metric: 150, status: 'planned', place: 'Château de Versailles', notes: 'Day trip from Paris' },
