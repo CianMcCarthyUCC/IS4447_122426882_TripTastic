@@ -68,6 +68,15 @@ export default function TargetForm({
           onSelect={(v) => onChangeField('tripId', v === 'trip' ? 1 : null)}
           accessibilityLabel="Select goal scope"
         />
+
+        <FormField
+          label="Notes"
+          helpText="Optional - a quick reminder of why this goal matters."
+          value={formData.notes}
+          onChangeText={(v) => onChangeField('notes', v)}
+          placeholder="e.g. Make the most of the museum pass"
+          accessibilityLabel="Notes about this goal"
+        />
       </View>
 
       {error ? (

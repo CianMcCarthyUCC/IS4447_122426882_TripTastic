@@ -6,8 +6,9 @@ type Props = {
 };
 
 /**
- * Reusable keyboard-aware wrapper for all form screens.
- * Handles platform-specific keyboard offset so inputs stay visible.
+ * A wrapper for form screens that makes sure the keyboard never covers
+ * the field the user is typing into. Handles the platform differences
+ * between iOS and Android so each form doesn't need to worry about it.
  */
 export default function KeyboardAwareForm({ children }: Props) {
   return (

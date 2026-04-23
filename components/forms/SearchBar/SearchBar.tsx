@@ -15,8 +15,9 @@ type Props = {
 };
 
 /**
- * Search bar with recent searches (SQLite-persisted), suggestions,
- * and animated dropdown. Provides rich feedback when no query entered.
+ * The app-wide search bar. When the user focuses an empty bar it drops
+ * down a helpful list of recent searches and a few suggested terms;
+ * recent searches are saved between sessions so they're always handy.
  */
 function SearchBar({
   value,

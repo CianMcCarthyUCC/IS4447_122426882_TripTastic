@@ -10,8 +10,9 @@ export type SavedFilter = {
 };
 
 /**
- * Hook for managing saved filters (SQLite-persisted).
- * Loads on mount, provides save/delete/apply operations.
+ * The hook that looks after the user's saved filter presets. Loads them
+ * on start-up and exposes the save, delete and apply actions, so the
+ * user's favourite filters are always one tap away.
  */
 export function useSavedFilters() {
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);

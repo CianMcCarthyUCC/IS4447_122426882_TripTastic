@@ -24,7 +24,7 @@ type Props = {
 };
 
 /**
- * Visual icon picker — grid of Ionicons to tap-select.
+ * Visual icon picker - grid of Ionicons to tap-select.
  * Replaces raw text input for icon names.
  * Uses Reanimated for spring-animated selection.
  */

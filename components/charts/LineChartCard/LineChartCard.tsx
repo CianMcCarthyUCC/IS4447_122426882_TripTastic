@@ -12,7 +12,7 @@ type Props = {
   title: string;
   data: LineItem[];
   color?: string;
-  /** Optional second series — renders as a parallel line via gifted-charts `data2`. */
+  /** Optional second series - renders as a parallel line via gifted-charts `data2`. */
   data2?: LineItem[];
   color2?: string;
   /** Legend labels for the two series (only shown when data2 is provided). */
@@ -39,7 +39,7 @@ export default function LineChartCard({
       <View
         style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
         accessibilityRole="image"
-        accessibilityLabel={`${title} line chart — no data`}
+        accessibilityLabel={`${title} line chart - no data`}
       >
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
         <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
@@ -51,8 +51,8 @@ export default function LineChartCard({
   const last = data[data.length - 1].value;
   const trend = last > first ? 'trending up' : last < first ? 'trending down' : 'flat';
   const a11y = hasSecond
-    ? `${title} line chart — ${data.length} points. ${label1 ?? 'Series 1'} ${trend} from ${first} to ${last}. ${label2 ?? 'Series 2'} latest ${data2![data2!.length - 1]?.value ?? 0}.`
-    : `${title} line chart — ${data.length} points, ${trend} from ${first} to ${last}`;
+    ? `${title} line chart - ${data.length} points. ${label1 ?? 'Series 1'} ${trend} from ${first} to ${last}. ${label2 ?? 'Series 2'} latest ${data2![data2!.length - 1]?.value ?? 0}.`
+    : `${title} line chart - ${data.length} points, ${trend} from ${first} to ${last}`;
 
   return (
     <View

@@ -2,8 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useCategories, useCategoryForm, useFormSubmit } from '@/hooks';
 import { CategoryForm } from '@/components/forms';
-import { Toast } from '@/components/feedback';
-import { ScreenHeader, ScreenContainer } from '@/components/layout';
+import { EditEntityScreen } from '@/components/layout';
 import { validateCategoryForm } from '@/utils/validation';
 
 export default function EditCategory() {
@@ -23,11 +22,16 @@ export default function EditCategory() {
   }, [category?.id, populateForm]);
 
   if (!category) return null;
+  // The Unspecified system category is the fallback that receives items
+  // when another category is deleted - its identity has to stay stable,
+  // so the edit screen bounces back if someone deep-links here.
+  if (category.isSystem) {
+    router.back();
+    return null;
+  }
 
   return (
-    <ScreenContainer>
-      <Toast {...toast} onHide={hideToast} />
-      <ScreenHeader title="Edit Category" subtitle={`Update ${category.name}`} />
+    <EditEntityScreen title="Edit Category" toast={toast} onHideToast={hideToast}>
       <CategoryForm
         formData={formData}
         onChangeField={onChangeField}
@@ -37,6 +41,6 @@ export default function EditCategory() {
         loading={loading}
         error={error}
       />
-    </ScreenContainer>
+    </EditEntityScreen>
   );
 }

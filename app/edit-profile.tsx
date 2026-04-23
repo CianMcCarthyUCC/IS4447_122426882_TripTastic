@@ -1,23 +1,20 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ExpoImagePicker from 'expo-image-picker';
 import { useAuth, useAppTheme, useHaptics, useToast } from '@/hooks';
-import { FormField } from '@/components/forms';
-import { PrimaryButton } from '@/components/buttons';
+import { PrimaryButton, PressableOpacity } from '@/components/buttons';
 import { Toast } from '@/components/feedback';
-import { ScreenContainer, KeyboardAwareForm } from '@/components/layout';
+import { ScreenContainer, KeyboardAwareForm, DecorativeCircles, PageHeader } from '@/components/layout';
 import { Avatar } from '@/components/Avatar';
-import { BorderRadius, Shadows, Spacing, SharedStyles } from '@/constants';
+import { BorderRadius, Palette, Spacing, SharedStyles } from '@/constants';
 import { deleteAvatar, isManagedAvatarUri, saveAvatar } from '@/utils/avatarStorage';
 
 /**
- * Edit Profile — three fields (display name, home city, profile picture)
- * wired straight through Drizzle via `useAuth().updateProfile`. Local
- * `draft` state is the single source of truth while editing; on Save we
- * persist the picked image to app-private storage first, then persist
- * the user row, then clean up any previous avatar file.
+ * The Edit Profile screen. Lets the user change their display name,
+ * home city and profile picture. The picked picture is copied into
+ * app-private storage on save so it survives across restarts.
  */
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -26,7 +23,7 @@ export default function EditProfileScreen() {
   const haptics = useHaptics();
   const { toast, showToast, hideToast } = useToast();
 
-  // One source of truth for the form — seeded from context once, then the
+  // One source of truth for the form - seeded from context once, then the
   // user owns it. Defaulting to '' keeps inputs controlled from render 1.
   const [draft, setDraft] = useState({
     displayName: user?.displayName ?? '',
@@ -36,7 +33,7 @@ export default function EditProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Disable Save when nothing actually changed — a small touch that prevents
+  // Disable Save when nothing actually changed - a small touch that prevents
   // pointless DB writes and makes it obvious when the form is "clean".
   const dirty = useMemo(() => {
     if (!user) return false;
@@ -60,7 +57,7 @@ export default function EditProfileScreen() {
       const result = await ExpoImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         // `allowsEditing` + square aspect lets the picker enforce the 1:1
-        // crop before the URI ever reaches us — cheaper than pulling in
+        // crop before the URI ever reaches us - cheaper than pulling in
         // expo-image-manipulator for a post-hoc crop.
         allowsEditing: true,
         aspect: [1, 1],
@@ -69,7 +66,8 @@ export default function EditProfileScreen() {
       if (result.canceled || !result.assets[0]) return;
       setDraft((prev) => ({ ...prev, profilePicture: result.assets[0].uri }));
       if (error) setError(null);
-      haptics.light();
+      haptics.success();
+      showToast('Profile picture uploaded successfully', 'accent');
     } catch {
       showToast('Could not open photo library.', 'error');
       haptics.error();
@@ -79,8 +77,9 @@ export default function EditProfileScreen() {
   const handleRemovePhoto = useCallback(() => {
     setDraft((prev) => ({ ...prev, profilePicture: '' }));
     if (error) setError(null);
-    haptics.light();
-  }, [error, haptics]);
+    haptics.medium();
+    showToast('Profile picture removed', 'accent');
+  }, [error, haptics, showToast]);
 
   const validate = (): string | null => {
     if (draft.displayName.length > 60) return 'Display name is too long (max 60 characters).';
@@ -101,7 +100,7 @@ export default function EditProfileScreen() {
       // If the draft holds a fresh picker URI (cache path), copy it into
       // app-private storage first so the persisted URI survives restarts.
       // A URI that's already under `documentDirectory/avatars/` means the
-      // user kept the existing photo — no copy needed.
+      // user kept the existing photo - no copy needed.
       let finalPicture = draft.profilePicture;
       if (finalPicture && !isManagedAvatarUri(finalPicture)) {
         finalPicture = await saveAvatar(user.id, finalPicture);
@@ -119,7 +118,7 @@ export default function EditProfileScreen() {
       }
 
       // After a successful save, remove the previous avatar file if the
-      // user actually changed the photo. Best-effort — failures here are
+      // user actually changed the photo. Best-effort - failures here are
       // swallowed inside `deleteAvatar`.
       const previous = user.profilePicture ?? '';
       if (previous && previous !== finalPicture) {
@@ -127,9 +126,17 @@ export default function EditProfileScreen() {
       }
 
       haptics.success();
-      showToast('Profile updated', 'success');
-      // Brief delay so the toast is visible before the screen pops.
-      setTimeout(() => router.back(), 400);
+      const previousPic = user.profilePicture ?? '';
+      const pictureChanged = previousPic !== finalPicture;
+      const message = pictureChanged
+        ? finalPicture
+          ? 'Profile picture updated successfully'
+          : 'Profile picture removed successfully'
+        : 'Profile updated';
+      showToast(message, 'accent');
+      // Hold long enough for the toast slide-in + dwell to fully play
+      // before we pop the screen (Toast default duration is 1200ms).
+      setTimeout(() => router.back(), 1400);
     } catch {
       setError('Could not save profile. Please try again.');
       haptics.error();
@@ -151,9 +158,11 @@ export default function EditProfileScreen() {
 
   return (
     <ScreenContainer>
-      <Toast {...toast} onHide={hideToast} />
+      <DecorativeCircles opacity={0.06} />
+      <Toast {...toast} onHide={hideToast} position="bottom" />
+      <PageHeader title="Edit Profile" />
       <KeyboardAwareForm>
-        {/* Header avatar — mirrors the draft photo in real time so the
+        {/* Header avatar - mirrors the draft photo in real time so the
             user can preview the crop before saving. The "Change photo"
             button doubles as the primary CTA since the avatar itself is
             not tappable (a big photo picker target reads better as its
@@ -167,36 +176,26 @@ export default function EditProfileScreen() {
           />
 
           <View style={styles.photoActions}>
-            <Pressable
+            <PressableOpacity
               onPress={handlePickPhoto}
               disabled={saving}
-              style={({ pressed }) => [
-                styles.photoButton,
-                {
-                  backgroundColor: theme.accentAction,
-                  opacity: pressed || saving ? 0.85 : 1,
-                },
-              ]}
+              pressedOpacity={0.85}
+              style={[styles.photoButton, { backgroundColor: theme.accentAction }]}
               accessibilityRole="button"
               accessibilityLabel={hasPhoto ? 'Change profile photo' : 'Add profile photo'}
             >
-              <Ionicons name="camera-outline" size={16} color="#FFFFFF" />
+              <Ionicons name="camera-outline" size={16} color={Palette.white} />
               <Text style={styles.photoButtonText}>
                 {hasPhoto ? 'Change Photo' : 'Add Photo'}
               </Text>
-            </Pressable>
+            </PressableOpacity>
 
             {hasPhoto ? (
-              <Pressable
+              <PressableOpacity
                 onPress={handleRemovePhoto}
                 disabled={saving}
-                style={({ pressed }) => [
-                  styles.removeButton,
-                  {
-                    borderColor: theme.cardBorder,
-                    opacity: pressed || saving ? 0.7 : 1,
-                  },
-                ]}
+                pressedOpacity={0.7}
+                style={[styles.removeButton, { borderColor: theme.cardBorder }]}
                 accessibilityRole="button"
                 accessibilityLabel="Remove profile photo"
               >
@@ -204,56 +203,53 @@ export default function EditProfileScreen() {
                 <Text style={[styles.removeButtonText, { color: theme.textSecondary }]}>
                   Remove
                 </Text>
-              </Pressable>
+              </PressableOpacity>
             ) : null}
           </View>
-
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Edit Profile</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            How should we address you across TripTastic?
-          </Text>
         </View>
 
-        {/* Read-only email — surfacing it makes it obvious which account
-            is being edited; it's intentionally not editable because the
-            email is the user's login identity. */}
-        <View
-          style={[
-            styles.readOnlyCard,
-            { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
-          ]}
-        >
-          <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>
-            Account Email
-          </Text>
-          <Text style={[styles.readOnlyValue, { color: theme.textPrimary }]} numberOfLines={1}>
-            {user.email}
-          </Text>
-          <Text style={[styles.readOnlyHint, { color: theme.textSecondary }]}>
-            Your email can't be changed here. Contact support if you need to update it.
-          </Text>
-        </View>
-
-        <View style={SharedStyles.form}>
-          <FormField
-            label="Display Name"
-            helpText="Shown on your Account screen and in greetings."
+        {/* Flat label-left / value-right rows - mirrors Instagram's edit
+            profile layout. No card chrome, hairline dividers only. */}
+        <View style={[styles.fieldRow, { borderBottomColor: theme.cardBorder }]}>
+          <Text style={[styles.fieldLabel, { color: theme.textPrimary }]}>Name</Text>
+          <TextInput
+            style={[styles.fieldInput, { color: theme.textPrimary }]}
             value={draft.displayName}
             onChangeText={(v) => onChangeField('displayName', v)}
-            placeholder="e.g. Cian McCarthy"
+            placeholder="Your name"
+            placeholderTextColor={theme.textSecondary}
             autoCapitalize="words"
             accessibilityLabel="Display name"
           />
-          <FormField
-            label="Home City"
-            helpText="Used as the default when creating new trips."
+        </View>
+
+        <View style={[styles.fieldRow, { borderBottomColor: theme.cardBorder }]}>
+          <Text style={[styles.fieldLabel, { color: theme.textPrimary }]}>Home City</Text>
+          <TextInput
+            style={[styles.fieldInput, { color: theme.textPrimary }]}
             value={draft.homeCity}
             onChangeText={(v) => onChangeField('homeCity', v)}
             placeholder="e.g. Dublin"
+            placeholderTextColor={theme.textSecondary}
             autoCapitalize="words"
             accessibilityLabel="Home city"
           />
         </View>
+
+        {/* Email is read-only - mirrors the row rhythm but disables
+            interaction so it's obvious the value can't be edited here. */}
+        <View style={[styles.fieldRow, { borderBottomColor: theme.cardBorder }]}>
+          <Text style={[styles.fieldLabel, { color: theme.textPrimary }]}>Email</Text>
+          <Text
+            style={[styles.fieldValueReadOnly, { color: theme.textPrimary }]}
+            numberOfLines={1}
+          >
+            {user.email}
+          </Text>
+        </View>
+        <Text style={[styles.emailHint, { color: theme.textSecondary }]}>
+          You cannot change this.
+        </Text>
 
         {error ? (
           <Text style={SharedStyles.errorText} accessibilityRole="alert">
@@ -261,13 +257,15 @@ export default function EditProfileScreen() {
           </Text>
         ) : null}
 
-        <PrimaryButton
-          label="Save Changes"
-          variant="accent"
-          loading={saving}
-          disabled={!dirty}
-          onPress={handleSave}
-        />
+        <View style={styles.saveSpacing}>
+          <PrimaryButton
+            label="Save Changes"
+            variant="accent"
+            loading={saving}
+            disabled={!dirty}
+            onPress={handleSave}
+          />
+        </View>
         <View style={SharedStyles.buttonSpacing}>
           <PrimaryButton
             label="Cancel"
@@ -300,22 +298,21 @@ const styles = StyleSheet.create({
   },
   photoButton: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
+    borderRadius: BorderRadius.xs,
     flexDirection: 'row',
     gap: 6,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    ...Shadows.sm,
   },
   photoButtonText: {
-    color: '#FFFFFF',
+    color: Palette.white,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   removeButton: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
+    borderRadius: BorderRadius.xs,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 4,
@@ -326,38 +323,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-    marginTop: Spacing.md,
+  fieldRow: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    minHeight: 48,
+    paddingVertical: Spacing.sm,
   },
-  subtitle: {
-    fontSize: 14,
-    marginTop: Spacing.xs,
-    paddingHorizontal: Spacing.lg,
-    textAlign: 'center',
+  fieldLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    width: 110,
   },
-  readOnlyCard: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginBottom: Spacing.lg,
-    padding: Spacing.lg,
-    ...Shadows.sm,
-  },
-  readOnlyLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  readOnlyValue: {
+  fieldInput: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '700',
-    marginTop: Spacing.xs,
+    paddingVertical: Spacing.xs,
   },
-  readOnlyHint: {
+  fieldValueReadOnly: {
+    flex: 1,
+    fontSize: 16,
+  },
+  emailHint: {
     fontSize: 12,
+    marginBottom: Spacing.lg,
     marginTop: Spacing.xs,
+    paddingLeft: 110,
+  },
+  saveSpacing: {
+    marginTop: Spacing.md,
   },
 });

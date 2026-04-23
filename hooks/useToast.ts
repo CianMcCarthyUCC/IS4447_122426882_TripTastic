@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-type ToastVariant = 'success' | 'error' | 'info';
+type ToastVariant = 'success' | 'error' | 'info' | 'accent';
 
 type ToastState = {
   visible: boolean;
@@ -9,8 +9,9 @@ type ToastState = {
 };
 
 /**
- * Hook for managing toast notification state.
- * Returns state + show/hide functions.
+ * The hook every screen uses to show a toast message. Hands back the
+ * current toast state along with simple show and hide functions, so any
+ * component can fire a toast without having to wire up its own timing.
  */
 export function useToast() {
   const [toast, setToast] = useState<ToastState>({

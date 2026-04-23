@@ -10,6 +10,12 @@ type Props = {
   onChangeText: (text: string) => void;
   placeholder?: string;
   helpText?: string;
+  /**
+   * When set, renders inline red helper text under the input and tints
+   * the border red so the user sees exactly which field failed validation
+   * instead of scanning a single top-of-form message.
+   */
+  error?: string;
   keyboardType?: KeyboardTypeOptions;
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
@@ -18,8 +24,9 @@ type Props = {
 };
 
 /**
- * Reusable text input with label and optional help text.
- * Label and input associated via nativeID for screen reader support.
+ * The standard labelled text input used throughout the app's forms.
+ * Supports inline help text and error messages, and is wired up for
+ * screen readers so the label and input are announced together.
  */
 export default function FormField({
   label,
@@ -27,6 +34,7 @@ export default function FormField({
   onChangeText,
   placeholder,
   helpText,
+  error,
   keyboardType,
   secureTextEntry,
   autoCapitalize,
@@ -47,7 +55,14 @@ export default function FormField({
         placeholderTextColor={theme.textSecondary}
         value={value}
         onChangeText={onChangeText}
-        style={[SharedStyles.fieldInput, { color: theme.textPrimary, backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}
+        style={[
+          SharedStyles.fieldInput,
+          {
+            color: theme.textPrimary,
+            backgroundColor: theme.inputBackground,
+            borderColor: error ? theme.dangerAction : theme.inputBorder,
+          },
+        ]}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
         autoCapitalize={autoCapitalize}
@@ -55,6 +70,14 @@ export default function FormField({
         accessibilityHint={accessibilityHint ?? helpText ?? `Enter ${label.toLowerCase()}`}
         accessibilityLabelledBy={inputId}
       />
+      {error ? (
+        <Text
+          style={[styles.errorText, { color: theme.dangerAction }]}
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -63,5 +86,10 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 13,
     marginBottom: Spacing.xs,
+  },
+  errorText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: Spacing.xs,
   },
 });

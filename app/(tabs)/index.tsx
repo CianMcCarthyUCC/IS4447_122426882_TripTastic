@@ -1,26 +1,32 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  Dimensions,
   FlatList,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTrips, useActivities, useAppTheme, useHaptics, useNotifications } from '@/hooks';
-import { ScreenContainer, ScreenHeader } from '@/components/layout';
-import { TripCard } from '@/components/cards';
-import { FAB } from '@/components/buttons';
+import { useThemeControl } from '@/hooks/useAppTheme';
+import { ScreenContainer, ScreenHeader, DecorativeCircles } from '@/components/layout';
+import { CreateTripCard, CREATE_TRIP_SENTINEL, TripCard } from '@/components/cards';
+import { PressableOpacity } from '@/components/buttons';
+import type { CreateTripSentinel } from '@/components/cards';
 import { EmptyState, NotificationsPanel } from '@/components/feedback';
 import { BorderRadius, Shadows, Spacing, Palette } from '@/constants';
+import { isPastTrip } from '@/utils/dateHelpers';
 import type { Trip } from '@/types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const LOGO_LIGHT = require('@/assets/images/logo/transparent-logo-light.png');
+const LOGO_DARK = require('@/assets/images/logo/transparent-logo-dark.png');
+
 const CARD_SPACING = Spacing.md;
 // Peek: how much of the neighbour card is visible on each side. Sized so a
 // meaningful slice of the next trip's cover image is on-screen (not just a
@@ -28,26 +34,28 @@ const CARD_SPACING = Spacing.md;
 // invites the swipe gesture.
 const PEEK_AMOUNT = 48;
 const SIDE_PADDING = PEEK_AMOUNT + CARD_SPACING;
-const CARD_WIDTH = SCREEN_WIDTH - SIDE_PADDING * 2;
-const SNAP_INTERVAL = CARD_WIDTH + CARD_SPACING;
-
-// Past trips render smaller in a secondary rail below the main carousel —
-// visual hierarchy says "look back, not the main event". ~55% of screen
-// keeps the 3:4 aspect readable without dominating.
-const PREVIOUS_CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.55);
 
 export default function TripsScreen() {
   const router = useRouter();
   const { trips } = useTrips();
   const { activities } = useActivities();
   const theme = useAppTheme();
+  const { isDark } = useThemeControl();
   const haptics = useHaptics();
   const { notifications, dismiss, clearAll } = useNotifications();
+  // Reactive to orientation changes (vs. cached Dimensions.get at module load)
+  // so the carousel reflows if the device rotates.
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth - SIDE_PADDING * 2;
+  const snapInterval = cardWidth + CARD_SPACING;
+  // Previous trips rail uses narrower cards - they're a secondary surface,
+  // so the rail fits ~2 cards on-screen to invite horizontal swiping.
+  const previousCardWidth = Math.round(screenWidth * 0.55);
   const [activeIndex, setActiveIndex] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  // Cap the visible badge so "99+" doesn't blow out the pill width — in
-  // practice we should never reach it, but the bound is cheap insurance.
+  // Cap the visible badge so "99+" doesn't blow out the pill width - in
+  // practise we should never reach it, but the bound is cheap insurance.
   const badgeCount = notifications.length;
   const badgeLabel = badgeCount > 9 ? '9+' : String(badgeCount);
 
@@ -68,16 +76,16 @@ export default function TripsScreen() {
   }, [activities]);
 
   // Split trips into "upcoming / in-progress" (shown in the main carousel)
-  // and "past" (shown in the Previous Trips rail below). An end date
-  // strictly before today means the trip is over. The split is a pure
+  // and "past" (exposed via the View Past Trips entry below, which opens
+  // the dedicated /trips/past archive screen). The split is a pure
   // derivation so a user logging a new past activity doesn't need to
-  // re-open the tab to see the sections update.
+  // re-open the tab to see the count update.
   const { plannedTrips, previousTrips } = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     const planned: Trip[] = [];
-    const previous: Trip[] = [];
+    const past: Trip[] = [];
     for (const t of trips) {
-      if (t.endDate < today) previous.push(t);
+      if (isPastTrip(t.endDate)) past.push(t);
       else planned.push(t);
     }
     // Planned: in-progress first, then soonest start first.
@@ -87,74 +95,112 @@ export default function TripsScreen() {
       if (aInProgress !== bInProgress) return aInProgress ? -1 : 1;
       return a.startDate.localeCompare(b.startDate);
     });
-    // Previous: most recently ended first — reading order matches recency.
-    previous.sort((a, b) => b.endDate.localeCompare(a.endDate));
-    return { plannedTrips: planned, previousTrips: previous };
+    // Past: most-recently-ended first so the freshest memory leads.
+    past.sort((a, b) => b.endDate.localeCompare(a.endDate));
+    return { plannedTrips: planned, previousTrips: past };
   }, [trips]);
 
-  const renderPlannedItem = useCallback(({ item }: { item: Trip }) => {
-    const stats = tripStats.get(item.id);
-    return (
-      <View style={styles.cardWrapper}>
-        <TripCard
-          trip={item}
-          width={CARD_WIDTH}
-          activityCount={stats?.total ?? 0}
-          completedCount={stats?.completed ?? 0}
-          onPress={() =>
-            router.push({
-              pathname: '/trip/[id]/activities',
-              params: { id: item.id.toString() },
-            })
-          }
-        />
-      </View>
-    );
-  }, [tripStats, router]);
+  // Carousel data - the create-trip placeholder always leads so the
+  // add-new affordance sits at a predictable spot (first swipe). Using a
+  // discriminated union lets the renderItem branch by `__kind` without
+  // sprinkling sentinel checks throughout the file.
+  type PlannedItem = CreateTripSentinel | Trip;
+  const plannedItems = useMemo<PlannedItem[]>(
+    () => [CREATE_TRIP_SENTINEL, ...plannedTrips],
+    [plannedTrips],
+  );
 
-  const renderPreviousItem = useCallback(({ item }: { item: Trip }) => {
-    const stats = tripStats.get(item.id);
-    return (
-      <View style={styles.cardWrapper}>
-        <TripCard
-          trip={item}
-          width={PREVIOUS_CARD_WIDTH}
-          muted
-          activityCount={stats?.total ?? 0}
-          completedCount={stats?.completed ?? 0}
-          onPress={() =>
-            router.push({
-              pathname: '/trip/[id]/past',
-              params: { id: item.id.toString() },
-            })
-          }
-        />
-      </View>
-    );
-  }, [tripStats, router]);
+  const renderPlannedItem = useCallback(
+    ({ item }: { item: PlannedItem }) => {
+      if ('__kind' in item) {
+        return (
+          <View style={styles.cardWrapper}>
+            <CreateTripCard
+              width={cardWidth}
+              onPress={() => {
+                haptics.light();
+                router.push('/trip/add');
+              }}
+            />
+          </View>
+        );
+      }
+      const stats = tripStats.get(item.id);
+      return (
+        <View style={styles.cardWrapper}>
+          <TripCard
+            trip={item}
+            width={cardWidth}
+            activityCount={stats?.total ?? 0}
+            completedCount={stats?.completed ?? 0}
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/activities',
+                params: { id: item.id.toString() },
+              })
+            }
+          />
+        </View>
+      );
+    },
+    [tripStats, router, haptics, cardWidth],
+  );
 
-  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / SNAP_INTERVAL);
-    // Functional updater keeps this callback stable across renders — the
-    // FlatList doesn't reattach its onScroll listener every time the
-    // active index changes.
-    setActiveIndex((prev) => (idx !== prev ? idx : prev));
-  }, []);
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const idx = Math.round(e.nativeEvent.contentOffset.x / snapInterval);
+      // Functional updater keeps this callback stable across renders - the
+      // FlatList doesn't reattach its onScroll listener every time the
+      // active index changes.
+      setActiveIndex((prev) => (idx !== prev ? idx : prev));
+    },
+    [snapInterval],
+  );
 
   const getItemLayout = useCallback(
-    (_: ArrayLike<Trip> | null | undefined, index: number) => ({
-      length: SNAP_INTERVAL,
-      offset: SNAP_INTERVAL * index,
+    (_: ArrayLike<PlannedItem> | null | undefined, index: number) => ({
+      length: snapInterval,
+      offset: snapInterval * index,
       index,
     }),
+    [snapInterval],
+  );
+
+  const plannedKeyExtractor = useCallback(
+    (item: PlannedItem) => ('__kind' in item ? 'create' : item.id.toString()),
     [],
   );
 
   const hasAnyTrips = plannedTrips.length > 0 || previousTrips.length > 0;
 
+  const renderPreviousItem = useCallback(
+    ({ item }: { item: Trip }) => {
+      const stats = tripStats.get(item.id);
+      return (
+        <View style={styles.previousCardWrapper}>
+          <TripCard
+            trip={item}
+            width={previousCardWidth}
+            activityCount={stats?.total ?? 0}
+            completedCount={stats?.completed ?? 0}
+            muted
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/past',
+                params: { id: item.id.toString() },
+              })
+            }
+          />
+        </View>
+      );
+    },
+    [tripStats, router, previousCardWidth],
+  );
+
   return (
     <ScreenContainer withTabs>
-      {/* Integrated header row — no opaque nav bar above. The title sits
+      <DecorativeCircles opacity={0.06} />
+      {/* Integrated header row - no opaque nav bar above. The title sits
           directly on the screen background so cards feel continuous with
           the page, and a circular theme toggle floats on the right side
           (same pattern as the reference screenshots). */}
@@ -169,16 +215,9 @@ export default function TripsScreen() {
             }
           />
         </View>
-        <Pressable
+        <PressableOpacity
           onPress={handleOpenNotifications}
-          style={({ pressed }) => [
-            styles.bellButton,
-            {
-              backgroundColor: theme.cardBackground,
-              borderColor: theme.cardBorder,
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
+          style={styles.bellButton}
           accessibilityRole="button"
           accessibilityLabel={
             badgeCount === 0
@@ -189,28 +228,23 @@ export default function TripsScreen() {
         >
           <Ionicons
             name={badgeCount > 0 ? 'notifications' : 'notifications-outline'}
-            size={20}
+            size={24}
             color={theme.textPrimary}
           />
           {badgeCount > 0 ? (
-            // Numbered coral pip — the count is short so it fits a small
+            // Numbered coral pip - the count is short so it fits a small
             // pill; we position it absolutely so the bell icon stays
-            // centred in the button regardless of badge state.
+            // centred regardless of badge state. No border ring now that
+            // the bell sits on the bare background.
             <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor: theme.accentAction,
-                  borderColor: theme.cardBackground,
-                },
-              ]}
+              style={[styles.badge, { backgroundColor: theme.accentAction }]}
               accessible={false}
               importantForAccessibility="no"
             >
               <Text style={styles.badgeText}>{badgeLabel}</Text>
             </View>
           ) : null}
-        </Pressable>
+        </PressableOpacity>
       </View>
 
       <NotificationsPanel
@@ -231,10 +265,8 @@ export default function TripsScreen() {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          // Leaves room so the FAB never sits on top of the last previous
-          // card when the user scrolls all the way down.
           contentContainerStyle={styles.scrollContent}
-          // Lock scroll to one axis at a time — helps the native scroll
+          // Lock scroll to one axis at a time - helps the native scroll
           // view classify mostly-vertical drags quickly so they don't
           // stall while competing with the horizontal FlatList children.
           directionalLockEnabled
@@ -242,115 +274,164 @@ export default function TripsScreen() {
           // gestures can be handed off between this ScrollView and its
           // horizontal FlatList children instead of being captured outright.
           nestedScrollEnabled
-          // Native iOS/Android pattern — dragging to scroll dismisses the
+          // Native iOS/Android pattern - dragging to scroll dismisses the
           // keyboard. Replaces the old tap-on-background dismiss that came
           // from the now-removed TouchableWithoutFeedback wrapper in
           // ScreenContainer (which was intercepting empty-space scroll).
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
-          {plannedTrips.length > 0 ? (
-            <>
-              <FlatList
-                data={plannedTrips}
-                keyExtractor={keyExtractor}
-                renderItem={renderPlannedItem}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                snapToInterval={SNAP_INTERVAL}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                style={styles.flatList}
-                contentContainerStyle={styles.list}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-                getItemLayout={getItemLayout}
-                ItemSeparatorComponent={plannedSeparator}
-                // Only claim gestures that are predominantly horizontal —
-                // releases mostly-vertical drags to the parent ScrollView
-                // so the user can swipe up/down through the page even when
-                // their finger starts on a trip card.
-                directionalLockEnabled
-                nestedScrollEnabled
-              />
+          <FlatList
+            data={plannedItems}
+            keyExtractor={plannedKeyExtractor}
+            renderItem={renderPlannedItem}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={snapInterval}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            style={styles.flatList}
+            contentContainerStyle={styles.list}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            getItemLayout={getItemLayout}
+            ItemSeparatorComponent={plannedSeparator}
+            // Only claim gestures that are predominantly horizontal -
+            // releases mostly-vertical drags to the parent ScrollView
+            // so the user can swipe up/down through the page even when
+            // their finger starts on a trip card.
+            directionalLockEnabled
+            nestedScrollEnabled
+          />
 
-              <View
-                style={styles.dots}
-                accessible
-                accessibilityRole="progressbar"
-                accessibilityLabel={`Trip ${activeIndex + 1} of ${plannedTrips.length}`}
-              >
-                {plannedTrips.map((t, i) => (
-                  <View
-                    key={t.id}
-                    accessible={false}
-                    importantForAccessibility="no"
-                    style={[
-                      styles.dot,
-                      { backgroundColor: i === activeIndex ? Palette.coral : theme.cardBorder },
-                      i === activeIndex && styles.dotActive,
-                    ]}
-                  />
-                ))}
-              </View>
-            </>
-          ) : (
-            <View
-              style={[
-                styles.noPlannedCard,
-                { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
-              ]}
-            >
-              <Ionicons name="airplane-outline" size={24} color={theme.textSecondary} />
-              <Text style={[styles.noPlannedTitle, { color: theme.textPrimary }]}>
-                No upcoming trips
-              </Text>
-              <Text style={[styles.noPlannedHint, { color: theme.textSecondary }]}>
-                Tap New Trip to plan your next one.
-              </Text>
-            </View>
-          )}
+          {/* One dot per carousel item - including the create card at
+              position 0. Keeping dots aligned with `plannedItems` means
+              the active indicator tracks the scroll position directly,
+              which is what the user expects when swiping through. */}
+          <View
+            style={styles.dots}
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel={
+              activeIndex === 0
+                ? 'Create trip card'
+                : `Trip ${activeIndex} of ${plannedTrips.length}`
+            }
+          >
+            {plannedItems.map((item, i) => {
+              const isActive = i === activeIndex;
+              const key = '__kind' in item ? 'create' : item.id;
+              return (
+                <View
+                  key={key}
+                  accessible={false}
+                  importantForAccessibility="no"
+                  style={[
+                    styles.dot,
+                    { backgroundColor: isActive ? Palette.coral : theme.cardBorder },
+                    isActive && styles.dotActive,
+                  ]}
+                />
+              );
+            })}
+          </View>
 
           {previousTrips.length > 0 ? (
             <View style={styles.previousSection}>
-              <Text style={[styles.previousTitle, { color: theme.textPrimary }]}>
-                Previous Trips
-              </Text>
-              <Text style={[styles.previousSubtitle, { color: theme.textSecondary }]}>
-                Look back on past trips
-              </Text>
+              <View style={styles.previousHeader}>
+                <Text style={[styles.previousTitle, { color: theme.textPrimary }]}>
+                  Previous Trips
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    haptics.light();
+                    router.push('/trips/past');
+                  }}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="See all past trips"
+                >
+                  {({ pressed }) => (
+                    <Text
+                      style={[
+                        styles.previousSeeAll,
+                        { color: theme.accentAction, opacity: pressed ? 0.6 : 1 },
+                      ]}
+                    >
+                      See all ({previousTrips.length})
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
               <FlatList
                 data={previousTrips}
-                keyExtractor={keyExtractor}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={renderPreviousItem}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.previousList}
-                contentContainerStyle={styles.previousListContent}
-                ItemSeparatorComponent={previousSeparator}
-                // Same gesture contract as the planned carousel above —
-                // vertical drags fall through to the outer ScrollView.
+                contentContainerStyle={styles.previousList}
+                ItemSeparatorComponent={plannedSeparator}
                 directionalLockEnabled
                 nestedScrollEnabled
               />
             </View>
-          ) : null}
+          ) : (
+            <View style={styles.previousSection}>
+              <View style={styles.previousHeader}>
+                <Text style={[styles.previousTitle, { color: theme.textPrimary }]}>
+                  Previous Trips
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.previousEmpty,
+                  { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
+                ]}
+                accessible
+                accessibilityRole="summary"
+                accessibilityLabel="No past trips yet. Plan your first trip to start building your travel history."
+              >
+                <Image
+                  source={isDark ? LOGO_DARK : LOGO_LIGHT}
+                  style={styles.previousEmptyLogo}
+                  resizeMode="contain"
+                />
+                <Text style={[styles.previousEmptyTitle, { color: theme.textPrimary }]}>
+                  No past trips yet
+                </Text>
+                <Text style={[styles.previousEmptySub, { color: theme.textSecondary }]}>
+                  Your completed adventures will land here. Plan your next trip and we’ll track the memories.
+                </Text>
+                <PressableOpacity
+                  onPress={() => {
+                    haptics.light();
+                    router.push('/trip/add');
+                  }}
+                  pressedOpacity={0.85}
+                  style={[styles.previousEmptyCta, { backgroundColor: theme.accentAction }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Plan a trip"
+                  accessibilityHint="Opens the create trip screen"
+                >
+                  <Ionicons name="add" size={18} color={Palette.white} />
+                  <Text style={styles.previousEmptyCtaText}>Plan a trip</Text>
+                </PressableOpacity>
+              </View>
+            </View>
+          )}
         </ScrollView>
       )}
 
-      <FAB onPress={() => router.push('/trip/add')} label="New Trip" accessibilityLabel="Create new trip" />
     </ScreenContainer>
   );
 }
 
 // Hoisted so the FlatList doesn't receive a new function identity on
-// every render of TripsScreen — keeps separators + keys cheap.
-const keyExtractor = (item: Trip) => item.id.toString();
+// every render of TripsScreen - keeps separators cheap.
 const plannedSeparator = () => <View style={{ width: CARD_SPACING }} />;
-const previousSeparator = () => <View style={{ width: Spacing.md }} />;
 
 const styles = StyleSheet.create({
-  // Top row — title on the left, theme toggle on the right. Using a
+  // Top row - title on the left, theme toggle on the right. Using a
   // flex row rather than absolute positioning keeps the toggle aligned
   // with the ScreenHeader's baseline and avoids overlap on narrow widths.
   topRow: {
@@ -363,34 +444,30 @@ const styles = StyleSheet.create({
   },
   bellButton: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
-    borderWidth: 1,
-    height: 44,
+    height: 40,
     justifyContent: 'center',
     marginTop: Spacing.xs,
-    width: 44,
-    ...Shadows.sm,
+    width: 40,
   },
   badge: {
     alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 2,
-    height: 18,
+    borderRadius: 9,
+    height: 16,
     justifyContent: 'center',
-    minWidth: 18,
+    minWidth: 16,
     paddingHorizontal: 4,
     position: 'absolute',
-    right: -4,
-    top: -4,
+    right: 0,
+    top: 0,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: Palette.white,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   // `flexGrow: 0` stops the horizontal FlatList from stretching to fill its
-  // column parent — without it, RN pushes the list to take all remaining
+  // column parent - without it, RN pushes the list to take all remaining
   // vertical space, which leaves a huge dead zone between the cards and
   // anything rendered below the list.
   flatList: {
@@ -429,46 +506,74 @@ const styles = StyleSheet.create({
     width: 24,
   },
   scrollContent: {
-    paddingBottom: Spacing.xxxl * 2, // clear the FAB
+    paddingBottom: Spacing.xxxl,
   },
+  // Previous trips inline rail - titled section with a horizontal FlatList
+  // of muted TripCards underneath. "See all" link on the right opens the
+  // full /trips/past archive.
   previousSection: {
     marginTop: Spacing.xl,
   },
-  previousTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+  previousHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
   },
-  previousSubtitle: {
-    fontSize: 13,
-    marginBottom: Spacing.md,
-    marginTop: 2,
+  previousTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  previousSeeAll: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   previousList: {
-    flexGrow: 0,
-    // Same trick as the planned carousel: break out of the screen gutter
-    // so past-trip cards reach the device edge.
-    marginHorizontal: -Spacing.lg,
+    paddingVertical: Spacing.xs,
   },
-  previousListContent: {
-    paddingHorizontal: Spacing.lg,
+  previousCardWrapper: {
+    // TripCard receives width via prop; wrapper just groups children.
   },
-  noPlannedCard: {
+
+  // Empty-state card shown when the user has no past trips yet. Mirrors
+  // the card surface vocabulary used elsewhere (bordered, soft shadow)
+  // so it sits naturally below the planned carousel.
+  previousEmpty: {
     alignItems: 'center',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxl,
+    ...Shadows.sm,
   },
-  noPlannedTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: Spacing.sm,
+  previousEmptyLogo: {
+    height: 48,
+    marginBottom: Spacing.md,
+    width: 170,
   },
-  noPlannedHint: {
-    fontSize: 13,
-    marginTop: 4,
+  previousEmptyTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  previousEmptySub: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.xs,
     textAlign: 'center',
+  },
+  previousEmptyCta: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.pill,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+  },
+  previousEmptyCtaText: {
+    color: Palette.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

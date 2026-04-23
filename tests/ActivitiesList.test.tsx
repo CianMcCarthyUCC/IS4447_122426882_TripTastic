@@ -58,8 +58,8 @@ jest.mock('expo-linear-gradient', () => {
 import IndexScreen from '@/app/(tabs)/index';
 
 const mockTrip = { id: 1, name: 'Summer in Italy', destination: 'Rome', country: 'Italy', coverImage: null, startDate: '2026-07-01', endDate: '2026-07-14' };
-const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metric: 180, status: 'completed' as const, notes: 'Colosseum tour', isFavourite: false };
-const mockCategory = { id: 1, name: 'Sightseeing', color: '#3B82F6', icon: 'eye' };
+const mockActivity = { id: 1, tripId: 1, categoryId: 1, date: '2026-07-02', metric: 180, status: 'completed' as const, place: 'Colosseum', notes: 'Guided tour', isFavourite: false, favouritedAt: null };
+const mockCategory = { id: 1, name: 'Sightseeing', color: '#3B82F6', icon: 'eye', isSystem: false };
 
 describe('Trips Screen', () => {
   it('renders the seeded trip on the home screen', () => {

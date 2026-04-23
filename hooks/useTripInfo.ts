@@ -6,34 +6,58 @@ import { getCountryInfo, type CountryData } from '@/utils/countriesApi';
 type TripInfoState = {
   weather: WeatherData | null;
   countryInfo: CountryData | null;
-  error: boolean;
+  weatherLoading: boolean;
+  weatherError: boolean;
+  countryLoading: boolean;
+  countryError: boolean;
   retry: () => void;
 };
 
 /**
- * Fetches weather + country metadata for a trip destination.
- * Pulled out of TripInfoBar so that card stays presentational and reusable.
- * Country is resolved first (gives the ISO code), then the weather call uses
- * that code for disambiguation ("Paris, FR" vs "Paris, TX").
+ * Fetches the weather, currency and language for a trip destination.
+ * Looks up the country first so the weather call can tell the right
+ * "Paris" apart from the wrong one. Tracks loading and error state for
+ * each API independently so the UI can surface a spinner or an "Error
+ * loading" pill per segment instead of collapsing the whole row on a
+ * single failure.
  */
 export function useTripInfo(city: string, country: string): TripInfoState {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [countryInfo, setCountryInfo] = useState<CountryData | null>(null);
-  const [error, setError] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState(false);
+  const [countryLoading, setCountryLoading] = useState(true);
+  const [countryError, setCountryError] = useState(false);
   const mounted = useMountedRef();
 
   const fetchAll = useCallback(async () => {
-    setError(false);
+    setWeatherError(false);
+    setCountryError(false);
+    setCountryLoading(true);
+    setWeatherLoading(true);
+
+    let isoCode: string | undefined;
     try {
       const countryResult = await getCountryInfo(country);
       if (!mounted.current) return;
       setCountryInfo(countryResult);
+      isoCode = countryResult.isoCode;
+    } catch {
+      if (!mounted.current) return;
+      setCountryError(true);
+    } finally {
+      if (mounted.current) setCountryLoading(false);
+    }
 
-      const weatherResult = await getWeather(city, countryResult.isoCode);
+    try {
+      const weatherResult = await getWeather(city, isoCode);
       if (!mounted.current) return;
       setWeather(weatherResult);
     } catch {
-      if (mounted.current) setError(true);
+      if (!mounted.current) return;
+      setWeatherError(true);
+    } finally {
+      if (mounted.current) setWeatherLoading(false);
     }
   }, [city, country, mounted]);
 
@@ -41,5 +65,13 @@ export function useTripInfo(city: string, country: string): TripInfoState {
     void fetchAll();
   }, [fetchAll]);
 
-  return { weather, countryInfo, error, retry: fetchAll };
+  return {
+    weather,
+    countryInfo,
+    weatherLoading,
+    weatherError,
+    countryLoading,
+    countryError,
+    retry: fetchAll,
+  };
 }

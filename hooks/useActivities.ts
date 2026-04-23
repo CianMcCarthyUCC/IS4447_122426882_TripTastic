@@ -5,14 +5,17 @@ import {
   insertActivity,
   updateActivityById,
   deleteActivityById,
+  deleteActivitiesByTripId,
   setFavouriteActivity,
-  clearFavouriteActivity,
+  unsetFavouriteActivity,
+  setActivityStatus,
 } from '@/db';
-import type { ActivityFormData } from '@/types';
+import type { Activity, ActivityFormData } from '@/types';
 
 /**
- * Central hook for all activity CRUD operations.
- * Handles DATA only — no navigation.
+ * The central hook for reading and changing activities. Covers creating,
+ * updating, deleting and marking favourites so every screen touches
+ * activity data through one place.
  */
 export function useActivities() {
   const { activities, setActivities } = useActivityContext();
@@ -46,6 +49,14 @@ export function useActivities() {
     [refreshActivities],
   );
 
+  const clearTripActivities = useCallback(
+    async (tripId: number) => {
+      await deleteActivitiesByTripId(tripId);
+      await refreshActivities();
+    },
+    [refreshActivities],
+  );
+
   const findActivityById = useCallback(
     (id: number) => {
       return activities.find((a) => a.id === id);
@@ -54,22 +65,34 @@ export function useActivities() {
   );
 
   /**
-   * Stars `activityId` as the trip's favourite, clearing any previously
-   * starred sibling inside the same transaction. Tapping the already-starred
-   * activity toggles it off instead of re-starring — matches the "tap the
-   * full star to unstar" convention users expect from iOS/Android.
+   * Toggles a single activity's favourite flag. Any number of activities
+   * on a trip can be starred at once; tapping an already-starred item
+   * unstars it.
    */
   const toggleFavourite = useCallback(
-    async (tripId: number, activityId: number) => {
+    async (_tripId: number, activityId: number) => {
       const current = activities.find((a) => a.id === activityId);
       if (current?.isFavourite) {
-        await clearFavouriteActivity(tripId);
+        await unsetFavouriteActivity(activityId);
       } else {
-        await setFavouriteActivity(tripId, activityId);
+        await setFavouriteActivity(activityId);
       }
       await refreshActivities();
     },
     [activities, refreshActivities],
+  );
+
+  /**
+   * Flips an activity between planned and completed so the user can tick
+   * an activity off (or back on) straight from the list.
+   */
+  const toggleComplete = useCallback(
+    async (activity: Activity) => {
+      const next = activity.status === 'completed' ? 'planned' : 'completed';
+      await setActivityStatus(activity.id, next);
+      await refreshActivities();
+    },
+    [refreshActivities],
   );
 
   return {
@@ -77,8 +100,10 @@ export function useActivities() {
     addActivity,
     updateActivity,
     deleteActivity,
+    clearTripActivities,
     findActivityById,
     refreshActivities,
     toggleFavourite,
+    toggleComplete,
   };
 }

@@ -9,10 +9,8 @@ type Props = {
   onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   /**
-   * Optional label. When present the FAB renders as an extended pill
-   * (icon + text) so the CTA reads at a glance; when omitted it falls
-   * back to the classic 60×60 circle for backwards-compat with any caller
-   * that doesn't care to label itself.
+   * Optional caption shown next to the icon. When supplied the FAB becomes
+   * a labelled pill, otherwise it stays as the classic round icon button.
    */
   label?: string;
   accessibilityLabel?: string;
@@ -21,16 +19,16 @@ type Props = {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
- * Floating Action Button — coral CTA at bottom-right.
- * Spring-animated scale on press. Used for primary actions on tab screens.
+ * The coral floating action button that sits in the bottom-right of the
+ * tab screens. Used for the main action on each page, such as adding a
+ * new trip or activity.
  */
 function FAB({ onPress, icon = 'add', label, accessibilityLabel }: Props) {
   const insets = useSafeAreaInsets();
   const scale = useSharedValue(1);
   const isExtended = typeof label === 'string' && label.length > 0;
 
-  // Lift above the home indicator / tab bar safe area. Fall back to the
-  // previous fixed offset when the inset is zero (Android without gestures).
+  // Keeps the button clear of the home indicator and tab bar on every device.
   const bottomOffset = Math.max(insets.bottom + Spacing.sm, 24);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -45,8 +43,7 @@ function FAB({ onPress, icon = 'add', label, accessibilityLabel }: Props) {
     scale.value = withSpring(1, { damping: 10 });
   };
 
-  // Prefer the explicit accessibilityLabel, otherwise fall back to the
-  // visible label, otherwise the generic "Add new".
+  // Pick the best label for screen readers.
   const a11yLabel = accessibilityLabel ?? label ?? 'Add new';
 
   return (
@@ -92,8 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.pill,
     flexDirection: 'row',
     gap: Spacing.sm,
-    // Slightly tighter vertical than a "round" button so the pill keeps
-    // the same visual weight as the old circle without getting chunky.
+    // Keeps the pill visually compact, matching the feel of the circle variant.
     paddingHorizontal: Spacing.lg,
     paddingVertical: 14,
   },

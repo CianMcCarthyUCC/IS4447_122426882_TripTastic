@@ -6,10 +6,12 @@ const EMPTY_FORM: TargetFormData = {
   categoryId: 0,
   targetValue: '',
   period: 'weekly',
+  notes: '',
 };
 
 /**
- * Reusable form state hook for target forms (add & edit).
+ * Holds the form state for the Goal form, shared by the add-goal and
+ * edit-goal screens.
  */
 export function useTargetForm(initial: TargetFormData = EMPTY_FORM) {
   const [formData, setFormData] = useState<TargetFormData>(initial);

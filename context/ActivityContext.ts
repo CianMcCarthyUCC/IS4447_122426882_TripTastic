@@ -1,17 +1,12 @@
-import { createContext, useContext } from 'react';
+import { createEntityContext, type EntityContextType } from './createEntityContext';
 import type { Activity } from '@/types';
 
-export type ActivityContextType = {
-  activities: Activity[];
-  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>;
-};
+export type ActivityContextType = EntityContextType<'activities', Activity>;
 
-export const ActivityContext = createContext<ActivityContextType | null>(null);
+const { Context, useEntityContext } = createEntityContext<'activities', Activity>(
+  'activities',
+  'Activity',
+);
 
-export function useActivityContext(): ActivityContextType {
-  const context = useContext(ActivityContext);
-  if (!context) {
-    throw new Error('useActivityContext must be used within an ActivityContext.Provider');
-  }
-  return context;
-}
+export const ActivityContext = Context;
+export const useActivityContext = useEntityContext;

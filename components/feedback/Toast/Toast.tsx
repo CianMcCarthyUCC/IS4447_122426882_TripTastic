@@ -9,42 +9,50 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
-type ToastVariant = 'success' | 'error' | 'info';
+type ToastVariant = 'success' | 'error' | 'info' | 'accent';
+type ToastPosition = 'top' | 'bottom';
 
 type Props = {
   visible: boolean;
   message: string;
   variant?: ToastVariant;
   duration?: number;
+  position?: ToastPosition;
   onHide: () => void;
 };
 
-const TOAST_HIDDEN_Y = -120;
-const TOAST_DEFAULT_DURATION = 2500;
+const TOAST_HIDDEN_OFFSET = 120;
+const TOAST_DEFAULT_DURATION = 1200;
 
 const ICONS: Record<ToastVariant, keyof typeof Ionicons.glyphMap> = {
   success: 'checkmark-circle',
   error: 'alert-circle',
   info: 'information-circle',
+  accent: 'heart',
 };
 
 /**
- * Toast notification — uses Reanimated for smooth spring animations.
- * Slides in from top with spring physics, auto-hides with timing.
+ * The short-lived pop-up message shown after an action completes (saved,
+ * deleted, added to favourites). Slides in from the top or bottom of the
+ * screen and fades itself out after a moment.
  */
 function Toast({
   visible,
   message,
   variant = 'success',
   duration = TOAST_DEFAULT_DURATION,
+  position = 'top',
   onHide,
 }: Props) {
   const theme = useAppTheme();
-  const translateY = useSharedValue(TOAST_HIDDEN_Y);
-  // Icon scale-in spring — replaces the former one-shot Lottie checkmark on
+  const insets = useSafeAreaInsets();
+  const hiddenY = position === 'bottom' ? TOAST_HIDDEN_OFFSET : -TOAST_HIDDEN_OFFSET;
+  const translateY = useSharedValue(hiddenY);
+  // Icon scale-in spring - replaces the former one-shot Lottie checkmark on
   // the success variant with a tactile pop. Reset to 0 each time `visible`
   // flips true so the pop re-plays on every new toast.
   const iconScale = useSharedValue(0);
@@ -58,20 +66,17 @@ function Toast({
   useEffect(() => {
     if (visible) {
       // Slide in with spring
-      translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
-      // Pop the icon in with a slight overshoot — tactile, matches the
-      // attention-grabbing feel of the previous Lottie animation.
+      translateY.value = withSpring(0, { damping: 18, stiffness: 260 });
       iconScale.value = 0;
-      iconScale.value = withSpring(1, { damping: 9, stiffness: 180 });
-      // Then slide out after duration
+      iconScale.value = withSpring(1, { damping: 10, stiffness: 320 });
       translateY.value = withDelay(
         duration,
-        withTiming(TOAST_HIDDEN_Y, { duration: 300 }, (finished) => {
+        withTiming(hiddenY, { duration: 150 }, (finished) => {
           if (finished) runOnJS(handleHide)();
         }),
       );
     } else {
-      translateY.value = TOAST_HIDDEN_Y;
+      translateY.value = hiddenY;
       iconScale.value = 0;
     }
   }, [visible, duration, translateY, iconScale, handleHide]);
@@ -84,23 +89,52 @@ function Toast({
     transform: [{ scale: iconScale.value }],
   }));
 
-  const bgColor = {
-    success: theme.successAction,
-    error: theme.dangerAction,
-    info: theme.primaryAction,
-  }[variant];
+  const isTikTokStyle = variant === 'accent';
+
+  const bgColor = isTikTokStyle
+    ? 'rgba(30,30,30,0.82)'
+    : {
+        success: theme.successAction,
+        error: theme.dangerAction,
+        info: theme.primaryAction,
+        accent: theme.accentAction,
+      }[variant];
+
+  // TikTok-style toast sits above the tab bar (~64pt bar + safe area) rather
+  // than flush to the bottom edge, so it doesn't collide with nav controls.
+  const bottomOffset = isTikTokStyle
+    ? insets.bottom + 120
+    : insets.bottom + Spacing.sm;
+
+  const positionStyle =
+    position === 'bottom'
+      ? { bottom: bottomOffset }
+      : { top: insets.top + Spacing.sm };
 
   if (!visible) return null;
 
   return (
     <Animated.View
-      style={[styles.container, { backgroundColor: bgColor }, animatedStyle]}
+      pointerEvents="none"
+      style={[
+        styles.container,
+        isTikTokStyle && styles.containerTikTok,
+        { backgroundColor: bgColor },
+        positionStyle,
+        animatedStyle,
+      ]}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
-      <Animated.View style={iconStyle}>
-        <Ionicons name={ICONS[variant]} size={22} color={Palette.white} />
-      </Animated.View>
+      {isTikTokStyle ? (
+        <Animated.View style={styles.iconBadge}>
+          <Ionicons name="star" size={14} color={Palette.grey900} />
+        </Animated.View>
+      ) : (
+        <Animated.View style={iconStyle}>
+          <Ionicons name={ICONS[variant]} size={22} color={Palette.white} />
+        </Animated.View>
+      )}
       <Text style={styles.text}>{message}</Text>
     </Animated.View>
   );
@@ -119,8 +153,19 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     position: 'absolute',
     right: Spacing.xl,
-    top: 60,
     zIndex: 9999,
+  },
+  containerTikTok: {
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.sm,
+  },
+  iconBadge: {
+    alignItems: 'center',
+    backgroundColor: Palette.white,
+    borderRadius: 999,
+    height: 26,
+    justifyContent: 'center',
+    width: 26,
   },
   text: {
     color: Palette.white,

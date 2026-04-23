@@ -12,26 +12,20 @@ import {
   ActivitiesSection,
   GoalsSection,
   PlacesSection,
-  InsightsSection,
 } from '@/components/trip-sections';
 
-type Section = 'activities' | 'goals' | 'places' | 'insights';
+type Section = 'activities' | 'goals' | 'places';
 
 const SECTION_OPTIONS: ReadonlyArray<SegmentOption<Section>> = [
   { label: 'Activities', value: 'activities' },
   { label: 'Goals', value: 'goals' },
-  { label: 'Places', value: 'places' },
-  // The "insights" route internally — surfaced to the user as "Summary" since
-  // it now pairs charts + the AI travel guide, which reads more as a trip
-  // recap than an analytics drill-down.
-  { label: 'Summary', value: 'insights' },
+  { label: 'Discover Places', value: 'places' },
 ];
 
 /**
- * Trip detail screen — thin shell that composes the hero, info bar, segmented
- * control, and whichever section is currently selected. All section-specific
- * state lives inside the section components (`./_sections/`), keeping this
- * file focused on layout + routing concerns only.
+ * The trip detail screen. Shows the cover image, the trip info bar and
+ * a segmented control that switches between the Activities, Places and
+ * Goals sections for the selected trip.
  */
 export default function TripDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,7 +36,7 @@ export default function TripDetail() {
   const trip = findTripById(Number(id));
   const [section, setSection] = useState<Section>('activities');
 
-  const { activities, targets, completedCount, totalMinutes } = useTripScopedData(Number(id));
+  const { activities, targets, completedCount } = useTripScopedData(Number(id));
 
   // router.back() pops the stack back to the screen that pushed us; Expo
   // Router keeps the tab screen mounted under this route, so the user lands
@@ -69,15 +63,18 @@ export default function TripDetail() {
       style={[styles.safeArea, { backgroundColor: theme.screenBackground }]}
       edges={['bottom']}
     >
-      {/* Hero stays full-bleed — ignores horizontal padding below. */}
+      {/* Hero stays full-bleed - ignores horizontal padding below. */}
       <TripHero
         trip={trip}
         completedCount={completedCount}
         totalCount={activities.length}
         onBack={handleBack}
+        onSettings={() =>
+          router.push({ pathname: '/trip/[id]/edit', params: { id: trip.id.toString() } })
+        }
       />
 
-      {/* Plain View — no press-wrapper. Earlier revisions wrapped this
+      {/* Plain View - no press-wrapper. Earlier revisions wrapped this
           region in a TouchableWithoutFeedback that dismissed the keyboard
           on empty-space taps, but Pressability's press-classification
           window captured those touches before the nested FlatLists could
@@ -93,20 +90,13 @@ export default function TripDetail() {
           selected={section}
           onSelect={setSection}
           accessibilityLabel="Trip sections"
+          variant="divided"
         />
 
         {section === 'activities' && <ActivitiesSection activities={activities} />}
         {section === 'goals' && <GoalsSection activities={activities} targets={targets} />}
         {section === 'places' && (
           <PlacesSection destination={trip.destination} country={trip.country} />
-        )}
-        {section === 'insights' && (
-          <InsightsSection
-            trip={trip}
-            activities={activities}
-            targets={targets}
-            totalMinutes={totalMinutes}
-          />
         )}
       </View>
     </SafeAreaView>

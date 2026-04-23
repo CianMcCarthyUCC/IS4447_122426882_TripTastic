@@ -4,7 +4,8 @@ import { getAllTrips, insertTrip, updateTripById, deleteTripById } from '@/db';
 import type { TripFormData } from '@/types';
 
 /**
- * Central hook for trip CRUD + current trip selection.
+ * The central hook for reading and changing trips. Also tracks which
+ * trip the user is currently working with across the app.
  */
 export function useTrips() {
   const { trips, setTrips, currentTrip, setCurrentTrip } = useTripContext();

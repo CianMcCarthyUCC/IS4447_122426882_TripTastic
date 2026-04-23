@@ -7,13 +7,19 @@ export type Activity = {
   date: string;
   metric: number;
   status: ActivityStatus;
+  place: string | null;
   notes: string | null;
   /**
-   * "Number-one priority" marker — at most one activity per trip carries
-   * this flag. Drives the Priority pin in the activities list and the
-   * Highlights card on the past-trip screen.
+   * Per-activity favourite marker. Any number can be set per trip - sort
+   * order uses `favouritedAt` so starred items appear at the top of the
+   * list in the order they were favourited.
    */
   isFavourite: boolean;
+  /**
+   * ISO timestamp captured when the activity was last starred; null when
+   * never starred or after an unstar.
+   */
+  favouritedAt: string | null;
 };
 
 export type ActivityFormData = {
@@ -22,5 +28,6 @@ export type ActivityFormData = {
   date: string;
   metric: string;
   status: ActivityStatus;
+  place: string;
   notes: string;
 };

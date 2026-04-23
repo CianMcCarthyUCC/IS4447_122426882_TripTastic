@@ -13,6 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
+type RelaxAction = {
+  label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+};
+
 type Props = {
   title: string;
   message?: string;
@@ -21,16 +27,18 @@ type Props = {
   /** Example searches or suggestions shown below the message */
   suggestions?: string[];
   onSuggestionPress?: (suggestion: string) => void;
+  /** One-tap "widen this filter" chips for filter-aware empty states. */
+  relaxActions?: RelaxAction[];
+  relaxLabel?: string;
   /** Optional action button */
   actionLabel?: string;
   onAction?: () => void;
 };
 
 /**
- * Rich empty state with an illustration, suggestions, and action button.
- * The illustration is a Reanimated-driven pulse on a travel-themed Ionicon —
- * a lightweight stand-in for the former looping Lottie animation, runs on
- * the UI thread, ships no extra asset weight.
+ * The friendly placeholder shown when a list has nothing in it. Pairs a
+ * pulsing travel icon with a title, a short message, optional suggestion
+ * chips, and an optional call-to-action button.
  */
 export default function EmptyState({
   title,
@@ -38,12 +46,14 @@ export default function EmptyState({
   showAnimation = true,
   suggestions,
   onSuggestionPress,
+  relaxActions,
+  relaxLabel = 'Widen a filter',
   actionLabel,
   onAction,
 }: Props) {
   const theme = useAppTheme();
 
-  // Gentle infinite scale-pulse — replicates the "something alive here" feel
+  // Gentle infinite scale-pulse - replicates the "something alive here" feel
   // of the old looping Lottie without committing to a specific narrative.
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -91,6 +101,32 @@ export default function EmptyState({
                 accessibilityRole="button"
               >
                 <Text style={[styles.suggestionText, { color: theme.accentAction }]}>{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {relaxActions && relaxActions.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          <Text style={[styles.suggestionsLabel, { color: theme.textSecondary }]}>
+            {relaxLabel}
+          </Text>
+          <View style={styles.suggestionsRow}>
+            {relaxActions.map((a) => (
+              <Pressable
+                key={a.label}
+                style={[styles.relaxChip, { borderColor: theme.accentAction }]}
+                onPress={a.onPress}
+                accessibilityLabel={a.label}
+                accessibilityRole="button"
+              >
+                {a.icon ? (
+                  <Ionicons name={a.icon} size={14} color={theme.accentAction} />
+                ) : null}
+                <Text style={[styles.suggestionText, { color: theme.accentAction }]}>
+                  {a.label}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -156,6 +192,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: BorderRadius.pill,
     justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  relaxChip: {
+    alignItems: 'center',
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: Spacing.xs,
     minHeight: 44,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,

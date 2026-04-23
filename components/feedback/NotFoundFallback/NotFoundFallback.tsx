@@ -9,8 +9,9 @@ type Props = {
 };
 
 /**
- * Shared fallback for detail screens when the requested entity
- * (activity, category, target, etc.) no longer exists.
+ * The fallback screen shown when the user opens a detail page for
+ * something that's been deleted or never existed. Keeps the user
+ * oriented with a clear message and a way back.
  */
 export function NotFoundFallback({ subtitle, onBack }: Props) {
   return (

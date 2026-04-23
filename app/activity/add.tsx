@@ -3,12 +3,16 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useActivities, useActivityForm, useCategories, useFormSubmit, useTrips } from '@/hooks';
 import { useMountedRef } from '@/hooks/useMountedRef';
 import { ActivityForm } from '@/components/forms';
-import { Toast } from '@/components/feedback';
 import { SlideUpSheet } from '@/components/modals';
-import { validateActivityForm } from '@/utils/validation';
 import { geocodeCity } from '@/utils/geocode';
 import { consumePickedPlace } from '@/utils/placePickerBridge';
+import { isPastTrip } from '@/utils/dateHelpers';
 
+/**
+ * The Log Activity screen. Opens as a bottom sheet, runs the user
+ * through the two-step activity form and shows a short celebratory
+ * overlay on save before returning them to the trip.
+ */
 export default function AddActivity() {
   const router = useRouter();
   const { addActivity } = useActivities();
@@ -18,6 +22,7 @@ export default function AddActivity() {
   const mounted = useMountedRef();
 
   const [tripCoords, setTripCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const tripIsPast = !!currentTrip && isPastTrip(currentTrip.endDate);
 
   // Resolve the current trip's destination → coords so we can open the picker.
   useEffect(() => {
@@ -31,13 +36,14 @@ export default function AddActivity() {
     return () => { cancelled = true; };
   }, [currentTrip?.destination, currentTrip?.country, mounted]);
 
-  // When returning from the picker, pull the selection out of the bridge and
-  // populate the form's notes + category.
+  // When returning from the picker, populate the form's place + category.
+  // Notes stays untouched so the user can still capture their own blurb
+  // on top of the venue.
   useFocusEffect(
     useCallback(() => {
       const picked = consumePickedPlace();
       if (picked) {
-        onChangeField('notes', picked.name);
+        onChangeField('place', picked.name);
         onChangeField('categoryId', picked.categoryId);
       }
     }, [onChangeField]),
@@ -51,26 +57,40 @@ export default function AddActivity() {
     });
   }, [router, tripCoords]);
 
-  const { error, loading, handleSubmit, toast, hideToast } =
-    useFormSubmit(() => addActivity(formData), 'Activity added');
+  const { error, loading, handleSubmit } = useFormSubmit(
+    () => addActivity(formData),
+    formData.status === 'planned' ? 'Added to your plan' : 'Activity logged',
+  );
+
+  // ActivityForm handles its own validation + wizard navigation; all we
+  // need to do here is the async save. Passing `null` as the validation
+  // error short-circuits useFormSubmit's own gate because the form has
+  // already confirmed the data is valid by the time it calls onSubmit.
+  const onSave = useCallback(() => {
+    handleSubmit(null);
+  }, [handleSubmit]);
 
   return (
     <SlideUpSheet
       title="Log Activity"
-      subtitle="Record something from your trip."
+      subtitle={
+        formData.status === 'planned'
+          ? 'Plan something for your trip.'
+          : 'Record something from your trip.'
+      }
       onClose={() => router.back()}
     >
-      <Toast {...toast} onHide={hideToast} />
       <ActivityForm
         formData={formData}
         onChangeField={onChangeField}
-        onSubmit={() => handleSubmit(validateActivityForm(formData))}
+        onSubmit={onSave}
         onCancel={() => router.back()}
         submitLabel="Save Activity"
         loading={loading}
         categories={categories}
         error={error}
         onPickPlace={tripCoords ? openPlacePicker : undefined}
+        isPastTrip={tripIsPast}
       />
     </SlideUpSheet>
   );

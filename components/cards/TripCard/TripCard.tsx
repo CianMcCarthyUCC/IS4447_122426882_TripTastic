@@ -13,22 +13,19 @@ type Props = {
   activityCount?: number;
   completedCount?: number;
   onPress: () => void;
-  /** Optional explicit width — used for horizontal carousels */
+  /** Fixed width, used when the card appears in a horizontal carousel. */
   width?: number;
   /**
-   * Applies a grey wash over the cover image so the card reads as
-   * "archived / past" in the Previous Trips rail. Keeps text fully
-   * legible by sitting below the dark-wash gradient.
+   * Greys out the cover image so the card reads as "archived" in the Past
+   * Trips rail. Headline text stays fully legible.
    */
   muted?: boolean;
 };
 
 /**
- * Editorial-style trip card — full-bleed cover image with:
- *  • country flag badge (top-left) + relative status pill (top-right)
- *  • nights count label
- *  • destination as the hero title (serif italic), trip name as subtitle
- *  • footer row: WHEN | PROGRESS
+ * The large trip tile used on the Trips tab and Profile screen. Shows the
+ * destination over a cover image, along with dates, nights and progress so
+ * the user can see at a glance what each trip is about.
  */
 function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width, muted = false }: Props) {
   const theme = useAppTheme();
@@ -48,11 +45,17 @@ function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width,
         pressed && styles.pressed,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${trip.name} — ${trip.destination}, ${trip.country}`}
+      accessibilityLabel={`${trip.name} - ${trip.destination}, ${trip.country}`}
       accessibilityHint="Opens trip details"
     >
       {trip.coverImage ? (
-        <Image source={{ uri: trip.coverImage }} style={styles.image} />
+        <Image
+          source={{ uri: trip.coverImage }}
+          style={styles.image}
+          accessible={false}
+          importantForAccessibility="no"
+          accessibilityLabel={`Photo of ${trip.destination}`}
+        />
       ) : (
         <View style={[styles.image, styles.placeholder]}>
           <Ionicons name="airplane" size={40} color={Palette.white} />
@@ -66,7 +69,7 @@ function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width,
 
       {/* Dark wash for legibility behind top + bottom text */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.85)']}
+        colors={[Palette.heroWashTop, 'transparent', Palette.heroWashBottom]}
         locations={[0, 0.35, 1]}
         style={styles.gradient}
       />
@@ -99,6 +102,9 @@ function TripCard({ trip, activityCount = 0, completedCount = 0, onPress, width,
           <View style={styles.footerCol}>
             <Text style={styles.footerLabel}>WHEN</Text>
             <Text style={styles.footerValue}>{dateRange}</Text>
+            {muted ? (
+              <Text style={styles.completedYear}>{trip.endDate.slice(0, 4)}</Text>
+            ) : null}
           </View>
           <View style={[styles.footerCol, styles.footerColRight]}>
             <Text style={styles.footerLabel}>PROGRESS</Text>
@@ -142,7 +148,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   mutedOverlay: {
-    backgroundColor: 'rgba(80, 80, 90, 0.45)',
+    backgroundColor: Palette.mutedWash,
     bottom: 0,
     left: 0,
     position: 'absolute',
@@ -162,8 +168,8 @@ const styles = StyleSheet.create({
   },
   countryBadge: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: Palette.glassFill,
+    borderColor: Palette.glassBorder,
     borderRadius: BorderRadius.pill,
     borderWidth: 1,
     flexDirection: 'row',
@@ -181,8 +187,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   statusPill: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: Palette.glassFill,
+    borderColor: Palette.glassBorder,
     borderRadius: BorderRadius.pill,
     borderWidth: 1,
     paddingHorizontal: Spacing.md,
@@ -197,7 +203,7 @@ const styles = StyleSheet.create({
 
   // Nº / nights label, sits just below the top row
   numberLabel: {
-    color: 'rgba(255,255,255,0.9)',
+    color: Palette.textOnImage,
     fontSize: 12,
     fontWeight: '600',
     left: Spacing.lg,
@@ -223,13 +229,13 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.9)',
+    color: Palette.textOnImage,
     fontSize: 15,
     fontWeight: '500',
     marginTop: Spacing.xs,
   },
   divider: {
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: Palette.glassDivider,
     height: StyleSheet.hairlineWidth,
     marginTop: Spacing.md,
     marginBottom: Spacing.md,
@@ -245,7 +251,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   footerLabel: {
-    color: 'rgba(255,255,255,0.7)',
+    color: Palette.textOnImageDim,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1.2,
@@ -255,5 +261,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginTop: Spacing.xs,
+  },
+  completedYear: {
+    color: Palette.textOnImageDim,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    marginTop: 2,
   },
 });

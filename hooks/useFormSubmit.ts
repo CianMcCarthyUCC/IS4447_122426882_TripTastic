@@ -1,21 +1,28 @@
-import { useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useToast } from './useToast';
 import { useHaptics } from './useHaptics';
+import { emitToast } from './toastBus';
 
 /**
- * Reusable form submission hook — handles validation, loading, error, success flow.
- * Eliminates duplicated try-catch-finally pattern across all 6 add/edit screens.
+ * The shared helper that every form uses for its submit button. Takes
+ * care of running the validation, showing the loading spinner, surfacing
+ * any error and showing a success toast on save, so each individual form
+ * only has to focus on what makes it unique.
  */
 export function useFormSubmit(
   onSubmit: () => Promise<void>,
   successMessage: string,
+  afterSuccess?: () => void,
 ) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast, showToast, hideToast } = useToast();
   const haptics = useHaptics();
   const router = useRouter();
+
+  const afterSuccessRef = useRef(afterSuccess);
+  afterSuccessRef.current = afterSuccess;
 
   const handleSubmit = useCallback(async (validationError: string | null) => {
     if (validationError) {
@@ -28,8 +35,14 @@ export function useFormSubmit(
     try {
       await onSubmit();
       haptics.success();
-      showToast(successMessage, 'success');
-      router.back();
+      if (afterSuccessRef.current) {
+        afterSuccessRef.current();
+      } else {
+        // Emit on the global bus so the toast outlives this screen
+        // once router.back() unmounts it.
+        emitToast(successMessage, 'success');
+        router.back();
+      }
     } catch {
       setError('Something went wrong. Please try again.');
       haptics.error();

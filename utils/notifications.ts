@@ -7,7 +7,8 @@ import * as Notifications from 'expo-notifications';
 const DAILY_REMINDER_TITLE = 'TripTastic';
 
 /**
- * Requests notification permissions. Call on first launch.
+ * Helpers for asking the user for permission to send notifications and
+ * scheduling the ones the app relies on, such as the daily reminder.
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -102,6 +103,29 @@ export async function notifyGoalMet(goalName: string, exceeded: boolean): Promis
       sound: true,
     },
     trigger: null, // fires immediately
+  });
+}
+
+/**
+ * Fires an instant notification when the completion streak ticks up.
+ * Copy scales with length so longer runs land louder.
+ */
+export async function notifyStreakIncrease(streak: number): Promise<void> {
+  const body =
+    streak >= 30
+      ? `${streak}-day streak - legendary! Keep showing up.`
+      : streak >= 14
+        ? `${streak} days in a row with everything ticked off.`
+        : streak >= 7
+          ? `One full week of fully completed days. Nice rhythm.`
+          : `${streak} ${streak === 1 ? 'day' : 'days'} in a row with everything done.`;
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: `🔥 ${streak}-day streak`,
+      body,
+      sound: true,
+    },
+    trigger: null,
   });
 }
 

@@ -4,13 +4,14 @@ import { useActivityContext } from '@/context/ActivityContext';
 import { useTargetContext } from '@/context/TargetContext';
 import { useCategoryContext } from '@/context/CategoryContext';
 import { useTripContext } from '@/context/TripContext';
+import { useCategoryLookup } from '@/hooks/useCategoryLookup';
 import { computeStreaks } from '@/utils/streakCalculator';
 import { computeTargetCurrentValue } from '@/utils/progressHelpers';
 
 export type NotificationKind = 'streak' | 'goal-met' | 'goal-close' | 'trip-soon' | 'trip-now';
 
 export type Notification = {
-  /** Stable identifier — used as the list key and lets the UI dedupe. */
+  /** Stable identifier - used as the list key and lets the UI dedupe. */
   id: string;
   kind: NotificationKind;
   title: string;
@@ -47,20 +48,18 @@ function notifyListeners() {
 }
 
 /**
- * Derives an in-app notification feed from current app state — streaks,
- * goal progress, and trip timing — and exposes dismiss controls.
- *
- * Pure read of context data (no side effects, no persistence) so the
- * list stays in sync with every edit. Dismissals live in a module-level
- * set with a tiny pub/sub so every mounted consumer re-renders together.
+ * Builds the in-app notification list shown in the top-right panel.
+ * Pulls from streaks, goals and upcoming trips, and tracks which
+ * notifications the user has dismissed this session.
  */
 export function useNotifications(): NotificationsApi {
   const { activities } = useActivityContext();
   const { targets } = useTargetContext();
   const { categories } = useCategoryContext();
   const { trips } = useTripContext();
+  const categoryMap = useCategoryLookup(categories);
 
-  // Subscribe to dismissal changes. The counter value is unused — it's
+  // Subscribe to dismissal changes. The counter value is unused - it's
   // just a cheap way to force a re-render when the shared set mutates.
   const [dismissTick, setDismissTick] = useState(0);
   useEffect(() => {
@@ -73,17 +72,16 @@ export function useNotifications(): NotificationsApi {
 
   const notifications = useMemo(() => {
     const items: Notification[] = [];
-    const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
     // ── Streak milestone ──────────────────────────────
-    // One global streak — consecutive days with any activity logged. We
+    // One global streak - consecutive days with any activity logged. We
     // only surface it at 3+ days so short runs don't spam the feed; longer
     // runs earn louder copy to reinforce the habit.
     const streak = computeStreaks(activities);
     if (streak.currentStreak >= 3) {
       let body: string;
       if (streak.currentStreak >= 30) {
-        body = `🔥 ${streak.currentStreak}-day streak — legendary!`;
+        body = `🔥 ${streak.currentStreak}-day streak - legendary!`;
       } else if (streak.currentStreak >= 14) {
         body = `${streak.currentStreak} days in a row. Keep it going!`;
       } else if (streak.currentStreak >= 7) {
@@ -100,7 +98,7 @@ export function useNotifications(): NotificationsApi {
         // Longer streaks should float to the top.
         priority: 60 + Math.min(streak.currentStreak, 40),
         // Streaks are surfaced on the Insights tab alongside charts and
-        // target progress — the most natural deep-link for the nudge.
+        // target progress - the most natural deep-link for the nudge.
         href: '/(tabs)/insights',
       });
     }
@@ -148,7 +146,7 @@ export function useNotifications(): NotificationsApi {
     const today = new Date().toISOString().slice(0, 10);
     for (const trip of trips) {
       // Tapping a trip notification lands directly on the activities list
-      // for that trip — that's where logging / reviewing happens.
+      // for that trip - that's where logging / reviewing happens.
       const href: Href = {
         pathname: '/trip/[id]/activities',
         params: { id: trip.id.toString() },
@@ -189,8 +187,8 @@ export function useNotifications(): NotificationsApi {
       .filter((n) => !dismissed.has(n.id))
       .sort((a, b) => b.priority - a.priority);
     // `dismissTick` participates in the deps so the memo recomputes after
-    // a dismiss/clearAll — values of the set itself change outside React.
-  }, [activities, targets, categories, trips, dismissTick]);
+    // a dismiss/clearAll - values of the set itself change outside React.
+  }, [activities, targets, categoryMap, trips, dismissTick]);
 
   const dismiss = useCallback((id: string) => {
     dismissed.add(id);

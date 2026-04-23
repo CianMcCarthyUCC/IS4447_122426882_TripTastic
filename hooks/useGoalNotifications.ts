@@ -2,28 +2,28 @@ import { useEffect, useRef } from 'react';
 import { useActivityContext } from '@/context/ActivityContext';
 import { useTargetContext } from '@/context/TargetContext';
 import { useCategoryContext } from '@/context/CategoryContext';
+import { useCategoryLookup } from '@/hooks/useCategoryLookup';
 import { computeTargetCurrentValue } from '@/utils/progressHelpers';
 import { notifyGoalMet, scheduleGoalReminder } from '@/utils/notifications';
 
 /**
- * Watches activity changes and fires notifications when goals are met.
- * Tracks which goals have already been notified to avoid duplicates.
- * Also schedules reminders for goals that are close but not yet met.
+ * Keeps an eye on the user's activities and fires a notification the
+ * moment a goal is reached. Also schedules a gentle nudge for goals
+ * that are getting close, so the user is the first to know.
  */
 export function useGoalNotifications() {
   const { activities } = useActivityContext();
   const { targets } = useTargetContext();
   const { categories } = useCategoryContext();
+  const categoryMap = useCategoryLookup(categories);
   const notifiedGoals = useRef(new Set<number>());
 
   useEffect(() => {
     if (activities.length === 0 || targets.length === 0) return;
 
-    const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
-
     for (const target of targets) {
       const current = computeTargetCurrentValue(target, activities);
-      const goalName = categoryMap.get(target.categoryId) ?? 'Unknown';
+      const goalName = categoryMap.get(target.categoryId)?.name ?? 'Unknown';
       const met = current >= target.targetValue;
       const exceeded = current > target.targetValue;
       const remaining = target.targetValue - current;
@@ -41,5 +41,5 @@ export function useGoalNotifications() {
         void scheduleGoalReminder(goalName, remaining);
       }
     }
-  }, [activities, targets, categories]);
+  }, [activities, targets, categoryMap]);
 }

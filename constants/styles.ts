@@ -3,9 +3,9 @@ import { Colors } from './colors';
 import { Spacing, BorderRadius, Shadows } from './spacing';
 
 /**
- * Shared styles reused across multiple screens.
- * These use the default (light) theme. For dynamic theming,
- * components should use useAppTheme() and apply overrides.
+ * A small library of shared styles reused across screens, such as field
+ * wrappers and list content paddings, so repeated layouts look the same
+ * everywhere without each screen rewriting its own rules.
  */
 export const SharedStyles = StyleSheet.create({
   screenContainer: {

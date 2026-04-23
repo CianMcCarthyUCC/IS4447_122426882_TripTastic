@@ -1,29 +1,51 @@
 import { memo, useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { InfoTag } from '@/components/tags';
-import { PrimaryButton } from '@/components/buttons';
-import { Spacing, BorderRadius, Shadows, SharedStyles, Palette } from '@/constants';
+import { CategoryIcon } from '@/components/cards/CategoryIcon';
+import { PressableOpacity, DetailsLink } from '@/components/buttons';
+import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import {
+  completeToggleLabel,
+  deleteLabel,
+  editLabel,
+  favouriteToggleLabel,
+  viewDetailsLabel,
+} from '@/utils';
 import type { Activity, Category } from '@/types';
 
 type Props = {
   activity: Activity;
   category?: Category;
   /**
-   * Tapping the star fires this. Optional — when undefined the star is
-   * hidden entirely so read-only surfaces (e.g. the past-trip recap) don't
-   * render a non-interactive icon.
+   * Tapping the star fires this. Optional - when undefined the star and
+   * other inline actions are hidden so read-only surfaces (e.g. the
+   * past-trip recap) render a clean read-only card.
    */
   onToggleFavourite?: (activity: Activity) => void;
+  /** Flip the activity between planned and completed from the status chip. */
+  onToggleComplete?: (activity: Activity) => void;
+  /**
+   * Inline trash action. When provided renders a small trash icon alongside
+   * the other action icons. The parent owns the confirm dialog + toast.
+   */
+  onDelete?: (activity: Activity) => void;
 };
 
-// Star-pip gold. Kept local since no other component renders a favourite
-// marker yet — promote to `Palette` if/when a second surface needs it.
-const STAR_GOLD = '#F5C518';
-
-function ActivityCard({ activity, category, onToggleFavourite }: Props) {
+/**
+ * The Instagram-style post card for a single activity. Shows the date,
+ * duration and place in the header, with a star to mark the activity
+ * as a priority, a tappable status chip for one-tap complete / uncomplete,
+ * and a link through to full details for notes and category.
+ */
+function ActivityCard({
+  activity,
+  category,
+  onToggleFavourite,
+  onToggleComplete,
+  onDelete,
+}: Props) {
   const router = useRouter();
   const theme = useAppTheme();
 
@@ -32,22 +54,36 @@ function ActivityCard({ activity, category, onToggleFavourite }: Props) {
     [router, activity.id],
   );
 
+  const openEdit = useCallback(
+    () =>
+      router.push({
+        pathname: '/activity/[id]/edit',
+        params: { id: activity.id.toString() },
+      }),
+    [router, activity.id],
+  );
+
   const handleToggleFavourite = useCallback(() => {
     onToggleFavourite?.(activity);
   }, [onToggleFavourite, activity]);
 
+  const handleToggleComplete = useCallback(() => {
+    onToggleComplete?.(activity);
+  }, [onToggleComplete, activity]);
+
+  const handleDelete = useCallback(() => {
+    onDelete?.(activity);
+  }, [onDelete, activity]);
+
   const showStar = onToggleFavourite !== undefined;
+  const showEdit = showStar;
+  const showDelete = onDelete !== undefined;
+  const canToggleStatus = onToggleComplete !== undefined;
+  const isCompleted = activity.status === 'completed';
 
   return (
     <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.cardBackground,
-          borderColor: activity.isFavourite ? STAR_GOLD : theme.cardBorder,
-          borderWidth: activity.isFavourite ? 2 : 1,
-        },
-      ]}
+      style={[styles.post, { borderBottomColor: theme.cardBorder }]}
       accessibilityRole="summary"
       accessibilityLabel={
         activity.isFavourite
@@ -55,73 +91,123 @@ function ActivityCard({ activity, category, onToggleFavourite }: Props) {
           : `Activity on ${activity.date}`
       }
     >
-      {activity.isFavourite ? (
-        <View style={[styles.priorityRibbon, { backgroundColor: STAR_GOLD }]}>
-          <Ionicons name="star" size={12} color={Palette.white} />
-          <Text style={styles.priorityRibbonText}>PRIORITY</Text>
-        </View>
-      ) : null}
-
+      {/* Post header - category glyph as avatar, date + duration as the
+          primary line (separated by a thin divider), place underneath.
+          Priority pill + tappable status chip sit on the right. */}
       <View style={styles.header}>
-        {category && (
-          <View style={[SharedStyles.colorDot, { backgroundColor: category.color }]} />
-        )}
-        <Text style={[styles.date, { color: theme.textPrimary }]}>{activity.date}</Text>
-        <View
-          style={[styles.statusBadge, { backgroundColor: activity.status === 'completed' ? theme.successAction : theme.accentAction }]}
-          accessibilityLabel={`${activity.status === 'completed' ? 'Completed' : 'Planned'} activity`}
-        >
-          <Ionicons
-            name={activity.status === 'completed' ? 'checkmark-circle' : 'ellipse-outline'}
-            size={12}
-            color={Palette.white}
-          />
-          <Text style={styles.statusText}>{activity.status === 'completed' ? 'Done' : 'Planned'}</Text>
+        {category ? (
+          <View style={styles.categoryIcon}>
+            <CategoryIcon category={category} size={18} />
+          </View>
+        ) : null}
+        <View style={styles.headerTextCol}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.date, { color: theme.textPrimary }]}>{activity.date}</Text>
+            <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+            <Ionicons name="time-outline" size={13} color={theme.textSecondary} />
+            <Text style={[styles.duration, { color: theme.textSecondary }]}>
+              {activity.metric} min
+            </Text>
+          </View>
+          {activity.place ? (
+            <View style={styles.placeRow}>
+              <Ionicons name="location-outline" size={12} color={theme.textSecondary} />
+              <Text
+                style={[styles.placeText, { color: theme.textSecondary }]}
+                numberOfLines={1}
+                accessibilityLabel={`At ${activity.place}`}
+              >
+                {activity.place}
+              </Text>
+            </View>
+          ) : null}
         </View>
-      </View>
-
-      <View style={styles.tags}>
-        <InfoTag icon="time-outline" label="Duration" value={`${activity.metric} min`} />
-        {category && <InfoTag icon="pricetag-outline" label="Category" value={category.name} />}
-      </View>
-
-      {activity.notes ? (
-        <Text
-          style={[styles.notes, { color: theme.textSecondary }]}
-          numberOfLines={1}
-          accessibilityLabel={`Notes: ${activity.notes}`}
-        >
-          {activity.notes}
-        </Text>
-      ) : null}
-
-      <View style={styles.footerRow}>
-        <View style={styles.footerButton}>
-          <PrimaryButton compact label="View Details" variant="accent" onPress={openDetails} />
-        </View>
-        {showStar ? (
-          <Pressable
-            onPress={handleToggleFavourite}
+        {canToggleStatus ? (
+          <PressableOpacity
+            onPress={handleToggleComplete}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={
-              activity.isFavourite
-                ? 'Unmark as priority activity'
-                : 'Mark as priority activity'
-            }
-            accessibilityState={{ selected: activity.isFavourite }}
-            style={({ pressed }) => [
-              styles.starBtn,
-              { borderColor: theme.cardBorder, opacity: pressed ? 0.6 : 1 },
+            accessibilityLabel={completeToggleLabel(isCompleted)}
+            accessibilityState={{ selected: isCompleted }}
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: isCompleted ? theme.successAction : Palette.grey500,
+              },
             ]}
           >
             <Ionicons
-              name={activity.isFavourite ? 'star' : 'star-outline'}
-              size={20}
-              color={activity.isFavourite ? STAR_GOLD : theme.textSecondary}
+              name={isCompleted ? 'checkmark-circle' : 'ellipse-outline'}
+              size={11}
+              color={Palette.white}
             />
-          </Pressable>
-        ) : null}
+            <Text style={styles.statusText}>{isCompleted ? 'Completed' : 'Planned'}</Text>
+          </PressableOpacity>
+        ) : (
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: isCompleted ? theme.successAction : Palette.grey500,
+              },
+            ]}
+            accessibilityLabel={`${isCompleted ? 'Completed' : 'Planned'} activity`}
+          >
+            <Ionicons
+              name={isCompleted ? 'checkmark-circle' : 'ellipse-outline'}
+              size={11}
+              color={Palette.white}
+            />
+            <Text style={styles.statusText}>{isCompleted ? 'Completed' : 'Planned'}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Instagram-style action row - star + edit on the left, View
+          Details text link on the right. Notes and category details live
+          on the View Details screen to keep the card compact. */}
+      <View style={styles.actionRow}>
+        <View style={styles.actionLeft}>
+          {showStar ? (
+            <PressableOpacity
+              onPress={handleToggleFavourite}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={favouriteToggleLabel('activity', activity.isFavourite)}
+              accessibilityState={{ selected: activity.isFavourite }}
+              style={styles.actionIcon}
+            >
+              <Ionicons
+                name={activity.isFavourite ? 'star' : 'star-outline'}
+                size={22}
+                color={activity.isFavourite ? Palette.starGold : theme.textPrimary}
+              />
+            </PressableOpacity>
+          ) : null}
+          {showEdit ? (
+            <PressableOpacity
+              onPress={openEdit}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={editLabel('activity')}
+              style={styles.actionIcon}
+            >
+              <Ionicons name="create-outline" size={20} color={theme.textPrimary} />
+            </PressableOpacity>
+          ) : null}
+          {showDelete ? (
+            <PressableOpacity
+              onPress={handleDelete}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={deleteLabel('activity')}
+              style={styles.actionIcon}
+            >
+              <Ionicons name="trash-outline" size={20} color={theme.dangerAction} />
+            </PressableOpacity>
+          ) : null}
+        </View>
+        <DetailsLink onPress={openDetails} accessibilityLabel={viewDetailsLabel('activity')} />
       </View>
     </View>
   );
@@ -130,75 +216,76 @@ function ActivityCard({ activity, category, onToggleFavourite }: Props) {
 export default memo(ActivityCard);
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    marginBottom: Spacing.md,
-    padding: Spacing.lg,
-    ...Shadows.md,
+  post: {
+    borderBottomWidth: 1,
+    paddingBottom: Spacing.md,
+    paddingTop: Spacing.md,
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  categoryIcon: {},
+  headerTextCol: {
+    flex: 1,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
   date: {
-    flex: 1,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700',
+  },
+  divider: {
+    height: 12,
+    width: 1,
+  },
+  duration: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  placeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 2,
+  },
+  placeText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
   },
   statusBadge: {
     alignItems: 'center',
     borderRadius: BorderRadius.pill,
     flexDirection: 'row',
-    gap: Spacing.xs,
+    gap: 3,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 3,
   },
   statusText: {
     color: Palette.white,
     fontSize: 11,
     fontWeight: '700',
   },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: Spacing.md,
-  },
-  notes: {
-    fontSize: 14,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  priorityRibbon: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderRadius: BorderRadius.pill,
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-  },
-  priorityRibbonText: {
-    color: Palette.white,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  footerRow: {
+  actionRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: Spacing.sm,
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
   },
-  footerButton: {
-    flex: 1,
-  },
-  starBtn: {
+  actionLeft: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
-    borderWidth: 1,
-    height: 40,
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  actionIcon: {
+    alignItems: 'center',
+    height: 32,
     justifyContent: 'center',
-    width: 40,
+    width: 32,
   },
 });

@@ -1,15 +1,17 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTripContext } from '@/context/TripContext';
+import { isPastTrip } from '@/utils/dateHelpers';
 import type { ActivityFormData } from '@/types';
 
 /**
- * Reusable form state hook for activity forms (add & edit).
- * Defaults tripId to the currently selected trip.
+ * Holds the form state for the Activity form, shared by the add-activity
+ * and edit-activity screens. Pre-fills the trip with whichever one the
+ * user is currently viewing.
  */
 export function useActivityForm(initial?: ActivityFormData) {
   const { currentTrip } = useTripContext();
 
-  // Memoised so `resetForm` below has a stable reference — otherwise a
+  // Memoised so `resetForm` below has a stable reference - otherwise a
   // fresh object literal on every render would defeat the useCallback.
   const defaultForm = useMemo<ActivityFormData>(
     () =>
@@ -18,10 +20,14 @@ export function useActivityForm(initial?: ActivityFormData) {
         categoryId: 0,
         date: '',
         metric: '',
-        status: 'planned',
+        // Past trips can only hold completed activities - seeding the
+        // default here means the form opens in the right state before
+        // the user sees the (locked) status field.
+        status: currentTrip && isPastTrip(currentTrip.endDate) ? 'completed' : 'planned',
+        place: '',
         notes: '',
       },
-    [initial, currentTrip?.id],
+    [initial, currentTrip?.id, currentTrip?.endDate],
   );
 
   const [formData, setFormData] = useState<ActivityFormData>(defaultForm);

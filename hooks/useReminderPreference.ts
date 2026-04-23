@@ -13,14 +13,9 @@ export type ReminderToggleResult =
   | 'error';
 
 /**
- * Owns the daily-reminder preference: hydrates from the OS on mount (so a
- * cold start reflects any pre-existing schedule instead of defaulting to
- * off) and exposes a single `toggle` that handles the permission request,
- * scheduling/cancellation, and state update together.
- *
- * Callers decide how to surface success/failure — the hook returns a tag
- * rather than firing toasts so it stays UI-agnostic and reusable from any
- * screen that wants a reminder switch.
+ * Looks after the daily reminder preference. Picks up the current
+ * on/off state from the system at start-up and exposes a single toggle
+ * that handles the permission prompt and scheduling in one go.
  */
 export function useReminderPreference() {
   const [enabled, setEnabled] = useState(false);

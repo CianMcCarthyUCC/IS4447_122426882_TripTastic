@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { PlaneLoader } from '@/components/feedback/PlaneLoader';
 import { BorderRadius, Spacing } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useHaptics } from '@/hooks/useHaptics';
 
 type Props = {
   label: string;
@@ -11,12 +12,14 @@ type Props = {
   disabled?: boolean;
   loading?: boolean;
   accessibilityLabel?: string;
+  /** Switch off the default light tap buzz for buttons pressed repeatedly. */
+  haptic?: boolean;
 };
 
 /**
- * Reusable button with disabled + loading states.
- * Greyed out and non-interactive when disabled or loading.
- * Shows spinner when loading.
+ * The standard button used across the app.
+ * Handles disabled and loading states, plays a light haptic on tap,
+ * and supports a few visual variants for different call-to-action levels.
  */
 export default function PrimaryButton({
   label,
@@ -26,9 +29,16 @@ export default function PrimaryButton({
   disabled = false,
   loading = false,
   accessibilityLabel,
+  haptic = true,
 }: Props) {
   const theme = useAppTheme();
+  const haptics = useHaptics();
   const isDisabled = disabled || loading;
+
+  const handlePress = () => {
+    if (haptic) haptics.light();
+    onPress();
+  };
 
   const bgColor = {
     primary: theme.primaryAction,
@@ -41,7 +51,7 @@ export default function PrimaryButton({
 
   return (
     <Pressable
-      onPress={isDisabled ? undefined : onPress}
+      onPress={isDisabled ? undefined : handlePress}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}

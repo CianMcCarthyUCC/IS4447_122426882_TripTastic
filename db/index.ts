@@ -1,11 +1,12 @@
 export { db, initializeDatabase } from './client';
-export { trips, categories, activities, targets, users, sessions, savedFilters, recentSearches, settings, tripAiOverviews } from './schema';
+export { trips, categories, activities, targets, users, sessions, savedFilters, recentSearches, settings } from './schema';
 export { seedDataIfEmpty } from './seed';
 export {
   getAllTrips,
   insertTrip,
   updateTripById,
   deleteTripById,
+  deleteActivitiesByTripId,
   getAllCategories,
   insertCategory,
   updateCategoryById,
@@ -15,14 +16,14 @@ export {
   updateActivityById,
   deleteActivityById,
   setFavouriteActivity,
-  clearFavouriteActivity,
-  getAiOverview,
-  upsertAiOverview,
-  clearAiOverview,
+  unsetFavouriteActivity,
+  setActivityStatus,
   getAllTargets,
   insertTarget,
   updateTargetById,
   deleteTargetById,
+  setFavouriteTarget,
+  unsetFavouriteTarget,
   findUserByEmail,
   findUserWithHashByEmail,
   findUserById,

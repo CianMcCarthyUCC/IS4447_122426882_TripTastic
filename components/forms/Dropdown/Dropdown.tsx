@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { SharedStyles } from '@/constants';
+import { dismissOverlayLabel } from '@/utils';
 
 export type DropdownOption = {
   label: string;
@@ -20,11 +21,18 @@ type Props = {
   onSelect: (value: string) => void;
   placeholder?: string;
   accessibilityLabel?: string;
+  // When supplied, a "+ <createLabel>" row is rendered at the bottom of
+  // the options list. Tapping it closes the sheet and fires `onCreate`,
+  // giving the parent a slot to push a create-new flow without shipping
+  // users off to a separate screen.
+  onCreate?: () => void;
+  createLabel?: string;
 };
 
 /**
- * Reusable dropdown selector — opens a bottom sheet modal with options.
- * Replaces pill toggles for a cleaner phone UX.
+ * The standard dropdown selector used across the app. Tapping the field
+ * opens a bottom sheet listing the options, with optional icon/colour
+ * badges and a slot to add a brand new option inline.
  */
 function Dropdown({
   label,
@@ -34,6 +42,8 @@ function Dropdown({
   onSelect,
   placeholder = 'Select...',
   accessibilityLabel,
+  onCreate,
+  createLabel = 'Create new',
 }: Props) {
   const theme = useAppTheme();
   const [open, setOpen] = useState(false);
@@ -81,7 +91,12 @@ function Dropdown({
 
       {/* Modal */}
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable style={[styles.overlay, { backgroundColor: theme.overlay }]} onPress={() => setOpen(false)}>
+        <Pressable
+          style={[styles.overlay, { backgroundColor: theme.overlay }]}
+          onPress={() => setOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel={dismissOverlayLabel(label ?? 'picker')}
+        >
           <View style={[styles.sheet, { backgroundColor: theme.cardBackground }]} onStartShouldSetResponder={() => true}>
             <View style={styles.handle} />
             <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>{label ?? 'Select'}</Text>
@@ -98,8 +113,15 @@ function Dropdown({
                     accessibilityLabel={opt.label}
                     accessibilityState={{ selected: active }}
                   >
-                    {opt.color && <View style={[styles.dot, { backgroundColor: opt.color }]} />}
-                    {opt.icon && <Ionicons name={opt.icon} size={20} color={active ? Palette.coral : theme.textSecondary} />}
+                    {opt.icon ? (
+                      <Ionicons
+                        name={opt.icon}
+                        size={20}
+                        color={opt.color ?? (active ? Palette.coral : theme.textSecondary)}
+                      />
+                    ) : opt.color ? (
+                      <View style={[styles.dot, { backgroundColor: opt.color }]} />
+                    ) : null}
                     <Text style={[styles.optionText, { color: theme.textPrimary }, active && styles.optionTextActive]}>
                       {opt.label}
                     </Text>
@@ -107,6 +129,26 @@ function Dropdown({
                   </Pressable>
                 );
               })}
+
+              {onCreate ? (
+                <Pressable
+                  onPress={() => {
+                    setOpen(false);
+                    onCreate();
+                  }}
+                  style={[styles.option, styles.createRow, { borderColor: theme.accentAction }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={createLabel}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color={theme.accentAction} />
+                  <Text
+                    style={[styles.optionText, styles.createText, { color: theme.accentAction }]}
+                    numberOfLines={1}
+                  >
+                    {createLabel}
+                  </Text>
+                </Pressable>
+              ) : null}
             </ScrollView>
 
             <Pressable
@@ -172,6 +214,12 @@ const styles = StyleSheet.create({
   },
   optionText: { flex: 1, fontSize: 16 },
   optionTextActive: { fontWeight: '700' },
+  createRow: {
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    marginTop: Spacing.sm,
+  },
+  createText: { fontWeight: '700' },
   closeButton: {
     alignItems: 'center',
     borderRadius: BorderRadius.sm,

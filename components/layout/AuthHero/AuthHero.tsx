@@ -17,8 +17,9 @@ type Props = {
 };
 
 /**
- * Animated branded hero for auth screens.
- * Plane SVG springs in with rotation, text fades in staggered.
+ * The branded banner at the top of the login and register screens.
+ * Shows the app's plane icon with a short tagline, animated in when the
+ * screen first appears to give the auth flow a warm first impression.
  */
 export default function AuthHero({ tagline = 'Plan your perfect holiday' }: Props) {
   const theme = useAppTheme();

@@ -4,21 +4,21 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { BorderRadius, Spacing } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { suggestionLabel } from '@/utils';
 
 type Props = {
-  /** Copy inside the chip — short, e.g. "Focus: Food this week". */
+  /** Copy inside the chip - short, e.g. "Focus: Food this week". */
   label: string;
-  /** Tap handler — applies the suggested filter state. */
+  /** Tap handler - applies the suggested filter state. */
   onApply: () => void;
-  /** Long-press handler — dismisses the chip for the rest of the session. */
+  /** Long-press handler - dismisses the chip for the rest of the session. */
   onDismiss: () => void;
 };
 
 /**
- * "💡 Try: ..." chip surfaced above a list when a rule-based filter
- * suggestion is available. Tap to apply, long-press to dismiss for the
- * session. Kept intentionally small — the entire thing is one pill of
- * coral-tinted copy so it reads as a nudge, not a primary action.
+ * The small "Try this filter" chip that appears above a list whenever
+ * the app has a helpful filter suggestion. A tap applies it; a long press
+ * dismisses it for the rest of the session.
  */
 function SuggestionChip({ label, onApply, onDismiss }: Props) {
   const theme = useAppTheme();
@@ -33,7 +33,7 @@ function SuggestionChip({ label, onApply, onDismiss }: Props) {
         onLongPress={onDismiss}
         delayLongPress={450}
         accessibilityRole="button"
-        accessibilityLabel={`Try filter: ${label}. Long-press to dismiss.`}
+        accessibilityLabel={`${suggestionLabel(label)}. Long-press to dismiss.`}
         style={({ pressed }) => [
           styles.chip,
           { backgroundColor: theme.tagBackground },

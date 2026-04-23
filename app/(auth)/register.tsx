@@ -10,7 +10,8 @@ import { SharedStyles } from '@/constants';
 import { validateRegisterForm } from '@/utils/validation';
 
 /**
- * Register screen — email + password + confirm password with link to login.
+ * The Register screen, where new users create an account with an email,
+ * password and password confirmation.
  */
 export default function RegisterScreen() {
   const router = useRouter();

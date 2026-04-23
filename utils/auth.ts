@@ -18,13 +18,9 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 /**
- * Hashes a password with a fresh per-user random salt. The salt defeats
- * rainbow-table attacks on an extracted SQLite file — two users with the
- * same password produce different hashes.
- *
- * expo-crypto doesn't expose PBKDF2, and running 10k+ SHA-256 rounds via
- * the JS/native bridge is unacceptably slow on-device. One salted round
- * is a pragmatic middle ground for a local-only app.
+ * Hashes a password together with a random per-user salt before saving
+ * it to the database, so that two users with the same password never
+ * end up with the same stored hash.
  */
 export async function hashPassword(password: string): Promise<string> {
   const saltBytes = await Crypto.getRandomBytesAsync(SALT_BYTES);
@@ -41,7 +37,7 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   if (storedHash.startsWith(`${HASH_VERSION}$`)) {
     const parts = storedHash.split('$');
-    // `['v2', saltHex, hashHex]` — anything else is malformed.
+    // `['v2', saltHex, hashHex]` - anything else is malformed.
     if (parts.length !== 3) return false;
     const [, saltHex, expectedHex] = parts;
     if (!saltHex || !expectedHex) return false;

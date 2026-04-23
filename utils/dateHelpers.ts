@@ -1,6 +1,7 @@
 /**
- * Pure date utility functions for grouping activities by period.
- * No React dependencies — can be tested independently.
+ * A collection of small date helpers used across the app for formatting
+ * ranges, working out "past vs upcoming" and grouping activities by day,
+ * week and month. Pure functions so they are easy to reason about.
  */
 
 /**
@@ -124,13 +125,24 @@ export function getNightsCount(startDate: string, endDate: string): number {
 }
 
 /**
+ * A trip is "past" once its end date is strictly before today. Uses ISO
+ * string comparison (safe because YYYY-MM-DD sorts chronologically) so
+ * we don't drag timezone math into every caller. Centralised here so the
+ * rule stays consistent across the Trips tab, activity form, and
+ * archive screen.
+ */
+export function isPastTrip(endDate: string, now: Date = new Date()): boolean {
+  return endDate < now.toISOString().slice(0, 10);
+}
+
+/**
  * Human-readable formatting of a single ISO string. Accepts either a
- * date-only slug (YYYY-MM-DD) or a full ISO timestamp — date-only inputs
+ * date-only slug (YYYY-MM-DD) or a full ISO timestamp - date-only inputs
  * are parsed at local midnight so they never display off-by-one in
  * timezones west of UTC.
  *
- *   'dayMonthYear' (default) → "18 Apr 2026" — used on filter chips, date fields
- *   'monthYear'              → "April 2026" — used for "member since" style labels
+ *   'dayMonthYear' (default) → "18 Apr 2026" - used on filter chips, date fields
+ *   'monthYear'              → "April 2026" - used for "member since" style labels
  */
 export function formatIsoDate(
   iso: string,
@@ -148,14 +160,14 @@ export function formatIsoDate(
 }
 
 /**
- * Compact date range label. Same month → "Jul 1–14". Cross-month → "Jul 28 – Aug 3".
+ * Compact date range label. Same month → "Jul 1-14". Cross-month → "Jul 28 - Aug 3".
  */
 export function formatDateRange(startDate: string, endDate: string): string {
   const s = new Date(startDate + 'T00:00:00');
   const e = new Date(endDate + 'T00:00:00');
   const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
   const startMonth = s.toLocaleString('en', { month: 'short' });
-  if (sameMonth) return `${startMonth} ${s.getDate()}–${e.getDate()}`;
+  if (sameMonth) return `${startMonth} ${s.getDate()}-${e.getDate()}`;
   const endMonth = e.toLocaleString('en', { month: 'short' });
-  return `${startMonth} ${s.getDate()} – ${endMonth} ${e.getDate()}`;
+  return `${startMonth} ${s.getDate()} - ${endMonth} ${e.getDate()}`;
 }

@@ -4,8 +4,9 @@ import { getAllCategories, insertCategory, updateCategoryById, deleteCategoryByI
 import type { CategoryFormData } from '@/types';
 
 /**
- * Central hook for all category CRUD operations.
- * Handles DATA only — no navigation.
+ * The central hook for reading and changing categories. Wraps the
+ * create, update and delete calls so every screen touches category
+ * data through one place.
  */
 export function useCategories() {
   const { categories, setCategories } = useCategoryContext();
@@ -16,9 +17,10 @@ export function useCategories() {
   }, [setCategories]);
 
   const addCategory = useCallback(
-    async (formData: CategoryFormData) => {
-      await insertCategory(formData);
+    async (formData: CategoryFormData): Promise<number> => {
+      const newId = await insertCategory(formData);
       await refreshCategories();
+      return newId;
     },
     [refreshCategories],
   );

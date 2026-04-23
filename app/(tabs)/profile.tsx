@@ -1,5 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo } from 'react';
+import {
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -10,44 +17,40 @@ import {
   useActivities,
   useTargets,
   useTrips,
-  useCategories,
-  useReminderPreference,
 } from '@/hooks';
-import { useThemeControl } from '@/hooks/useAppTheme';
-import { PrimaryButton, ButtonGroup } from '@/components/buttons';
-import { ConfirmDialog, Toast } from '@/components/feedback';
-import { ScreenContainer } from '@/components/layout';
-import { SettingsSection, SettingToggle } from '@/components/cards';
+import { PrimaryButton, PressableOpacity } from '@/components/buttons';
+import { Toast } from '@/components/feedback';
+import { ScreenContainer, DecorativeCircles } from '@/components/layout';
+import { TripCard, CreateTripCard } from '@/components/cards';
 import { Avatar } from '@/components/Avatar';
-import { BorderRadius, Shadows, Spacing } from '@/constants';
-import { exportDataAsCsv } from '@/utils/csvExport';
-import { formatIsoDate } from '@/utils/dateHelpers';
+import { BorderRadius, Palette, Spacing } from '@/constants';
+import { formatIsoDate, isPastTrip } from '@/utils/dateHelpers';
+import type { Trip } from '@/types';
+
+const CARD_SPACING = Spacing.md;
+// Peek amount mirrors the Trips tab so the carousel feels consistent across
+// surfaces - a slice of the next card invites the swipe gesture.
+const PEEK_AMOUNT = 48;
+const SIDE_PADDING = PEEK_AMOUNT + CARD_SPACING;
 
 /**
- * Account screen — hero identity block + at-a-glance stats + grouped
- * preference rows. Mirrors the "profile dashboard" pattern used in modern
- * travel apps: who you are on top, what you've done in the middle, what
- * you can tweak below. All data comes from local SQLite via existing hooks
- * so the screen is fully offline-capable.
+ * The Profile tab. Shows the user's avatar, name and a quick snapshot
+ * of their trips, activities and goals, with a gear icon in the corner
+ * that opens the full Settings screen.
  */
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, deleteAccount } = useAuth();
+  const { user } = useAuth();
   const { activities } = useActivities();
   const { targets } = useTargets();
   const { trips } = useTrips();
-  const { categories } = useCategories();
-  const { toast, showToast, hideToast } = useToast();
+  const { toast, hideToast } = useToast();
   const haptics = useHaptics();
   const theme = useAppTheme();
-  const { mode, setMode, isDark } = useThemeControl();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth - SIDE_PADDING * 2;
 
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const { enabled: notificationsEnabled, toggle: toggleReminder } = useReminderPreference();
-
-  // Derived display bits — stable across renders thanks to useMemo; we fall
+  // Derived display bits - stable across renders thanks to useMemo; we fall
   // back to the email's local part when the user hasn't filled in a display
   // name yet so the hero never looks empty on first visit.
   const displayName = useMemo(() => {
@@ -62,6 +65,54 @@ export default function ProfileScreen() {
     [user],
   );
 
+  // Planned (current/upcoming) trips feed the carousel - past trips stay on
+  // the Trips tab's dedicated archive, so they're hidden here.
+  const plannedTrips = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return trips
+      .filter((t) => !isPastTrip(t.endDate))
+      .sort((a, b) => {
+        const aInProgress = a.startDate <= today;
+        const bInProgress = b.startDate <= today;
+        if (aInProgress !== bInProgress) return aInProgress ? -1 : 1;
+        return a.startDate.localeCompare(b.startDate);
+      });
+  }, [trips]);
+
+  const tripStats = useMemo(() => {
+    const map = new Map<number, { total: number; completed: number }>();
+    for (const a of activities) {
+      const current = map.get(a.tripId) ?? { total: 0, completed: 0 };
+      current.total++;
+      if (a.status === 'completed') current.completed++;
+      map.set(a.tripId, current);
+    }
+    return map;
+  }, [activities]);
+
+  const renderTrip = useCallback(
+    ({ item }: { item: Trip }) => {
+      const stats = tripStats.get(item.id);
+      return (
+        <View style={{ marginRight: CARD_SPACING }}>
+          <TripCard
+            trip={item}
+            width={cardWidth}
+            activityCount={stats?.total ?? 0}
+            completedCount={stats?.completed ?? 0}
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/activities',
+                params: { id: item.id.toString() },
+              })
+            }
+          />
+        </View>
+      );
+    },
+    [cardWidth, router, tripStats],
+  );
+
   if (!user) {
     return (
       <ScreenContainer>
@@ -71,85 +122,34 @@ export default function ProfileScreen() {
     );
   }
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      haptics.success();
-    } catch {
-      showToast('Failed to logout. Please try again.', 'error');
-      haptics.error();
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    setConfirmVisible(false);
-    setDeleting(true);
-    try {
-      await deleteAccount();
-      haptics.success();
-    } catch {
-      showToast('Failed to delete account. Please try again.', 'error');
-      haptics.error();
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleThemeToggle = () => {
-    const next = isDark ? 'light' : 'dark';
-    setMode(next);
-    haptics.light();
-  };
-
-  const handleNotificationToggle = async (enabled: boolean) => {
-    const result = await toggleReminder(enabled);
-    switch (result) {
-      case 'enabled':
-        showToast('Daily reminders enabled', 'success');
-        haptics.light();
-        break;
-      case 'disabled':
-        showToast('Reminders disabled', 'info');
-        haptics.light();
-        break;
-      case 'permission-denied':
-        showToast('Notification permission denied', 'error');
-        break;
-      case 'error':
-        showToast('Failed to update notifications', 'error');
-        break;
-    }
-  };
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await exportDataAsCsv(activities, targets, categories);
-      haptics.success();
-      showToast('Data exported', 'success');
-    } catch {
-      showToast('Failed to export. Please try again.', 'error');
-      haptics.error();
-    } finally {
-      setExporting(false);
-    }
-  };
-
   return (
     <ScreenContainer>
+      <DecorativeCircles opacity={0.06} />
       <Toast {...toast} onHide={hideToast} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        // Dragging to scroll dismisses the keyboard — the native iOS/Android
-        // pattern, and the replacement for the tap-on-background dismiss
-        // that lived in ScreenContainer's removed press wrapper.
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Hero ──────────────────────────────────────────────
-            Circular avatar + name + email + home-city line + Edit Profile
-            pill. Uses initials on the avatar rather than a stock icon so
-            accounts feel personal once display-name is filled in. */}
+        {/* ── Top bar ─────────────────────────────────────────
+            Settings gear anchored to the right - Instagram's "Settings
+            and activity" entry point. */}
+        <View style={styles.topBar}>
+          <PressableOpacity
+            onPress={() => {
+              haptics.light();
+              router.push('/settings');
+            }}
+            hitSlop={12}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
+            <Ionicons name="settings-outline" size={24} color={theme.textPrimary} />
+          </PressableOpacity>
+        </View>
+
+        {/* ── Hero ────────────────────────────────────────── */}
         <View style={styles.hero}>
           <View style={styles.avatarWrap}>
             <Avatar
@@ -194,109 +194,62 @@ export default function ProfileScreen() {
             </View>
           )}
 
-          <Pressable
+          <PressableOpacity
             onPress={() => {
               haptics.light();
               router.push('/edit-profile');
             }}
-            style={({ pressed }) => [
-              styles.editPill,
-              {
-                backgroundColor: theme.accentAction,
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
+            pressedOpacity={0.85}
+            style={[styles.editPill, { backgroundColor: theme.accentAction }]}
             accessibilityRole="button"
             accessibilityLabel="Edit profile"
           >
-            <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+            <Ionicons name="create-outline" size={16} color={Palette.white} />
             <Text style={styles.editPillText}>Edit Profile</Text>
-          </Pressable>
+          </PressableOpacity>
         </View>
 
-        {/* ── Stats strip ───────────────────────────────────────
-            At-a-glance numbers that make the Account screen feel like
-            *their* screen, not a settings dump. Three chips side-by-side
-            flex equally so it stays responsive on every width. */}
-        <View style={styles.statsRow}>
-          <StatChip
-            icon="airplane"
-            label="Trips"
-            value={trips.length}
-            theme={theme}
-          />
+        {/* ── Stats strip ─────────────────────────────────── */}
+        <View style={[styles.statsRow, { borderColor: theme.cardBorder }]}>
+          <StatChip icon="airplane" label="Trips" value={trips.length} theme={theme} />
+          <View style={[styles.statDivider, { backgroundColor: theme.cardBorder }]} />
           <StatChip
             icon="checkmark-done"
             label="Activities"
             value={activities.length}
             theme={theme}
           />
-          <StatChip
-            icon="flag"
-            label="Goals"
-            value={targets.length}
-            theme={theme}
-          />
+          <View style={[styles.statDivider, { backgroundColor: theme.cardBorder }]} />
+          <StatChip icon="flag" label="Goals" value={targets.length} theme={theme} />
         </View>
 
-        {/* ── Preferences ───────────────────────────────────── */}
-        <SettingsSection title="Preferences">
-          <SettingToggle
-            icon={isDark ? 'moon' : 'sunny'}
-            label="Dark Mode"
-            hint={`Currently: ${mode === 'system' ? 'Following device' : mode}`}
-            value={isDark}
-            onValueChange={handleThemeToggle}
-            accessibilityLabel="Toggle dark mode"
-          />
-          <View style={styles.toggleDivider} />
-          <SettingToggle
-            icon="notifications-outline"
-            label="Daily Reminders"
-            hint="Get reminded at 8pm to log your activities"
-            value={notificationsEnabled}
-            onValueChange={handleNotificationToggle}
-            accessibilityLabel="Toggle daily reminders"
-          />
-        </SettingsSection>
-
-        {/* ── Data ──────────────────────────────────────────── */}
-        <SettingsSection title="Your Data">
-          <ActionRow
-            icon="download-outline"
-            label="Export as CSV"
-            hint="Download activities & goals to share or back up"
-            onPress={handleExport}
-            loading={exporting}
-            theme={theme}
-          />
-        </SettingsSection>
-
-        {/* ── Account actions ───────────────────────────────── */}
-        <ButtonGroup>
-          <PrimaryButton label="Log Out" variant="secondary" onPress={handleLogout} />
-          <PrimaryButton
-            label="Delete Account"
-            loading={deleting}
-            variant="danger"
-            onPress={() => {
-              haptics.warning();
-              setConfirmVisible(true);
-            }}
-          />
-        </ButtonGroup>
+        {/* ── Your Trips ──────────────────────────────────── */}
+        <View style={styles.tripsSection}>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Your Trips</Text>
+          {plannedTrips.length === 0 ? (
+            <View style={styles.emptyTripsWrap}>
+              <CreateTripCard
+                width={cardWidth}
+                onPress={() => {
+                  haptics.light();
+                  router.push('/trip/add');
+                }}
+              />
+            </View>
+          ) : (
+            <FlatList
+              data={plannedTrips}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderTrip}
+              contentContainerStyle={styles.tripsList}
+            />
+          )}
+        </View>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      <ConfirmDialog
-        visible={confirmVisible}
-        title="Delete Account"
-        message="This will permanently delete your account and all your data. This action cannot be undone."
-        confirmLabel="Delete Account"
-        onConfirm={handleDeleteAccount}
-        onCancel={() => setConfirmVisible(false)}
-      />
     </ScreenContainer>
   );
 }
@@ -310,75 +263,13 @@ type StatChipProps = {
   theme: ReturnType<typeof useAppTheme>;
 };
 
-/**
- * Compact at-a-glance stat card. Kept local to the screen because it's
- * only used here — if another surface needs it later it can move into
- * `components/cards`.
- */
 function StatChip({ icon, label, value, theme }: StatChipProps) {
   return (
-    <View
-      style={[
-        styles.statChip,
-        {
-          backgroundColor: theme.cardBackground,
-          borderColor: theme.cardBorder,
-        },
-      ]}
-      accessible
-      accessibilityLabel={`${value} ${label}`}
-    >
-      <View style={[styles.statIconBubble, { backgroundColor: theme.tagBackground }]}>
-        <Ionicons name={icon} size={18} color={theme.accentAction} />
-      </View>
+    <View style={styles.statChip} accessible accessibilityLabel={`${value} ${label}`}>
+      <Ionicons name={icon} size={16} color={theme.accentAction} style={styles.statIcon} />
       <Text style={[styles.statValue, { color: theme.textPrimary }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
-  );
-}
-
-type ActionRowProps = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  hint?: string;
-  loading?: boolean;
-  onPress: () => void;
-  theme: ReturnType<typeof useAppTheme>;
-};
-
-/**
- * Tappable row with leading icon + label/hint + trailing chevron. Used
- * for the "Export as CSV" action — feels more at home inside a
- * SettingsSection than a full-width button would.
- */
-function ActionRow({ icon, label, hint, loading, onPress, theme }: ActionRowProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={loading}
-      style={({ pressed }) => [
-        styles.actionRow,
-        { opacity: pressed || loading ? 0.6 : 1 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ busy: Boolean(loading) }}
-    >
-      <View style={[styles.actionIconBubble, { backgroundColor: theme.tagBackground }]}>
-        <Ionicons name={icon} size={18} color={theme.accentAction} />
-      </View>
-      <View style={styles.actionTextCol}>
-        <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>{label}</Text>
-        {hint ? (
-          <Text style={[styles.actionHint, { color: theme.textSecondary }]}>{hint}</Text>
-        ) : null}
-      </View>
-      <Ionicons
-        name={loading ? 'time-outline' : 'chevron-forward'}
-        size={20}
-        color={theme.textSecondary}
-      />
-    </Pressable>
   );
 }
 
@@ -390,6 +281,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  // Top bar
+  topBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: Spacing.md,
+    paddingTop: Spacing.xs,
+  },
+  iconButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+
   // Hero
   hero: {
     alignItems: 'center',
@@ -397,9 +303,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
   },
   avatarWrap: {
-    // Spacing below the avatar matches what the previous inline ring had
-    // via `marginBottom` on `avatarRing`. Kept as a wrapper so the Avatar
-    // component stays layout-neutral.
     marginBottom: Spacing.md,
   },
   heroName: {
@@ -431,46 +334,43 @@ const styles = StyleSheet.create({
   },
   editPill: {
     alignItems: 'center',
-    borderRadius: BorderRadius.pill,
+    borderRadius: BorderRadius.xs,
     flexDirection: 'row',
     gap: 6,
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    ...Shadows.sm,
   },
   editPillText: {
-    color: '#FFFFFF',
+    color: Palette.white,
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
 
-  // Stats strip
+  // Stats strip - flat, bracketed by hairlines top + bottom (matches the
+  // Goals SummaryBanner overview).
   statsRow: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
     flexDirection: 'row',
-    gap: Spacing.sm,
     marginBottom: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   statChip: {
     alignItems: 'center',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
     flex: 1,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.md,
-    ...Shadows.sm,
   },
-  statIconBubble: {
-    alignItems: 'center',
-    borderRadius: BorderRadius.pill,
-    height: 36,
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-    width: 36,
+  statDivider: {
+    height: 28,
+    width: 1,
+  },
+  statIcon: {
+    marginBottom: 4,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
@@ -479,37 +379,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
     marginTop: 2,
+    textTransform: 'uppercase',
   },
 
-  // Preferences divider between toggles
-  toggleDivider: {
-    height: Spacing.md,
+  // Trips section
+  tripsSection: {
+    marginBottom: Spacing.lg,
   },
-
-  // Action row
-  actionRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: Spacing.md,
-    paddingVertical: Spacing.xs,
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    marginBottom: Spacing.sm,
   },
-  actionIconBubble: {
-    alignItems: 'center',
-    borderRadius: BorderRadius.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
+  tripsList: {
+    paddingRight: Spacing.md,
   },
-  actionTextCol: {
-    flex: 1,
-  },
-  actionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  actionHint: {
-    fontSize: 13,
-    marginTop: 2,
+  emptyTripsWrap: {
+    paddingLeft: Spacing.xs,
   },
 
   bottomSpacer: {

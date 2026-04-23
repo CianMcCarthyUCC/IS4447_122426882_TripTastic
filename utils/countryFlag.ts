@@ -1,9 +1,7 @@
 /**
- * Country-name → flag emoji lookup.
- *
- * Covers the seeded demo destinations and common travel countries. Falls back
- * to a globe so the UI never renders a blank slot. Matching is case-sensitive
- * against the exact country string stored on a Trip.
+ * Turns a country name into its flag emoji so trip cards and headers can
+ * show the flag at a glance. Falls back to a globe when the country is
+ * not in the list, so the UI never looks broken.
  */
 
 const COUNTRY_FLAGS: Record<string, string> = {

@@ -11,8 +11,9 @@ export type ProgressData = {
 };
 
 /**
- * Pure function that computes all progress display values.
- * Used by TargetCard and the target detail screen.
+ * Works out the numbers the progress bar needs (percentage, bar colour,
+ * whether the target was met or exceeded) from a current value and a
+ * goal. Kept pure so it can be used anywhere a progress bar appears.
  */
 export function computeProgress(
   current: number,
@@ -24,8 +25,10 @@ export function computeProgress(
   const met = current >= target && !exceeded;
   const remaining = Math.max(0, target - current);
   const barFillWidth = Math.min(percent, 100);
+  // Exceeding a goal is a win, not a warning - paint the bar green so the
+  // signal reads as positive reinforcement rather than an error state.
   const barColor = exceeded
-    ? Palette.danger
+    ? Palette.success
     : accentColor ?? Palette.coral;
 
   return { percent, exceeded, met, remaining, barFillWidth, barColor };

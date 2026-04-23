@@ -16,7 +16,7 @@ jest.mock('@/context', () => ({
   useCategoryContext: () => ({ categories: state.categories }),
 }));
 
-// Silence Expo SQLite side-effects — the hook doesn't touch the DB but
+// Silence Expo SQLite side-effects - the hook doesn't touch the DB but
 // `@/utils` transitively pulls in modules that do in some projects. The
 // mock is cheap insurance.
 jest.mock('@/db/client', () => ({ db: {} }));
@@ -28,6 +28,7 @@ const cat = (id: number, name: string, color = '#000000'): Category => ({
   name,
   color,
   icon: 'star',
+  isSystem: false,
 });
 
 const activity = (
@@ -43,8 +44,9 @@ const activity = (
   date,
   metric,
   status,
+  place: null,
   notes: null,
-  isFavourite: false,
+  isFavourite: false, favouritedAt: null,
 });
 
 beforeEach(() => {
@@ -53,37 +55,46 @@ beforeEach(() => {
   state.categories = [];
 });
 
-describe('useInsightsData — plannedLine / completedLine', () => {
-  it('zero-fills missing periods so the two series align by index', () => {
-    // Day A has only a completed activity; Day B has only a planned one.
-    // Both series must emit a value for both labels so gifted-charts can
-    // overlay them point-for-point.
-    state.categories = [cat(1, 'Food')];
-    state.activities = [
-      activity(1, 1, '2026-01-01', 30, 'completed'),
-      activity(2, 1, '2026-01-02', 30, 'planned'),
-    ];
-
+describe('useInsightsData - barChartData window shape', () => {
+  it('produces a fixed 7-day window for daily view', () => {
     const { result } = renderHook(() => useInsightsData('daily', state.activities));
-    expect(result.current.plannedLine).toHaveLength(2);
-    expect(result.current.completedLine).toHaveLength(2);
-    // Labels must match position-for-position.
-    expect(result.current.plannedLine.map((p) => p.label)).toEqual(
-      result.current.completedLine.map((p) => p.label),
-    );
-    // Day A: 0 planned, 1 completed. Day B: 1 planned, 0 completed.
-    expect(result.current.plannedLine.map((p) => p.value)).toEqual([0, 1]);
-    expect(result.current.completedLine.map((p) => p.value)).toEqual([1, 0]);
+    expect(result.current.barChartData).toHaveLength(7);
+    // Every bar has two stack segments (logged + planned).
+    expect(result.current.barChartData.every((b) => b.stacks.length === 2)).toBe(true);
+    // Every segment starts at zero when there are no activities.
+    expect(
+      result.current.barChartData.every(
+        (b) => b.stacks.reduce((s, seg) => s + seg.value, 0) === 0,
+      ),
+    ).toBe(true);
   });
 
-  it('returns empty arrays when there are no activities', () => {
+  it('produces a fixed 4-slot window for weekly view', () => {
     const { result } = renderHook(() => useInsightsData('weekly', state.activities));
-    expect(result.current.plannedLine).toEqual([]);
-    expect(result.current.completedLine).toEqual([]);
+    expect(result.current.barChartData).toHaveLength(4);
+  });
+
+  it('produces a fixed 4-slot window for monthly view', () => {
+    const { result } = renderHook(() => useInsightsData('monthly', state.activities));
+    expect(result.current.barChartData).toHaveLength(4);
+  });
+
+  it('emits a range label describing the window', () => {
+    const { result } = renderHook(() => useInsightsData('weekly', state.activities));
+    expect(result.current.rangeLabel).toMatch(/-/);
+  });
+
+  it('exposes forward/back flags that match the offset', () => {
+    const atMostRecent = renderHook(() => useInsightsData('weekly', state.activities, 0));
+    expect(atMostRecent.result.current.canGoBack).toBe(true);
+    expect(atMostRecent.result.current.canGoForward).toBe(false);
+
+    const stepBack = renderHook(() => useInsightsData('weekly', state.activities, -1));
+    expect(stepBack.result.current.canGoForward).toBe(true);
   });
 });
 
-describe('useInsightsData — categoryPieData', () => {
+describe('useInsightsData - categoryPieData', () => {
   it('buckets sub-3% slices into a single "Other" segment', () => {
     state.categories = [
       cat(1, 'Food', '#FF0000'),
@@ -91,9 +102,6 @@ describe('useInsightsData — categoryPieData', () => {
       cat(3, 'Transport', '#0000FF'),
       cat(4, 'Shopping', '#FFFF00'),
     ];
-    // Food dominates (95%). The three tail categories each hold ~1.67%
-    // of the total (5 / 300), well under the 3% threshold, so they
-    // should collapse into one "Other" slice.
     state.activities = [
       activity(1, 1, '2026-01-01', 285),
       activity(2, 2, '2026-01-01', 5),
@@ -107,7 +115,6 @@ describe('useInsightsData — categoryPieData', () => {
     expect(names).toContain('Other');
     expect(names).not.toContain('Transport');
     expect(names).not.toContain('Shopping');
-    // Other's value is the sum of the dropped slices.
     const other = result.current.categoryPieData.find((d) => d.name === 'Other');
     expect(other?.value).toBe(15);
   });
@@ -116,21 +123,5 @@ describe('useInsightsData — categoryPieData', () => {
     state.categories = [cat(1, 'Food')];
     const { result } = renderHook(() => useInsightsData('daily', state.activities));
     expect(result.current.categoryPieData).toEqual([]);
-  });
-});
-
-describe('useInsightsData — barChartData', () => {
-  it('aggregates metric per period under the selected view mode', () => {
-    state.categories = [cat(1, 'Food')];
-    state.activities = [
-      activity(1, 1, '2026-01-01', 30),
-      activity(2, 1, '2026-01-01', 15),
-      activity(3, 1, '2026-02-01', 20),
-    ];
-    const { result } = renderHook(() => useInsightsData('monthly', state.activities));
-    // Two distinct months → two bars; January sums to 45.
-    expect(result.current.barChartData).toHaveLength(2);
-    expect(result.current.barChartData[0].value).toBe(45);
-    expect(result.current.barChartData[1].value).toBe(20);
   });
 });

@@ -18,7 +18,7 @@ type InsightsFilterState = {
   selectedCategoryId: number | 'all';
   status: InsightsStatus;
   dateRange: InsightsDateRange;
-  // YYYY-MM-DD bounds — only used when dateRange === 'custom'. Kept as
+  // YYYY-MM-DD bounds - only used when dateRange === 'custom'. Kept as
   // strings to match the activities table's date format for direct
   // string-slice comparison in the filter predicate.
   customStartDate: string | null;
@@ -41,13 +41,9 @@ const DEFAULT_STATE: InsightsFilterState = {
 };
 
 /**
- * Central filter hook for the Insights screen. Owns the full filter
- * state + derives the filtered activity list.
- *
- * The search query is internally debounced (300ms) so the downstream
- * chart memos don't re-compute on every keystroke. `searchQuery` (the
- * input-facing setter value) is returned so the UI stays responsive;
- * `filteredActivities` re-computes off the debounced value.
+ * The filter hook powering the Insights screen. Holds every active
+ * filter the user has set and produces the filtered activity list the
+ * charts read from.
  */
 export function useInsightsFilters() {
   const { activities } = useActivityContext();
@@ -57,7 +53,7 @@ export function useInsightsFilters() {
   const [state, setState] = useState<InsightsFilterState>(DEFAULT_STATE);
   const debouncedQuery = useDebouncedValue(state.searchQuery, 300);
 
-  // Lookup table for category names — joins into the search match so
+  // Lookup table for category names - joins into the search match so
   // the user can search "food" and hit all activities in the Food
   // category, not just ones whose notes mention food.
   const categoryById = useMemo(
@@ -65,7 +61,7 @@ export function useInsightsFilters() {
     [categories],
   );
 
-  // Activities don't store country directly — we resolve
+  // Activities don't store country directly - we resolve
   // activity.tripId → Trip.country → continent for location filters.
   const tripById = useMemo(
     () => new Map<number, Trip>((trips as Trip[]).map((t) => [t.id, t])),
@@ -73,7 +69,7 @@ export function useInsightsFilters() {
   );
 
   // Surfaced to the UI so the sub-screens only offer options the user's
-  // actual trip set contains — no dead chips.
+  // actual trip set contains - no dead chips.
   const availableCountries = useMemo<string[]>(() => {
     const set = new Set<string>();
     for (const t of trips as Trip[]) if (t.country) set.add(t.country);
@@ -110,7 +106,7 @@ export function useInsightsFilters() {
       }
       // Location filters resolve through the activity's trip. An activity
       // whose tripId points to a missing trip gets filtered out whenever
-      // a location filter is active — treat orphans as "no location".
+      // a location filter is active - treat orphans as "no location".
       if (state.continent !== 'all' || state.country !== 'all') {
         const trip = tripById.get(a.tripId);
         if (!trip) return false;
@@ -129,15 +125,16 @@ export function useInsightsFilters() {
         return false;
       }
       if (q.length > 0) {
+        const place = a.place?.toLowerCase() ?? '';
         const notes = a.notes?.toLowerCase() ?? '';
         const catName = categoryById.get(a.categoryId)?.name.toLowerCase() ?? '';
-        if (!notes.includes(q) && !catName.includes(q)) return false;
+        if (!place.includes(q) && !notes.includes(q) && !catName.includes(q)) return false;
       }
       return true;
     });
   }, [activities, categoryById, tripById, debouncedQuery, state]);
 
-  // Count of filters currently deviating from the default state — drives
+  // Count of filters currently deviating from the default state - drives
   // the "Filters · N" badge on the secondary-filter button in the UI.
   const activeFilterCount = useMemo(() => {
     let n = 0;
@@ -156,7 +153,7 @@ export function useInsightsFilters() {
   const isFiltered = activeFilterCount > 0 || state.searchQuery.trim().length > 0;
 
   // Individual setters kept explicit rather than exposing the whole
-  // reducer — caller code reads better as `setStatus('completed')` than
+  // reducer - caller code reads better as `setStatus('completed')` than
   // `dispatch({ type: 'setStatus', value: 'completed' })`.
   const setSearchQuery = useCallback((v: string) => setState((s) => ({ ...s, searchQuery: v })), []);
   const setSelectedCategoryId = useCallback(
@@ -224,7 +221,7 @@ export function useInsightsFilters() {
     isFiltered,
     availableContinents,
     availableCountries,
-    // Context passthroughs — kept here so the consuming screen doesn't
+    // Context passthroughs - kept here so the consuming screen doesn't
     // re-subscribe to the same contexts separately.
     categories,
     trips: trips as Trip[],

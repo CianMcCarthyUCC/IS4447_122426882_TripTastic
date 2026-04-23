@@ -23,6 +23,7 @@ const cat = (id: number, name: string, color = '#000000'): Category => ({
   name,
   color,
   icon: 'star',
+  isSystem: false,
 });
 
 const activity = (
@@ -40,8 +41,9 @@ const activity = (
   date,
   metric,
   status,
+  place: null,
   notes,
-  isFavourite: false,
+  isFavourite: false, favouritedAt: null,
 });
 
 const trip = (id: number, name: string, country: string): Trip => ({

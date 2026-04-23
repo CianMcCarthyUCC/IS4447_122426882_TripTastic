@@ -14,11 +14,13 @@ type Props = {
 };
 
 /**
- * Trip picker — dropdown showing available trips + add button.
+ * The trip selector used wherever the user needs to choose a trip
+ * (for example when scoping a goal). Shows each trip as a dropdown row
+ * and includes a shortcut to create a new trip.
  */
 function TripPicker({ trips, currentTrip, onSelect, onAddTrip }: Props) {
   const options = useMemo<DropdownOption[]>(
-    () => trips.map((t) => ({ label: `${t.name} — ${t.destination}`, value: String(t.id), icon: 'airplane' })),
+    () => trips.map((t) => ({ label: `${t.name} - ${t.destination}`, value: String(t.id), icon: 'airplane' })),
     [trips],
   );
 

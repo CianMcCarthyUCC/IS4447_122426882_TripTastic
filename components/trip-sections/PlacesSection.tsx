@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList } from 'react-native';
-import { useCategories } from '@/hooks';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { useCategories, useFilteredPlaces } from '@/hooks';
 import { usePlaces } from '@/hooks/usePlaces';
 import { useMountedRef } from '@/hooks/useMountedRef';
-import { FilterChips } from '@/components/forms';
+import {
+  FiltersPill,
+  QuickFilterChip,
+  SearchBar,
+  SearchableListPicker,
+} from '@/components/forms';
+import type { SearchableOption } from '@/components/forms';
 import { PlaceCard } from '@/components/cards';
 import { EmptyState, PlaneLoader } from '@/components/feedback';
-import { SharedStyles } from '@/constants';
+import { DrillDownFilterSheet } from '@/components/modals';
+import type { DrillDownFilterConfig } from '@/components/modals';
+import { SharedStyles, Spacing } from '@/constants';
 import { geocodeCity } from '@/utils/geocode';
-import type { ChipOption } from '@/components/forms/FilterChips/FilterChips';
 import type { Place } from '@/utils/geoapify';
 
 type Props = {
@@ -19,21 +26,15 @@ type Props = {
 const EMPTY_PLACES: Place[] = [];
 
 /**
- * Places section of the trip detail screen — geocodes the destination once,
- * then renders a filterable list of nearby POIs via the Geoapify hook.
- *
- * The FilterChips row lives inside the FlatList's `ListHeaderComponent`
- * so the entire section shares one scroll surface — a drag on the chip
- * row is in-bounds for the list's pan gesture. Non-populated states
- * (no geocode / loading / error / zero places) are handled via
- * `ListEmptyComponent` against an empty data array, so the chip row
- * still renders above them and the same scroll contract holds.
+ * The Places tab on the trip detail screen. Looks up nearby points of
+ * interest around the trip's destination and shows them in a searchable,
+ * filterable list so the user can find somewhere to visit.
  */
 export function PlacesSection({ destination, country }: Props) {
   const { categories } = useCategories();
   const mounted = useMountedRef();
   const [tripCoords, setTripCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [selectedPlaceCategory, setSelectedPlaceCategory] = useState<string>('all');
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!destination) return;
@@ -48,11 +49,9 @@ export function PlacesSection({ destination, country }: Props) {
     };
   }, [destination, country, mounted]);
 
-  const placeCategoryIds = useMemo(
-    () => (selectedPlaceCategory === 'all' ? [] : [Number(selectedPlaceCategory)]),
-    [selectedPlaceCategory],
-  );
-
+  // Fetch unfiltered - client-side filter handles category selection so
+  // tapping between categories doesn't refetch and the sort/search
+  // remain instant.
   const {
     places,
     loading: placesLoading,
@@ -60,32 +59,113 @@ export function PlacesSection({ destination, country }: Props) {
   } = usePlaces({
     lat: tripCoords?.lat,
     lon: tripCoords?.lon,
-    categoryIds: placeCategoryIds,
+    categoryIds: [],
   });
 
-  const categoryChips = useMemo<ChipOption[]>(
+  const {
+    filtered,
+    searchQuery,
+    selectedCategory,
+    sortDirection,
+    setSearchQuery,
+    setSelectedCategory,
+    setSortDirection,
+    isFiltered,
+    resetFilters,
+  } = useFilteredPlaces(places);
+
+  const categoryOptions = useMemo<SearchableOption[]>(
     () => [
-      { label: 'All', value: 'all' },
-      ...categories.map((c) => ({ label: c.name, value: String(c.id), color: c.color })),
+      { label: 'All categories', value: 'all', icon: 'apps-outline' },
+      ...categories.map((c) => ({
+        label: c.name,
+        value: String(c.id),
+        color: c.color,
+        icon: c.icon as SearchableOption['icon'],
+      })),
     ],
     [categories],
   );
 
+  const categoryLabelFor = (v: string) =>
+    v === 'all'
+      ? 'All categories'
+      : categories.find((c) => String(c.id) === v)?.name ?? 'All categories';
+
+  const sheetFilters = useMemo<DrillDownFilterConfig[]>(
+    () => [
+      {
+        key: 'category',
+        icon: 'pricetag-outline',
+        label: 'Category',
+        subViewTitle: 'Category',
+        value: selectedCategory,
+        defaultValue: 'all',
+        describe: (v) => categoryLabelFor(v as string),
+        isActive: (v) => (v as string) !== 'all',
+        onApply: (v) => setSelectedCategory(v as string),
+        renderPicker: ({ value, setValue, close }) => (
+          <SearchableListPicker
+            options={categoryOptions}
+            selected={value as string}
+            onSelect={(v) => {
+              setValue(v);
+              close();
+            }}
+            searchPlaceholder="Search categories"
+            accessibilityLabel="Filter by category"
+          />
+        ),
+      },
+    ],
+    [categoryOptions, selectedCategory, categories, setSelectedCategory],
+  );
+
+  const appliedFilterCount = selectedCategory !== 'all' ? 1 : 0;
+
   const listHeader = useMemo(
     () => (
-      <FilterChips
-        options={categoryChips}
-        selected={selectedPlaceCategory}
-        onSelect={setSelectedPlaceCategory}
-        accessibilityLabel="Filter places by category"
-      />
+      <View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search places..."
+        />
+        <View style={styles.quickRow}>
+          <QuickFilterChip
+            label={sortDirection === 'asc' ? 'Name A-Z' : 'Name Z-A'}
+            icon="swap-vertical-outline"
+            active={sortDirection === 'desc'}
+            onPress={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+            accessibilityLabel={`Sort by name ${sortDirection === 'asc' ? 'A to Z' : 'Z to A'}, tap to flip`}
+          />
+          <FiltersPill activeCount={appliedFilterCount} onPress={() => setSheetOpen(true)} />
+          {isFiltered ? (
+            <QuickFilterChip
+              label="Clear"
+              icon="close-circle-outline"
+              active
+              onPress={resetFilters}
+              accessibilityLabel="Clear search and filters"
+            />
+          ) : null}
+        </View>
+      </View>
     ),
-    [categoryChips, selectedPlaceCategory],
+    [
+      searchQuery,
+      setSearchQuery,
+      sortDirection,
+      setSortDirection,
+      appliedFilterCount,
+      isFiltered,
+      resetFilters,
+    ],
   );
 
   // Priority order: missing geocode > loading > error > zero results.
-  // All four render via ListEmptyComponent so the FilterChips header
-  // stays visible above them without being moved in and out of the DOM.
+  // When the user has narrowed the list themselves, swap in a
+  // filter-aware empty state so they have a one-tap escape.
   const listEmpty =
     tripCoords === null ? (
       <EmptyState
@@ -94,9 +174,17 @@ export function PlacesSection({ destination, country }: Props) {
         showAnimation={false}
       />
     ) : placesLoading ? (
-      <PlaneLoader size="medium" message="Loading places…" />
+      <PlaneLoader size="medium" message="Loading places..." />
     ) : placesError ? (
       <EmptyState title="Couldn't load places" message={placesError} showAnimation={false} />
+    ) : isFiltered ? (
+      <EmptyState
+        title="No results"
+        message="Try a different search or category."
+        actionLabel="Clear filters"
+        onAction={resetFilters}
+        showAnimation={false}
+      />
     ) : (
       <EmptyState
         title="No places found"
@@ -105,25 +193,36 @@ export function PlacesSection({ destination, country }: Props) {
       />
     );
 
-  // Drive the FlatList from an empty array while any non-populated state
-  // is active. This keeps the header + empty component inside the one
-  // scrollable so touches on the chips always route into the scroll
-  // surface, matching the Activities / Goals sections.
-  const data = tripCoords !== null && !placesLoading && !placesError ? places : EMPTY_PLACES;
+  const data = tripCoords !== null && !placesLoading && !placesError ? filtered : EMPTY_PLACES;
 
   return (
-    <FlatList
-      data={data}
-      keyExtractor={(p) => p.id}
-      renderItem={({ item }) => <PlaceCard place={item} categories={categories} />}
-      contentContainerStyle={SharedStyles.listContent}
-      showsVerticalScrollIndicator={false}
-      // Keep parity with the other section lists — dragging dismisses
-      // any open keyboard without any press-wrapper intercepting.
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={listEmpty}
-    />
+    <>
+      <FlatList
+        data={data}
+        keyExtractor={(p) => p.id}
+        renderItem={({ item }) => <PlaceCard place={item} categories={categories} />}
+        contentContainerStyle={SharedStyles.listContent}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+      />
+      <DrillDownFilterSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        filters={sheetFilters}
+      />
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  quickRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+});

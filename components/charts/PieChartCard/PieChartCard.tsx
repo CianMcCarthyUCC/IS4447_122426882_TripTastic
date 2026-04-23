@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
-import { Spacing, BorderRadius, Shadows, Palette } from '@/constants';
+import { Ionicons } from '@expo/vector-icons';
+import { Spacing, BorderRadius, Palette } from '@/constants';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 type PieItem = {
@@ -11,35 +12,35 @@ type PieItem = {
   text: string;
   /** Full category name shown in the legend row. */
   name: string;
+  /** Ionicons name rendered in the legend in place of a colour swatch. */
+  icon?: string;
 };
 
 type Props = {
   title: string;
   data: PieItem[];
-  /** Suffix appended to value readouts in the center + legend (e.g. "m"). */
+  /** Suffix appended to value readouts in the centre + legend (e.g. "m"). */
   valueSuffix?: string;
 };
 
 /**
- * Interactive donut chart. Tap a slice to focus it — the center label
- * and legend highlight sync to the focused slice; tap again to clear.
- *
- * Uses the gifted-charts `focusOnPress` machinery so we don't have to
- * hand-roll slice geometry / hit-testing.
+ * The interactive donut chart used on the Insights tab. Tapping a slice
+ * highlights it and brings its value into the centre so the user can
+ * dig into the breakdown; tapping again returns to the full view.
  */
 export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) {
   const theme = useAppTheme();
   // `focused` is the index of the currently selected slice, or null.
   // We track it ourselves (in addition to gifted-charts' internal
-  // focus state) so the center label + legend row can react.
+  // focus state) so the centre label + legend row can react.
   const [focused, setFocused] = useState<number | null>(null);
 
   if (data.length === 0) {
     return (
       <View
-        style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+        style={[styles.card, { borderBottomColor: theme.cardBorder }]}
         accessibilityRole="image"
-        accessibilityLabel={`${title} donut chart — no data`}
+        accessibilityLabel={`${title} donut chart - no data`}
       >
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
         <Text style={[styles.empty, { color: theme.textSecondary }]}>No data to display yet.</Text>
@@ -55,9 +56,9 @@ export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) 
 
   return (
     <View
-      style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+      style={[styles.card, { borderBottomColor: theme.cardBorder }]}
       accessibilityRole="image"
-      accessibilityLabel={`${title} donut chart — total ${total}${valueSuffix}. ${a11yBreakdown}.`}
+      accessibilityLabel={`${title} donut chart - total ${total}${valueSuffix}. ${a11yBreakdown}.`}
     >
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
@@ -77,17 +78,28 @@ export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) 
 
       <View style={styles.chartWrapper}>
         <PieChart
-          data={data}
+          data={data.map((d, i) => ({
+            ...d,
+            focused: focused === i,
+            textColor: theme.textPrimary,
+            // Only render the slice's percent label when it's the focused
+            // one, and strip it down to just the number so the category
+            // name doesn't repeat what the legend + centre already say.
+            text: focused === i ? `${Math.round((d.value / total) * 100)}%` : '',
+          }))}
           donut
           radius={90}
           innerRadius={55}
           focusOnPress
-          sectionAutoFocus
+          sectionAutoFocus={false}
           showText
-          textColor={Palette.white}
+          textColor={theme.textPrimary}
           textSize={11}
           fontWeight="700"
-          innerCircleColor={theme.cardBackground}
+          labelsPosition="outward"
+          showValuesAsLabels={false}
+          extraRadius={8}
+          innerCircleColor={theme.screenBackground}
           onPress={(_item: PieItem, index: number) => {
             setFocused((prev) => (prev === index ? null : index));
           }}
@@ -95,7 +107,6 @@ export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) 
             <View style={styles.center}>
               <Text style={[styles.centerValue, { color: theme.textPrimary }]}>
                 {focusedSlice ? focusedSlice.value : total}
-                {valueSuffix}
               </Text>
               <Text style={[styles.centerLabel, { color: theme.textSecondary }]} numberOfLines={1}>
                 {focusedSlice ? focusedSlice.name : 'Total'}
@@ -119,7 +130,12 @@ export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) 
               accessibilityRole="button"
               accessibilityLabel={`Focus ${d.name}, ${d.value}${valueSuffix}`}
             >
-              <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+              <Ionicons
+                name={(d.icon as keyof typeof Ionicons.glyphMap) ?? 'ellipse'}
+                size={14}
+                color={d.color}
+                style={styles.legendIcon}
+              />
               <Text
                 style={[
                   styles.legendName,
@@ -143,12 +159,13 @@ export default function PieChartCard({ title, data, valueSuffix = 'm' }: Props) 
 }
 
 const styles = StyleSheet.create({
+  // Flat: no card chrome, just a bottom hairline so sibling charts
+  // separate cleanly on the Insights tab.
   card: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     marginBottom: Spacing.lg,
-    padding: Spacing.lg,
-    ...Shadows.md,
+    paddingBottom: Spacing.lg,
+    paddingTop: Spacing.sm,
   },
   headerRow: {
     alignItems: 'center',
@@ -172,7 +189,8 @@ const styles = StyleSheet.create({
   chartWrapper: {
     alignItems: 'center',
     marginVertical: Spacing.sm,
-    overflow: 'hidden',
+    overflow: 'visible',
+    paddingHorizontal: Spacing.xl,
   },
   center: {
     alignItems: 'center',
@@ -206,10 +224,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
   },
-  legendDot: {
-    borderRadius: 5,
-    height: 10,
-    width: 10,
+  legendIcon: {
+    width: 16,
   },
   legendName: {
     flex: 1,

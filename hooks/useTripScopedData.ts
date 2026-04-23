@@ -15,11 +15,9 @@ type TripScopedData = {
 };
 
 /**
- * Single source of truth for "everything tied to trip X" selections over the
- * in-memory context. Replaces ad-hoc `activities.filter(a => a.tripId === id)`
- * duplicated across trip detail + insights + streaks, so the filter rule
- * (including the `targets.tripId === null` global-target convention) lives
- * in one place.
+ * Returns everything that belongs to a given trip (its activities,
+ * goals and stats). Keeps the rule for "what belongs to this trip" in
+ * one place so every screen agrees.
  */
 export function useTripScopedData(tripId: number): TripScopedData {
   const { activities } = useActivities();
