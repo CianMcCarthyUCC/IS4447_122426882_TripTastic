@@ -2,9 +2,14 @@
 
 https://github.com/CianMcCarthyUCC/IS4447_122426882_TripTastic
 
-## Expo
+## Expo Dashboard Link (QR Code + All Links are attached in the Word Doc)
+## iOS
+https://expo.dev/preview/update?message=Final+submission&updateRuntimeVersion=1.0.0&createdAt=2026-04-23T19%3A49%3A21.271Z&slug=exp&projectId=cfec5f6c-bde2-471f-b4da-d22b92b99412&group=2707e2be-2b6b-4606-a54e-742756727c1a
 
-https://expo.dev/projects/0c1d33ff-849f-4cbd-86b3-79efbfa0ae26
+
+## Android
+https://expo.dev/preview/update?message=Final+submission&updateRuntimeVersion=1.0.0&createdAt=2026-04-23T19%3A49%3A38.100Z&slug=exp&projectId=cfec5f6c-bde2-471f-b4da-d22b92b99412&group=2288c3ad-82ba-4a3f-bce0-e58a0a3f24ff
+
 
 ## App Name and Option
 
